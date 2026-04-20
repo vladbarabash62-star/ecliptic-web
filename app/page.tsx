@@ -89,38 +89,20 @@ const products = [
   },
 ];
 
-declare global {
-  interface Window {
-    Telegram?: {
-      WebApp?: {
-        ready?: () => void;
-        expand?: () => void;
-      };
-    };
-  }
-}
-
 export default function HomePage() {
-  const [columns, setColumns] = useState(4);
+  const [isMobileLike, setIsMobileLike] = useState(false);
 
-useEffect(() => {
-  const check = () => {
-    const width = window.innerWidth;
+  useEffect(() => {
+    const checkScreen = () => {
+      setIsMobileLike(window.innerWidth < 500);
+    };
 
-    if (width < 500) {
-      setColumns(3); // Telegram / телефон
-    } else {
-      setColumns(4); // ПК / браузер
-    }
-  };
+    checkScreen();
+    window.addEventListener("resize", checkScreen);
 
-  check();
-  window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", checkScreen);
+  }, []);
 
-  return () => window.removeEventListener("resize", check);
-}, []);
-
-const gridClass = `grid grid-cols-${columns} gap-3`;
   return (
     <main className="min-h-screen bg-[#0b0d12] text-white">
       <div className="mx-auto w-full max-w-[1400px] px-3 py-4 sm:px-4 sm:py-6">
@@ -139,7 +121,7 @@ const gridClass = `grid grid-cols-${columns} gap-3`;
           </p>
         </div>
 
-        <section className={gridClass}>
+        <section className={isMobileLike ? "grid grid-cols-3 gap-3" : "grid grid-cols-4 gap-4"}>
           {products.map((product) => (
             <button
               key={product.name}
