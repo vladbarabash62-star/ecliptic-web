@@ -112,10 +112,13 @@ export default function HomePage() {
     Ecliptic Store
   </div>
 </div>
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-            Добро пожаловать в Ecliptic Store 
-          </h1>
-
+<h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+  <span className="block">Добро пожаловать в</span>
+  <span className="block text-white">Ecliptic Store</span>
+</h1>
+<span className="block text-white text-3xl sm:text-4xl">
+  Ecliptic Store
+</span>
           <p className="mt-2 max-w-2xl text-sm text-white/60 sm:text-base mx-auto">
             Выберите нужный товар 
           </p>
