@@ -241,7 +241,7 @@ export default function HomePage() {
                   <img
                     src={product.icon}
                     alt={product.name}
-                    className="h-[32px] w-[32px] object-contain sm:h-[42px] sm:w-[42px] md:h-[54px] md:w-[54px]"
+                   className="h-[60px] w-[60px] object-contain sm:h-[80px] sm:w-[80px] md:h-[100px] md:w-[100px]"
                     loading="lazy"
                     referrerPolicy="no-referrer"
                   />
