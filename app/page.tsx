@@ -95,7 +95,6 @@ declare global {
       WebApp?: {
         ready?: () => void;
         expand?: () => void;
-        initDataUnsafe?: unknown;
       };
     };
   }
