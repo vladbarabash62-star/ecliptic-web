@@ -13,7 +13,7 @@ const products = [
   },
   {
     name: "Telegram аккаунты",
-    icon: "https://pngdownload.io/wp-content/uploads/2025/07/Telegram-Logo-Icon-Messaging-App.webp",
+    icon: "https://static.vecteezy.com/system/resources/previews/023/986/562/non_2x/telegram-logo-telegram-logo-transparent-telegram-icon-transparent-free-free-png.png",
   },
   {
     name: "Steam пополнение",
