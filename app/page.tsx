@@ -9,7 +9,7 @@ const products = [
   },
   {
     name: "Telegram Premium",
-    icon: "https://s3.getstickerpack.com/storage/uploads/sticker-pack/telegram-premium/tray_large.png?1b9970f7c6b9a75d8733911336ffaff1&d=200x200",
+    icon: "https://smmlaboratory.com/image/data/3/telegrammpremium.svg",
   },
   {
     name: "Telegram аккаунты",
@@ -21,31 +21,31 @@ const products = [
   },
   {
     name: "Standoff 2",
-    icon: "https://play-lh.googleusercontent.com/DlXm-an-YzwmiD68moORtAr8wV2Haj4mNoSapjI_Th4UxQnPyl3roAjpfUS3i8bzZyA=w240-h480-rw",
+    icon: "https://play-lh.googleusercontent.com/F1oRJ-x-zRq7cbNgTBua03Hanp-PnASQ-j4Nnn-O2LMdtrwxxxic2r8o8DBAX-MOZ0s=s48-rw",
   },
   {
     name: "PUBG Mobile",
-    icon: "https://upload.wikimedia.org/wikipedia/ru/7/7e/PlayerUnknown%27s_Battlegrounds_Mobile.jpg",
+    icon: "https://i.pinimg.com/736x/7a/7e/6c/7a7e6c73a11999c645106ae43dee4c9e.jpg",
   },
   {
     name: "Brawl Stars",
-    icon: "https://www.citypng.com/public/uploads/preview/hd-brawl-stars-game-logo-icon-symbol-png-701751694787802lmcclzylma.png",
+    icon: "https://logos-world.net/wp-content/uploads/2021/08/Brawl-Stars-Symbol.png",
   },
   {
     name: "Roblox",
-    icon: "https://toppng.com/uploads/preview/hd-text-roblox-logo-white-with-symbol-sign-icon-png-116785559665dxzszkref.png",
+    icon: "https://media.tenor.com/HO1YAH0_iMcAAAAj/roblox-logo.gif",
   },
   {
     name: "Minecraft",
-    icon: "https://p1.hiclipart.com/preview/896/990/447/minecraft-hd-icon-mac-pc-minecraft-icon-512-png-icon-thumbnail.jpg",
+    icon: "https://images.icon-icons.com/2699/PNG/512/minecraft_logo_icon_168974.png",
   },
   {
     name: "Clash Royale",
-    icon: "https://i.pinimg.com/736x/b3/ff/ef/b3ffef09ca62e61c2a16aeba4138bf5c.jpg",
+    icon: "https://play-lh.googleusercontent.com/gnSC6s8-6Tjc4uhvDW7nfrSJxpbhllzYhgX8y374N1LYvWBStn2YhozS9XXaz1T_Pi2q=s48-rw",
   },
   {
     name: "Mobile Legends",
-    icon: "https://www.pngall.com/wp-content/uploads/18/Mobile-Legends-Diamond-Graphic-PNG-thumb.png",
+    icon: "https://www.freepnglogos.com/uploads/logo-mobile-legend-png/logo-mobile-legend-tcash-apapun-operatornya-semua-bisa-paketcash-18.png",
   },
   {
     name: "Free Fire",
@@ -61,31 +61,31 @@ const products = [
   },
   {
     name: "Black Russia",
-    icon: "https://www.google.com/s2/favicons?sz=128&domain_url=https://blackrussia.online",
+    icon: "https://cdn140.picsart.com/327485001024211.png",
   },
   {
     name: "Spotify Premium",
-    icon: "https://cdn.simpleicons.org/spotify/ffffff",
+    icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Spotify_logo_without_text.svg/3840px-Spotify_logo_without_text.svg.png",
   },
   {
     name: "YouTube Premium",
-    icon: "https://cdn.simpleicons.org/youtube/ffffff",
+    icon: "https://upload.wikimedia.org/wikipedia/commons/3/34/YouTube_logo_%282017%29.png",
   },
   {
     name: "TikTok Coins",
-    icon: "https://cdn.simpleicons.org/tiktok/ffffff",
+    icon: "https://cdn-icons-png.freepik.com/256/3621/3621450.png?semt=ais_white_label",
   },
   {
     name: "PlayStation",
-    icon: "https://cdn.simpleicons.org/playstation/ffffff",
+    icon: "https://www.pngkey.com/png/full/7-74293_la-siguiente-playstation-playstation-4-logo-png.png",
   },
   {
     name: "Boosty",
-    icon: "https://www.google.com/s2/favicons?sz=128&domain_url=https://boosty.to",
+    icon: "https://images.live.vkvideo.ru/image/31715c5a-91c0-455b-994f-31650954caee?change_time=1729181151&mw=640",
   },
   {
     name: "Twitch",
-    icon: "https://cdn.simpleicons.org/twitch/ffffff",
+    icon: "https://cdn-icons-png.flaticon.com/512/3938/3938117.png",
   },
 ];
 
