@@ -114,8 +114,6 @@ export default function HomePage() {
 </div>
 <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
   <span className="block">Добро пожаловать в</span>
-  <span className="block text-white">Ecliptic Store</span>
-</h1>
 <span className="block text-white text-3xl sm:text-4xl">
   Ecliptic Store
 </span>
