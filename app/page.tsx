@@ -114,14 +114,14 @@ export default function HomePage() {
 </div>
 <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
   <span className="block">Добро пожаловать в</span>
-<span className="block text-white text-3xl sm:text-4xl">
-  Ecliptic Store
-</span>
-          <p className="mt-2 max-w-2xl text-sm text-white/60 sm:text-base mx-auto">
-            Выберите нужный товар 
-          </p>
-        </div>
+  <span className="block text-white text-3xl sm:text-4xl">
+    Ecliptic Store
+  </span>
+</h1>
 
+<p className="mt-2 max-w-2xl text-sm text-white/60 sm:text-base mx-auto">
+  Выберите нужный товар 
+</p>
         <section className={isMobileLike ? "grid grid-cols-3 gap-3" : "grid grid-cols-4 gap-4"}>
           {products.map((product) => (
             <button
