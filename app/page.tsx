@@ -4,6 +4,22 @@ import { useEffect, useState } from "react";
 
 const products = [
   {
+    name: "Telegram Stars",
+    icon: "https://cdn.simpleicons.org/telegram/ffffff",
+  },
+  {
+    name: "Telegram Premium",
+    icon: "https://cdn.simpleicons.org/telegram/ffffff",
+  },
+  {
+    name: "Telegram аккаунты",
+    icon: "https://cdn.simpleicons.org/telegram/ffffff",
+  },
+  {
+    name: "Steam пополнение",
+    icon: "https://cdn.simpleicons.org/steam/ffffff",
+  },
+  {
     name: "Standoff 2",
     icon: "https://www.google.com/s2/favicons?sz=128&domain_url=https://standoff2.com",
   },
@@ -48,34 +64,6 @@ const products = [
     icon: "https://www.google.com/s2/favicons?sz=128&domain_url=https://blackrussia.online",
   },
   {
-    name: "PlayStation",
-    icon: "https://cdn.simpleicons.org/playstation/ffffff",
-  },
-  {
-    name: "Boosty",
-    icon: "https://www.google.com/s2/favicons?sz=128&domain_url=https://boosty.to",
-  },
-  {
-    name: "Twitch",
-    icon: "https://cdn.simpleicons.org/twitch/ffffff",
-  },
-  {
-    name: "Telegram аккаунты",
-    icon: "https://cdn.simpleicons.org/telegram/ffffff",
-  },
-  {
-    name: "Telegram Premium",
-    icon: "https://cdn.simpleicons.org/telegram/ffffff",
-  },
-  {
-    name: "Telegram Stars",
-    icon: "https://cdn.simpleicons.org/telegram/ffffff",
-  },
-  {
-    name: "Steam пополнение",
-    icon: "https://cdn.simpleicons.org/steam/ffffff",
-  },
-  {
     name: "Spotify Premium",
     icon: "https://cdn.simpleicons.org/spotify/ffffff",
   },
@@ -86,6 +74,18 @@ const products = [
   {
     name: "TikTok Coins",
     icon: "https://cdn.simpleicons.org/tiktok/ffffff",
+  },
+  {
+    name: "PlayStation",
+    icon: "https://cdn.simpleicons.org/playstation/ffffff",
+  },
+  {
+    name: "Boosty",
+    icon: "https://www.google.com/s2/favicons?sz=128&domain_url=https://boosty.to",
+  },
+  {
+    name: "Twitch",
+    icon: "https://cdn.simpleicons.org/twitch/ffffff",
   },
 ];
 
