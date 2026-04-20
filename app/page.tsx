@@ -106,17 +106,18 @@ export default function HomePage() {
   return (
     <main className="min-h-screen bg-[#0b0d12] text-white">
       <div className="mx-auto w-full max-w-[1400px] px-3 py-4 sm:px-4 sm:py-6">
-        <div className="mb-5 sm:mb-7">
-          <div className="mb-2 inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-white/60">
-                   Ecliptic Store        
-          </div>
-
+      <div className="mb-5 sm:mb-7 text-center">
+      <div className="mb-2 flex justify-center">
+  <div className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-white/60">
+    Ecliptic Store
+  </div>
+</div>
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-                    Добро пожаловать в          Ecliptic Store 
+            Добро пожаловать в Ecliptic Store 
           </h1>
 
-          <p className="mt-2 max-w-2xl text-sm text-white/60 sm:text-base">
-                      Выберите нужный товар 
+          <p className="mt-2 max-w-2xl text-sm text-white/60 sm:text-base mx-auto">
+            Выберите нужный товар 
           </p>
         </div>
 
