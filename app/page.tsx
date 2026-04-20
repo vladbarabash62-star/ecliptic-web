@@ -89,6 +89,88 @@ const products = [
   },
 ];
 
+function BackgroundPlanets() {
+  const planets = [
+    {
+      size: 170,
+      top: "8%",
+      left: "-40px",
+      duration: "26s",
+      delay: "0s",
+      rotate: "-18deg",
+      opacity: 0.12,
+    },
+    {
+      size: 120,
+      top: "18%",
+      right: "6%",
+      duration: "22s",
+      delay: "2s",
+      rotate: "24deg",
+      opacity: 0.1,
+    },
+    {
+      size: 150,
+      top: "52%",
+      left: "4%",
+      duration: "30s",
+      delay: "1s",
+      rotate: "12deg",
+      opacity: 0.08,
+    },
+    {
+      size: 110,
+      top: "72%",
+      right: "10%",
+      duration: "24s",
+      delay: "3s",
+      rotate: "-28deg",
+      opacity: 0.1,
+    },
+    {
+      size: 90,
+      top: "84%",
+      left: "42%",
+      duration: "20s",
+      delay: "0.5s",
+      rotate: "16deg",
+      opacity: 0.07,
+    },
+  ];
+
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      {planets.map((planet, index) => (
+        <div
+          key={index}
+          className="absolute animate-[floatPlanet_var(--duration)_ease-in-out_infinite]"
+          style={
+            {
+              width: `${planet.size}px`,
+              height: `${planet.size}px`,
+              top: planet.top,
+              left: planet.left,
+              right: planet.right,
+              opacity: planet.opacity,
+              ["--duration" as string]: planet.duration,
+              animationDelay: planet.delay,
+              transform: `rotate(${planet.rotate})`,
+            } as React.CSSProperties
+          }
+        >
+          <div className="relative h-full w-full">
+            <div className="absolute inset-[18%] rounded-full border border-white/25 bg-white/5" />
+            <div className="absolute left-[-8%] top-[42%] h-[16%] w-[116%] -translate-y-1/2 rounded-full border-2 border-white/35" />
+            <div className="absolute left-[50%] top-[24%] h-2 w-2 -translate-x-1/2 rounded-full bg-white/60 blur-[1px]" />
+          </div>
+        </div>
+      ))}
+
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(11,13,18,0.18)_55%,rgba(11,13,18,0.55)_100%)]" />
+    </div>
+  );
+}
+
 export default function HomePage() {
   const [isMobileLike, setIsMobileLike] = useState(false);
 
@@ -104,35 +186,58 @@ export default function HomePage() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-[#0b0d12] text-white">
-      <div className="mx-auto w-full max-w-[1400px] px-3 py-4 sm:px-4 sm:py-6">
-      <div className="mb-5 sm:mb-7 text-center">
-      <div className="mb-2 flex justify-center">
-  <div className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-white/60">
-    Ecliptic Store
-  </div>
-</div>
-<h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-  <span className="block">Добро пожаловать в</span>
-  <span className="block text-white text-3xl sm:text-4xl">
-    Ecliptic Store
-  </span>
-</h1>
+    <main className="relative min-h-screen overflow-hidden bg-[#0b0d12] text-white">
+      <style jsx global>{`
+        @keyframes floatPlanet {
+          0% {
+            transform: translate3d(0, 0, 0) rotate(var(--rotate, 0deg));
+          }
+          50% {
+            transform: translate3d(0, -14px, 0) rotate(var(--rotate, 0deg));
+          }
+          100% {
+            transform: translate3d(0, 0, 0) rotate(var(--rotate, 0deg));
+          }
+        }
+      `}</style>
 
-<p className="mt-2 max-w-2xl text-sm text-white/60 sm:text-base mx-auto">
-  Выберите нужный товар 
-</p>
-        <section className={isMobileLike ? "grid grid-cols-3 gap-3" : "grid grid-cols-4 gap-4"}>
+      <BackgroundPlanets />
+
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.06),transparent_30%)]" />
+
+      <div className="relative mx-auto w-full max-w-[1400px] px-3 py-4 sm:px-4 sm:py-6">
+        <div className="mb-6 text-center sm:mb-8">
+          <div className="mb-3 flex justify-center">
+            <div className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.22em] text-white/70 backdrop-blur-sm">
+              Ecliptic Store
+            </div>
+          </div>
+
+          <h1 className="text-2xl font-bold tracking-tight sm:text-4xl">
+            <span className="block text-white/90">Добро пожаловать в</span>
+            <span className="mt-1 block text-white">Ecliptic Store</span>
+          </h1>
+
+          <p className="mx-auto mt-3 max-w-2xl text-sm text-white/60 sm:text-base">
+            Выберите нужный товар
+          </p>
+        </div>
+
+        <section
+          className={
+            isMobileLike ? "grid grid-cols-3 gap-3" : "grid grid-cols-4 gap-4"
+          }
+        >
           {products.map((product) => (
             <button
               key={product.name}
               type="button"
-              className="group relative overflow-hidden rounded-2xl border border-white/10 bg-[#12151c] transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-[#171b24] hover:shadow-[0_10px_30px_rgba(0,0,0,0.35)] active:scale-[0.98]"
+              className="group relative overflow-hidden rounded-2xl border border-white/10 bg-[rgba(18,21,28,0.78)] backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-[rgba(23,27,36,0.92)] hover:shadow-[0_14px_32px_rgba(0,0,0,0.42)] active:scale-[0.98]"
             >
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_45%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.10),transparent_45%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
-              <div className="relative flex h-full flex-col items-center justify-start p-2 sm:p-3 md:p-4">
-                <div className="mb-2 flex aspect-square w-full items-center justify-center rounded-2xl border border-white/10 bg-[#0d1016] shadow-inner sm:mb-3">
+              <div className="relative flex h-full flex-col items-center p-2 sm:p-3 md:p-4">
+                <div className="mb-2 flex aspect-square w-full items-center justify-center rounded-2xl border border-white/10 bg-[#0a0d14]/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] sm:mb-3">
                   <img
                     src={product.icon}
                     alt={product.name}
@@ -142,7 +247,7 @@ export default function HomePage() {
                   />
                 </div>
 
-                <h3 className="text-center text-[11px] font-semibold leading-tight text-white/90 sm:text-xs md:text-sm">
+                <h3 className="min-h-[32px] text-center text-[11px] font-semibold leading-tight text-white/90 sm:text-xs md:text-sm">
                   {product.name}
                 </h3>
               </div>
