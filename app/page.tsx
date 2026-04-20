@@ -41,11 +41,11 @@ const products = [
   },
   {
     name: "Clash Royale",
-    icon: "https://www.clipartmax.com/png/middle/171-1716735_clash-royale-logo-logo-de-clash-royale-png.png",
+    icon: "https://www.pngplay.com/wp-content/uploads/10/Clash-Royale-Logo-PNG-HD-Photos.png",
   },
   {
     name: "Mobile Legends",
-    icon: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSK9GCdca_dhU9bswBbEzdYOZOcdDAy07XjJA&s",
+    icon: "https://www.freepnglogos.com/uploads/logo-mobile-legend-png/logo-mobile-legend-tcash-apapun-operatornya-semua-bisa-paketcash-18.png",
   },
   {
     name: "Free Fire",
