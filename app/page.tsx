@@ -21,15 +21,15 @@ const products = [
   },
   {
     name: "Standoff 2",
-    icon: "https://play-lh.googleusercontent.com/F1oRJ-x-zRq7cbNgTBua03Hanp-PnASQ-j4Nnn-O2LMdtrwxxxic2r8o8DBAX-MOZ0s=s48-rw",
+    icon: "https://standof.ru/wp-content/uploads/2023/07/favicon.png",
   },
   {
     name: "PUBG Mobile",
-    icon: "https://i.pinimg.com/736x/7a/7e/6c/7a7e6c73a11999c645106ae43dee4c9e.jpg",
+    icon: "https://pnghdpro.com/wp-content/themes/pnghdpro/download/social-media-and-brands/pubg-mobile-logo.png",
   },
   {
     name: "Brawl Stars",
-    icon: "https://logos-world.net/wp-content/uploads/2021/08/Brawl-Stars-Symbol.png",
+    icon: "https://static.vecteezy.com/system/resources/thumbnails/027/127/558/small_2x/brawl-stars-logo-brawl-stars-icon-transparent-free-png.png",
   },
   {
     name: "Roblox",
@@ -41,15 +41,15 @@ const products = [
   },
   {
     name: "Clash Royale",
-    icon: "https://play-lh.googleusercontent.com/gnSC6s8-6Tjc4uhvDW7nfrSJxpbhllzYhgX8y374N1LYvWBStn2YhozS9XXaz1T_Pi2q=s48-rw",
+    icon: "https://www.clipartmax.com/png/middle/171-1716735_clash-royale-logo-logo-de-clash-royale-png.png",
   },
   {
     name: "Mobile Legends",
-    icon: "https://www.freepnglogos.com/uploads/logo-mobile-legend-png/logo-mobile-legend-tcash-apapun-operatornya-semua-bisa-paketcash-18.png",
+    icon: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSK9GCdca_dhU9bswBbEzdYOZOcdDAy07XjJA&s",
   },
   {
     name: "Free Fire",
-    icon: "https://static.wikia.nocookie.net/videojuego/images/e/e0/Freefirelogo.png/revision/latest?cb=20190718011501",
+    icon: "https://images.seeklogo.com/logo-png/50/2/free-fire-logo-png_seeklogo-500424.png",
   },
   {
     name: "GTA 5 RP",
@@ -69,7 +69,7 @@ const products = [
   },
   {
     name: "YouTube Premium",
-    icon: "https://upload.wikimedia.org/wikipedia/commons/3/34/YouTube_logo_%282017%29.png",
+    icon: "https://upload.wikimedia.org/wikipedia/commons/e/ef/Youtube_logo.png",
   },
   {
     name: "TikTok Coins",
