@@ -101,20 +101,26 @@ declare global {
 }
 
 export default function HomePage() {
-  const [isTelegram, setIsTelegram] = useState(false);
+  const [columns, setColumns] = useState(4);
 
-  useEffect(() => {
-    if (typeof window !== "undefined" && window.Telegram?.WebApp) {
-      setIsTelegram(true);
-      window.Telegram.WebApp.ready?.();
-      window.Telegram.WebApp.expand?.();
+useEffect(() => {
+  const check = () => {
+    const width = window.innerWidth;
+
+    if (width < 500) {
+      setColumns(3); // Telegram / телефон
+    } else {
+      setColumns(4); // ПК / браузер
     }
-  }, []);
+  };
 
-  const gridClass = isTelegram
-    ? "grid grid-cols-3 gap-3"
-    : "grid grid-cols-4 gap-4";
+  check();
+  window.addEventListener("resize", check);
 
+  return () => window.removeEventListener("resize", check);
+}, []);
+
+const gridClass = `grid grid-cols-${columns} gap-3`;
   return (
     <main className="min-h-screen bg-[#0b0d12] text-white">
       <div className="mx-auto w-full max-w-[1400px] px-3 py-4 sm:px-4 sm:py-6">
