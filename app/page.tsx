@@ -5,15 +5,15 @@ import { useEffect, useState } from "react";
 const products = [
   {
     name: "Telegram Stars",
-    icon: "https://cdn.simpleicons.org/telegram/ffffff",
+    icon: "https://lztcdn.com/files/6514f1e6-dab4-4d49-806a-3ff22d7793e5.webp",
   },
   {
     name: "Telegram Premium",
-    icon: "https://cdn.simpleicons.org/telegram/ffffff",
+    icon: "https://subscriptionsmartbd.com/wp-content/uploads/2024/05/Untitled-design-36.png",
   },
   {
     name: "Telegram аккаунты",
-    icon: "https://cdn.simpleicons.org/telegram/ffffff",
+    icon: "https://image.similarpng.com/file/similarpng/very-thumbnail/2021/01/Illustration-of-Telegram-icon-design-on-transparent-background-PNG.png",
   },
   {
     name: "Steam пополнение",
@@ -21,7 +21,7 @@ const products = [
   },
   {
     name: "Standoff 2",
-    icon: "https://www.google.com/s2/favicons?sz=128&domain_url=https://standoff2.com",
+    icon: "https://cdn.medal.tv/games/962/cover.jpg",
   },
   {
     name: "PUBG Mobile",
