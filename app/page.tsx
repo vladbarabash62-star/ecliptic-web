@@ -112,12 +112,11 @@ export default function HomePage() {
           </div>
 
           <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-            Магазин товаров
+            Добро пожаловать в Ecliptic Store 
           </h1>
 
           <p className="mt-2 max-w-2xl text-sm text-white/60 sm:text-base">
-            Выберите нужную категорию. Интерфейс подготовлен под Telegram Mini App
-            и обычный браузер.
+            Выберите нужный товар 
           </p>
         </div>
 
