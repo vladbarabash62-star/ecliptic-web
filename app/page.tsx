@@ -9,7 +9,7 @@ const products = [
   },
   {
     name: "Telegram Premium",
-    icon: "https://subscriptionsmartbd.com/wp-content/uploads/2024/05/Untitled-design-36.png",
+    icon: "https://s3.getstickerpack.com/storage/uploads/sticker-pack/telegram-premium/tray_large.png?1b9970f7c6b9a75d8733911336ffaff1&d=200x200",
   },
   {
     name: "Telegram аккаунты",
@@ -17,43 +17,43 @@ const products = [
   },
   {
     name: "Steam пополнение",
-    icon: "https://cdn.simpleicons.org/steam/ffffff",
+    icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Steam_icon_logo.svg/960px-Steam_icon_logo.svg.png",
   },
   {
     name: "Standoff 2",
-    icon: "https://cdn.medal.tv/games/962/cover.jpg",
+    icon: "https://play-lh.googleusercontent.com/DlXm-an-YzwmiD68moORtAr8wV2Haj4mNoSapjI_Th4UxQnPyl3roAjpfUS3i8bzZyA=w240-h480-rw",
   },
   {
     name: "PUBG Mobile",
-    icon: "https://www.google.com/s2/favicons?sz=128&domain_url=https://www.pubgmobile.com",
+    icon: "https://upload.wikimedia.org/wikipedia/ru/7/7e/PlayerUnknown%27s_Battlegrounds_Mobile.jpg",
   },
   {
     name: "Brawl Stars",
-    icon: "https://www.google.com/s2/favicons?sz=128&domain_url=https://supercell.com/en/games/brawlstars/",
+    icon: "https://www.citypng.com/public/uploads/preview/hd-brawl-stars-game-logo-icon-symbol-png-701751694787802lmcclzylma.png",
   },
   {
     name: "Roblox",
-    icon: "https://cdn.simpleicons.org/roblox/ffffff",
+    icon: "https://toppng.com/uploads/preview/hd-text-roblox-logo-white-with-symbol-sign-icon-png-116785559665dxzszkref.png",
   },
   {
     name: "Minecraft",
-    icon: "https://www.google.com/s2/favicons?sz=128&domain_url=https://www.minecraft.net",
+    icon: "https://p1.hiclipart.com/preview/896/990/447/minecraft-hd-icon-mac-pc-minecraft-icon-512-png-icon-thumbnail.jpg",
   },
   {
     name: "Clash Royale",
-    icon: "https://www.google.com/s2/favicons?sz=128&domain_url=https://supercell.com/en/games/clashroyale/",
+    icon: "https://i.pinimg.com/736x/b3/ff/ef/b3ffef09ca62e61c2a16aeba4138bf5c.jpg",
   },
   {
     name: "Mobile Legends",
-    icon: "https://www.google.com/s2/favicons?sz=128&domain_url=https://m.mobilelegends.com",
+    icon: "https://www.pngall.com/wp-content/uploads/18/Mobile-Legends-Diamond-Graphic-PNG-thumb.png",
   },
   {
     name: "Free Fire",
-    icon: "https://www.google.com/s2/favicons?sz=128&domain_url=https://ff.garena.com",
+    icon: "https://static.wikia.nocookie.net/videojuego/images/e/e0/Freefirelogo.png/revision/latest?cb=20190718011501",
   },
   {
     name: "GTA 5 RP",
-    icon: "https://www.google.com/s2/favicons?sz=128&domain_url=https://gta5rp.com",
+    icon: "https://gta5rp.com/_next/image?url=%2Fimages%2Flogo%2Fmain.png&w=1920&q=100",
   },
   {
     name: "Amazing RP",
