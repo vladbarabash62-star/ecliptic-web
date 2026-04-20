@@ -1,3 +1,7 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
 const products = [
   {
     name: "Standoff 2",
@@ -85,7 +89,33 @@ const products = [
   },
 ];
 
+declare global {
+  interface Window {
+    Telegram?: {
+      WebApp?: {
+        ready?: () => void;
+        expand?: () => void;
+        initDataUnsafe?: unknown;
+      };
+    };
+  }
+}
+
 export default function HomePage() {
+  const [isTelegram, setIsTelegram] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.Telegram?.WebApp) {
+      setIsTelegram(true);
+      window.Telegram.WebApp.ready?.();
+      window.Telegram.WebApp.expand?.();
+    }
+  }, []);
+
+  const gridClass = isTelegram
+    ? "grid grid-cols-3 gap-3"
+    : "grid grid-cols-4 gap-4";
+
   return (
     <main className="min-h-screen bg-[#0b0d12] text-white">
       <div className="mx-auto w-full max-w-[1400px] px-3 py-4 sm:px-4 sm:py-6">
@@ -104,10 +134,11 @@ export default function HomePage() {
           </p>
         </div>
 
-        <section className="grid grid-cols-4 gap-2 sm:gap-3 md:gap-4">
+        <section className={gridClass}>
           {products.map((product) => (
-            <div
+            <button
               key={product.name}
+              type="button"
               className="group relative overflow-hidden rounded-2xl border border-white/10 bg-[#12151c] transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-[#171b24] hover:shadow-[0_10px_30px_rgba(0,0,0,0.35)] active:scale-[0.98]"
             >
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.08),transparent_45%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
@@ -117,7 +148,7 @@ export default function HomePage() {
                   <img
                     src={product.icon}
                     alt={product.name}
-                    className="h-[34px] w-[34px] object-contain sm:h-[42px] sm:w-[42px] md:h-[54px] md:w-[54px]"
+                    className="h-[32px] w-[32px] object-contain sm:h-[42px] sm:w-[42px] md:h-[54px] md:w-[54px]"
                     loading="lazy"
                     referrerPolicy="no-referrer"
                   />
@@ -127,7 +158,7 @@ export default function HomePage() {
                   {product.name}
                 </h3>
               </div>
-            </div>
+            </button>
           ))}
         </section>
       </div>
