@@ -1,9 +1,9 @@
 {
-    "redirects": [
-      {
-        "source": "/shop",
-        "destination": "https://t.me/Ecliptic_Store_BOT/shop",
-        "permanent": true
-      }
-    ]
-  }
+  "redirects": [
+    {
+      "source": "/shop",
+      "destination": "https://t.me/Ecliptic_Store_BOT?startapp=shop",
+      "permanent": true
+    }
+  ]
+}
