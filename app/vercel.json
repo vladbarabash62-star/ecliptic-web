@@ -1,0 +1,9 @@
+{
+    "redirects": [
+      {
+        "source": "/shop",
+        "destination": "https://t.me/Ecliptic_Store_BOT/shop",
+        "permanent": true
+      }
+    ]
+  }
