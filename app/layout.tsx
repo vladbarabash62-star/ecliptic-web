@@ -19,7 +19,7 @@ export const metadata = {
   },
   description: "Магазин игровых товаров",
   icons: {
-    icon: "/favicon.png",
+    icon: "/favicon.ico",
   },
 };
 
