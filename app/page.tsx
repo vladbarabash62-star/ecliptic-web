@@ -20,6 +20,10 @@ const products = [
     icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Steam_icon_logo.svg/960px-Steam_icon_logo.svg.png",
   },
   {
+    name: "Epic Games пополнение",
+    icon: "https://cms-assets.unrealengine.com/AjTAN1C8SLWRn7fg4wnzlz/cmd6p7ipv3hl707ohjnyhwki2",
+  },
+  {
     name: "Standoff 2",
     icon: "https://standof.ru/wp-content/uploads/2023/07/favicon.png",
   },
