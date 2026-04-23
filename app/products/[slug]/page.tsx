@@ -21,6 +21,10 @@ function buildTelegramMessage(
   product: { name: string; slug: string },
   offer: Offer
 ) {
+  if (product.slug === "telegram-accounts") {
+    return `Здравствуйте, хочу приобрести Telegram аккаунт, регион ${offer.label} по цене ${offer.priceRub} рублей`;
+  }
+
   const cleanedLabel = offer.label
     .replace(new RegExp(product.name, "ig"), "")
     .replace(/\s{2,}/g, " ")
