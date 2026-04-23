@@ -206,7 +206,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                           href={`https://t.me/${telegramUsername}?text=${encodeURIComponent(buildTelegramMessage(product, offer))}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="shrink-0 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-400 active:scale-[0.98]"
+                          className="pressable shrink-0 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-400 active:scale-[0.98]"
                         >
                           Купить
                         </a>
@@ -222,7 +222,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         <div className="mt-8 flex justify-center">
           <Link
             href="/"
-            className="inline-flex rounded-xl border border-white/15 px-4 py-2 text-sm text-white/90 transition hover:bg-white/10"
+            className="pressable inline-flex rounded-xl border border-white/15 px-4 py-2 text-sm text-white/90 transition hover:bg-white/10"
           >
             Назад к товарам
           </Link>

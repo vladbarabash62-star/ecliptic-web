@@ -4,134 +4,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { products } from "../lib/products";
 
-type PlanetConfig = {
-  size: number;
-  top?: string;
-  left?: string;
-  right?: string;
-  duration: string;
-  delay: string;
-  rotate: string;
-  opacity: number;
-};
-
-function BackgroundPlanets() {
-  const planets: PlanetConfig[] = [
-    {
-      size: 180,
-      top: "6%",
-      left: "-48px",
-      duration: "24s",
-      delay: "0s",
-      rotate: "-18deg",
-      opacity: 0.12,
-    },
-    {
-      size: 120,
-      top: "14%",
-      right: "7%",
-      duration: "20s",
-      delay: "2s",
-      rotate: "24deg",
-      opacity: 0.1,
-    },
-    {
-      size: 150,
-      top: "44%",
-      left: "2%",
-      duration: "28s",
-      delay: "1s",
-      rotate: "12deg",
-      opacity: 0.08,
-    },
-    {
-      size: 130,
-      top: "68%",
-      right: "8%",
-      duration: "22s",
-      delay: "3s",
-      rotate: "-28deg",
-      opacity: 0.09,
-    },
-    {
-      size: 90,
-      top: "84%",
-      left: "42%",
-      duration: "18s",
-      delay: "0.5s",
-      rotate: "16deg",
-      opacity: 0.07,
-    },
-  ];
-
-  return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden">
-      {planets.map((planet, index) => (
-        <div
-          key={index}
-          className="absolute animate-[floatPlanet_var(--duration)_ease-in-out_infinite]"
-          style={
-            {
-              width: `${planet.size}px`,
-              height: `${planet.size}px`,
-              top: planet.top,
-              left: planet.left,
-              right: planet.right,
-              opacity: planet.opacity,
-              ["--duration" as string]: planet.duration,
-              ["--rotate" as string]: planet.rotate,
-              animationDelay: planet.delay,
-            } as React.CSSProperties
-          }
-        >
-          <div className="relative h-full w-full">
-            <div className="absolute inset-[18%] rounded-full border border-white/25 bg-white/[0.04]" />
-            <div className="absolute left-[-8%] top-[42%] h-[16%] w-[116%] -translate-y-1/2 rounded-full border-2 border-white/35" />
-            <div className="absolute left-[50%] top-[24%] h-2 w-2 -translate-x-1/2 rounded-full bg-white/60 blur-[1px]" />
-          </div>
-        </div>
-      ))}
-
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(11,13,18,0.16)_55%,rgba(11,13,18,0.56)_100%)]" />
-    </div>
-  );
-}
-
-function BackgroundStars() {
-  const stars = [
-    { top: "8%", left: "18%", size: 2, delay: "0s" },
-    { top: "12%", left: "62%", size: 3, delay: "1s" },
-    { top: "18%", left: "84%", size: 2, delay: "0.5s" },
-    { top: "26%", left: "35%", size: 2, delay: "1.5s" },
-    { top: "31%", left: "71%", size: 3, delay: "0.8s" },
-    { top: "42%", left: "14%", size: 2, delay: "1.2s" },
-    { top: "48%", left: "58%", size: 2, delay: "0.3s" },
-    { top: "56%", left: "88%", size: 3, delay: "1.8s" },
-    { top: "67%", left: "25%", size: 2, delay: "1.1s" },
-    { top: "74%", left: "48%", size: 3, delay: "0.6s" },
-    { top: "81%", left: "76%", size: 2, delay: "1.4s" },
-    { top: "88%", left: "10%", size: 2, delay: "0.9s" },
-  ];
-
-  return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden">
-      {stars.map((star, index) => (
-        <span
-          key={index}
-          className="absolute rounded-full bg-white/70 animate-[starBlink_3.2s_ease-in-out_infinite]"
-          style={{
-            top: star.top,
-            left: star.left,
-            width: `${star.size}px`,
-            height: `${star.size}px`,
-            animationDelay: star.delay,
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
 export default function HomePage() {
   const [isMobileLike, setIsMobileLike] = useState(false);
 
@@ -149,18 +21,6 @@ export default function HomePage() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#0b0d12] text-white animate-[pageReveal_0.9s_ease-out]">
       <style jsx global>{`
-        @keyframes floatPlanet {
-          0% {
-            transform: translate3d(0, 0, 0) rotate(var(--rotate, 0deg));
-          }
-          50% {
-            transform: translate3d(0, -14px, 0) rotate(var(--rotate, 0deg));
-          }
-          100% {
-            transform: translate3d(0, 0, 0) rotate(var(--rotate, 0deg));
-          }
-        }
-
         @keyframes pageReveal {
           0% {
             opacity: 0;
@@ -194,18 +54,6 @@ export default function HomePage() {
           }
         }
 
-        @keyframes starBlink {
-          0%,
-          100% {
-            opacity: 0.25;
-            transform: scale(1);
-          }
-          50% {
-            opacity: 1;
-            transform: scale(1.35);
-          }
-        }
-
         @keyframes glowPulse {
           0%,
           100% {
@@ -218,9 +66,6 @@ export default function HomePage() {
           }
         }
       `}</style>
-
-      <BackgroundStars />
-      <BackgroundPlanets />
 
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.075),transparent_32%)]" />
 
@@ -256,7 +101,7 @@ export default function HomePage() {
               style={{
                 animationDelay: `${0.18 + index * 0.05}s`,
               }}
-              className="group relative overflow-hidden rounded-2xl border border-white/10 bg-[rgba(18,21,28,0.78)] backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-[rgba(23,27,36,0.92)] hover:shadow-[0_14px_32px_rgba(0,0,0,0.42)] active:scale-[0.98] opacity-0 translate-y-6 animate-[cardReveal_0.7s_ease-out_forwards]"
+              className="pressable group relative overflow-hidden rounded-2xl border border-white/10 bg-[rgba(18,21,28,0.78)] backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-[rgba(23,27,36,0.92)] hover:shadow-[0_14px_32px_rgba(0,0,0,0.42)] active:scale-[0.98] opacity-0 translate-y-6 animate-[cardReveal_0.7s_ease-out_forwards]"
             >
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.10),transparent_45%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
