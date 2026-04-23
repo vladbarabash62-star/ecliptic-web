@@ -7,6 +7,82 @@ type ProductPageProps = {
   params: Promise<{ slug: string }>;
 };
 
+type Offer = {
+  label: string;
+  priceRub: number;
+};
+
+type OfferGroup = {
+  title: string;
+  offers: Offer[];
+};
+
+function splitOffersByGroups(slug: string, offers: Offer[]): OfferGroup[] {
+  if (offers.length === 0) {
+    return [];
+  }
+
+  const buildGroups = (definitions: Array<{ title: string; match: (label: string) => boolean }>) =>
+    definitions
+      .map((definition) => ({
+        title: definition.title,
+        offers: offers.filter((offer) => definition.match(offer.label)),
+      }))
+      .filter((group) => group.offers.length > 0);
+
+  switch (slug) {
+    case "brawl-stars":
+      return buildGroups([
+        { title: "Пропуски", match: (label) => /pass/i.test(label) },
+        { title: "Гемы", match: (label) => /гем/i.test(label) },
+      ]);
+    case "pubg-mobile":
+      return buildGroups([
+        { title: "UC", match: (label) => /\buc\b/i.test(label) },
+        { title: "Premium", match: (label) => /^premium\b/i.test(label) },
+        { title: "Premium+", match: (label) => /^premium\+/i.test(label) },
+        { title: "Elite Pass", match: (label) => /elite pass/i.test(label) },
+      ]);
+    case "mobile-legends":
+      return buildGroups([
+        { title: "Алмазы", match: (label) => /алмаз/i.test(label) && !/пропуск/i.test(label) },
+        { title: "Пропуски", match: (label) => /пропуск/i.test(label) },
+      ]);
+    case "clash-royale":
+      return buildGroups([
+        { title: "Pass Royale", match: (label) => /pass royale/i.test(label) },
+        { title: "Гемы", match: (label) => /гем/i.test(label) },
+      ]);
+    case "clash-of-clans":
+      return buildGroups([
+        { title: "Гемы", match: (label) => /гем/i.test(label) },
+        { title: "Оформление", match: (label) => /оформление/i.test(label) },
+      ]);
+    case "world-of-tanks":
+      return buildGroups([
+        { title: "Золото", match: (label) => /золот/i.test(label) },
+        { title: "Подписка", match: (label) => /подписк/i.test(label) },
+      ]);
+    case "roblox":
+      return buildGroups([
+        { title: "Robux", match: (label) => /robux/i.test(label) },
+        { title: "Premium", match: (label) => /premium/i.test(label) },
+      ]);
+    case "telegram-premium":
+      return buildGroups([
+        { title: "Со входом", match: (label) => /со входом/i.test(label) },
+        { title: "Без входа", match: (label) => /без входа/i.test(label) },
+      ]);
+    case "gta-5-rp-majestic-rp":
+      return buildGroups([
+        { title: "Игровая валюта", match: (label) => /\$\s*$/i.test(label) },
+        { title: "DP / MC", match: (label) => /\b(dp|mc)\b/i.test(label) },
+      ]);
+    default:
+      return [{ title: "Все варианты", offers }];
+  }
+}
+
 export async function generateMetadata({
   params,
 }: ProductPageProps): Promise<Metadata> {
@@ -39,6 +115,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
     notFound();
   }
 
+  const offerGroups = splitOffersByGroups(product.slug, product.offers);
+
   return (
     <main className="min-h-screen bg-[#0b0d12] px-4 py-12 text-white animate-[pageFade_0.55s_ease-out]">
       <div className="mx-auto max-w-3xl rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-md">
@@ -61,33 +139,45 @@ export default async function ProductPage({ params }: ProductPageProps) {
             Доступные варианты
           </h2>
 
-          {product.offers.length === 0 ? (
+          {offerGroups.length === 0 ? (
             <div className="rounded-2xl border border-white/15 bg-black/30 p-4 text-white/80">
               Для этого товара прайс пока не добавлен.
             </div>
           ) : (
-            <div className="grid gap-3">
-              {product.offers.map((offer, index) => (
-                <div
-                  key={`${offer.label}-${offer.priceRub}`}
-                  className="flex items-center justify-between gap-3 rounded-2xl border border-white/15 bg-[rgba(14,18,26,0.95)] px-4 py-3 opacity-0 shadow-[0_10px_26px_rgba(0,0,0,0.28)] animate-[itemFade_0.45s_ease-out_forwards]"
-                  style={{ animationDelay: `${0.08 + index * 0.04}s` }}
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium text-white sm:text-base">
-                      {offer.label}
-                    </p>
-                    <p className="mt-1 text-sm font-semibold text-emerald-300">
-                      {offer.priceRub}₽
-                    </p>
-                  </div>
+            <div className="grid gap-5">
+              {offerGroups.map((group, groupIndex) => (
+                <div key={group.title} className="rounded-2xl border border-white/10 bg-black/15 p-3 sm:p-4">
+                  <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-white/75">
+                    {group.title}
+                  </h3>
 
-                  <button
-                    type="button"
-                    className="shrink-0 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-400 active:scale-[0.98]"
-                  >
-                    Купить
-                  </button>
+                  <div className="grid gap-3">
+                    {group.offers.map((offer, index) => (
+                      <div
+                        key={`${group.title}-${offer.label}-${offer.priceRub}`}
+                        className="flex items-center justify-between gap-3 rounded-2xl border border-white/15 bg-[rgba(14,18,26,0.95)] px-4 py-3 opacity-0 shadow-[0_10px_26px_rgba(0,0,0,0.28)] animate-[itemFade_0.45s_ease-out_forwards]"
+                        style={{
+                          animationDelay: `${0.08 + (groupIndex * 0.12 + index * 0.04)}s`,
+                        }}
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-white sm:text-base">
+                            {offer.label}
+                          </p>
+                          <p className="mt-1 text-sm font-semibold text-emerald-300">
+                            {offer.priceRub}₽
+                          </p>
+                        </div>
+
+                        <button
+                          type="button"
+                          className="shrink-0 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-400 active:scale-[0.98]"
+                        >
+                          Купить
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>
