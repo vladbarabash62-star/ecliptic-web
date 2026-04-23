@@ -108,6 +108,7 @@ export function generateStaticParams() {
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
+  const telegramUsername = "Ecliptic_Store_PMR";
   const { slug } = await params;
   const product = getProductBySlug(slug);
 
@@ -169,12 +170,16 @@ export default async function ProductPage({ params }: ProductPageProps) {
                           </p>
                         </div>
 
-                        <button
-                          type="button"
+                        <a
+                          href={`https://t.me/${telegramUsername}?text=${encodeURIComponent(
+                            `Здравствуйте, хочу преобрести ${product.name} (${offer.label})`
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           className="shrink-0 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-400 active:scale-[0.98]"
                         >
                           Купить
-                        </button>
+                        </a>
                       </div>
                     ))}
                   </div>
