@@ -38,12 +38,12 @@ function buildTelegramMessage(
   const passOrSubscription =
     /pass|premium|подписк|месяц|дней|дня|день/i.test(cleanedLabel);
 
-  if (topUpLabel) {
-    return `Здравствуйте, хочу пополнить ${product.name} на ${cleanedLabel} по цене ${offer.priceRub} рублей`;
-  }
-
   if (passOrSubscription) {
     return `Здравствуйте, хочу приобрести ${normalizeDuration(cleanedLabel)} по цене ${offer.priceRub} рублей`;
+  }
+
+  if (topUpLabel) {
+    return `Здравствуйте, хочу пополнить ${product.name} на ${cleanedLabel} по цене ${offer.priceRub} рублей`;
   }
 
   return `Здравствуйте, хочу приобрести ${cleanedLabel} по цене ${offer.priceRub} рублей`;
