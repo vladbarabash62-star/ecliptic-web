@@ -17,6 +17,55 @@ type OfferGroup = {
   offers: Offer[];
 };
 
+function buildTelegramMessage(
+  product: { name: string; slug: string },
+  offer: Offer
+) {
+  const withPrice = (text: string) =>
+    `Здравствуйте, хочу ${text} по цене ${offer.priceRub} рублей`;
+
+  switch (product.slug) {
+    case "steam":
+    case "world-of-tanks":
+    case "tiktok-coins":
+    case "standoff-2":
+      return withPrice(`пополнить ${product.name} на ${offer.label}`);
+    case "pubg-mobile":
+      if (/\buc\b/i.test(offer.label)) {
+        return withPrice(`пополнить ${product.name} на ${offer.label}`);
+      }
+      return withPrice(`приобрести ${offer.label} в ${product.name}`);
+    case "roblox":
+      if (/robux/i.test(offer.label)) {
+        return withPrice(`пополнить ${product.name} на ${offer.label}`);
+      }
+      return withPrice(`приобрести ${offer.label} в ${product.name}`);
+    case "mobile-legends":
+    case "free-fire":
+    case "clash-royale":
+    case "clash-of-clans":
+      if (/гем|алмаз/i.test(offer.label)) {
+        return withPrice(`пополнить ${product.name} на ${offer.label}`);
+      }
+      return withPrice(`приобрести ${offer.label} в ${product.name}`);
+    case "youtube-premium":
+    case "spotify-premium":
+    case "telegram-premium":
+    case "chatgpt-plus":
+    case "discord-nitro":
+      return withPrice(`оформить ${offer.label} в ${product.name}`);
+    case "telegram-accounts":
+      return withPrice(`приобрести Telegram аккаунт (${offer.label})`);
+    case "gta-5-rp-majestic-rp":
+    case "radmir-rp":
+    case "amazing-rp":
+    case "black-russia":
+      return withPrice(`пополнить ${product.name} на ${offer.label}`);
+    default:
+      return withPrice(`приобрести ${product.name} — ${offer.label}`);
+  }
+}
+
 function splitOffersByGroups(slug: string, offers: Offer[]): OfferGroup[] {
   if (offers.length === 0) {
     return [];
@@ -171,9 +220,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                         </div>
 
                         <a
-                          href={`https://t.me/${telegramUsername}?text=${encodeURIComponent(
-                            `Здравствуйте, хочу приобрести ${product.name} — ${offer.label} по цене ${offer.priceRub} рублей`
-                          )}`}
+                          href={`https://t.me/${telegramUsername}?text=${encodeURIComponent(buildTelegramMessage(product, offer))}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="shrink-0 rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-400 active:scale-[0.98]"
