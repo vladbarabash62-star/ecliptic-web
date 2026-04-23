@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 const CustomerModel = require("../models/customer.model");
 const ProductModel = require("../models/product.model");
 const PurchaseModel = require("../models/purchase.model");

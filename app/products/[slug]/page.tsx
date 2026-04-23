@@ -66,6 +66,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
       <div className="mx-auto max-w-3xl rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-md">
         <div className="flex flex-col items-center text-center">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={product.icon}
           alt={product.name}

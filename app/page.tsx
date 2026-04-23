@@ -262,6 +262,7 @@ export default function HomePage() {
 
               <div className="relative flex h-full flex-col items-center p-2 sm:p-3 md:p-4">
                 <div className="mb-2 flex aspect-square w-full items-center justify-center rounded-2xl border border-white/10 bg-[#0a0d14]/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] sm:mb-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={product.icon}
                     alt={product.name}
