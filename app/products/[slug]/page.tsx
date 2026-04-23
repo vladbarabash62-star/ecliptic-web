@@ -172,7 +172,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
                         <a
                           href={`https://t.me/${telegramUsername}?text=${encodeURIComponent(
-                            `Здравствуйте, хочу приобрести ${product.name} (${offer.label})`
+                            `Здравствуйте, хочу приобрести ${product.name} — ${offer.label} по цене ${offer.priceRub} рублей`
                           )}`}
                           target="_blank"
                           rel="noopener noreferrer"
