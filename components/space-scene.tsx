@@ -36,11 +36,11 @@ export default function SpaceScene() {
 
   return (
     <>
-      <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+      <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         {stars.map((star, index) => (
           <span
             key={`star-${index}`}
-            className="absolute rounded-full bg-white/75 animate-[twinkleStar_3.4s_ease-in-out_infinite]"
+            className="absolute rounded-full bg-white/85 animate-[twinkleStar_4.8s_ease-in-out_infinite]"
             style={{
               top: star.top,
               left: star.left,
@@ -54,7 +54,7 @@ export default function SpaceScene() {
         {planets.map((planet, index) => (
           <div
             key={`planet-${index}`}
-            className="absolute opacity-60 animate-[orbitFloat_20s_ease-in-out_infinite]"
+            className="absolute opacity-80 animate-[orbitFloat_26s_ease-in-out_infinite]"
             style={{
               top: planet.top,
               left: planet.left,
@@ -66,28 +66,28 @@ export default function SpaceScene() {
             }}
           >
             <div className="relative h-full w-full">
-              <div className="absolute inset-[15%] rounded-full border border-white/35 bg-white/[0.06]" />
-              <div className="absolute left-[-12%] top-[48%] h-[18%] w-[124%] -translate-y-1/2 rounded-full border-2 border-white/40" />
-              <div className="absolute left-[48%] top-[22%] h-2 w-2 rounded-full bg-white/75 blur-[0.5px]" />
+              <div className="absolute inset-[15%] rounded-full border border-white/45 bg-white/[0.12]" />
+              <div className="absolute left-[-12%] top-[48%] h-[18%] w-[124%] -translate-y-1/2 rounded-full border-2 border-white/55" />
+              <div className="absolute left-[48%] top-[22%] h-2 w-2 rounded-full bg-white/90 blur-[0.5px]" />
             </div>
           </div>
         ))}
 
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(11,13,18,0.26)_58%,rgba(11,13,18,0.62)_100%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(6,8,14,0.18)_62%,rgba(5,7,13,0.42)_100%)]" />
       </div>
 
       {!isHome && (
         <Link
           href="/"
           aria-label="На главную"
-          className="pressable fixed left-4 top-1/2 z-30 hidden -translate-y-1/2 rounded-3xl border border-white/10 bg-black/30 p-3 backdrop-blur-md md:block"
+          className="pressable fixed left-4 top-4 z-30 hidden md:block"
         >
           <Image
             src="/ecliptic-logo.svg"
             alt="Ecliptic"
             width={160}
             height={160}
-            className="h-40 w-40 object-contain mix-blend-screen"
+            className="h-36 w-36 object-contain opacity-95"
             priority
           />
         </Link>

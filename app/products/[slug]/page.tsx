@@ -27,6 +27,9 @@ function buildTelegramMessage(
   if (product.slug === "telegram-accounts") {
     return `Здравствуйте, хочу приобрести Telegram аккаунт, регион ${offer.label} по цене ${offer.priceRub} рублей`;
   }
+  if (product.slug === "tiktok-coins") {
+    return `Здравствуйте, хочу пополнить TikTok на ${offer.label} по цене ${offer.priceRub} рублей`;
+  }
 
   const cleanedLabel = offer.label
     .replace(new RegExp(product.name, "ig"), "")
@@ -151,7 +154,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const offerGroups = splitOffersByGroups(product.slug, product.offers);
 
   return (
-    <main className="min-h-screen bg-[#0b0d12] px-4 py-12 text-white animate-[pageFade_0.55s_ease-out]">
+    <main className="min-h-screen bg-transparent px-4 py-12 text-white animate-[pageFade_0.8s_ease-out]">
       <div className="mx-auto max-w-3xl rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-md">
         <div className="flex flex-col items-center text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -188,7 +191,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                     {group.offers.map((offer, index) => (
                       <div
                         key={`${group.title}-${offer.label}-${offer.priceRub}`}
-                        className="flex items-center justify-between gap-3 rounded-2xl border border-white/15 bg-[rgba(14,18,26,0.95)] px-4 py-3 opacity-0 shadow-[0_10px_26px_rgba(0,0,0,0.28)] animate-[itemFade_0.45s_ease-out_forwards]"
+                        className="flex items-center justify-between gap-3 rounded-2xl border border-white/15 bg-[rgba(14,18,26,0.9)] px-4 py-3 opacity-0 shadow-[0_10px_26px_rgba(0,0,0,0.28)] animate-[itemFade_0.65s_cubic-bezier(0.22,1,0.36,1)_forwards]"
                         style={{
                           animationDelay: `${0.08 + (groupIndex * 0.12 + index * 0.04)}s`,
                         }}

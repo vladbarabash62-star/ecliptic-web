@@ -19,7 +19,7 @@ export default function HomePage() {
   }, []);
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#0b0d12] text-white animate-[pageReveal_0.9s_ease-out]">
+    <main className="relative min-h-screen overflow-hidden bg-transparent text-white animate-[pageReveal_1.2s_ease-out]">
       <style jsx global>{`
         @keyframes pageReveal {
           0% {
@@ -35,7 +35,7 @@ export default function HomePage() {
         @keyframes heroReveal {
           0% {
             opacity: 0;
-            transform: translateY(22px);
+            transform: translateY(18px);
           }
           100% {
             opacity: 1;
@@ -46,7 +46,7 @@ export default function HomePage() {
         @keyframes cardReveal {
           0% {
             opacity: 0;
-            transform: translateY(24px) scale(0.97);
+            transform: translateY(18px) scale(0.985);
           }
           100% {
             opacity: 1;
@@ -69,7 +69,7 @@ export default function HomePage() {
 
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.075),transparent_32%)]" />
 
-      <div className="pointer-events-none absolute left-1/2 top-[84px] h-[180px] w-[560px] -translate-x-1/2 rounded-full bg-white/[0.03] blur-3xl animate-[glowPulse_7s_ease-in-out_infinite]" />
+      <div className="pointer-events-none absolute left-1/2 top-[84px] h-[180px] w-[560px] -translate-x-1/2 rounded-full bg-white/[0.04] blur-3xl animate-[glowPulse_10s_ease-in-out_infinite]" />
 
       <div className="relative mx-auto w-full max-w-[1400px] px-3 py-4 sm:px-4 sm:py-6">
         <div className="mb-6 text-center sm:mb-8 animate-[heroReveal_0.9s_ease-out]">
@@ -101,7 +101,7 @@ export default function HomePage() {
               style={{
                 animationDelay: `${0.18 + index * 0.05}s`,
               }}
-              className="pressable group relative overflow-hidden rounded-2xl border border-white/10 bg-[rgba(18,21,28,0.78)] backdrop-blur-md transition-all duration-300 hover:-translate-y-1 hover:border-white/20 hover:bg-[rgba(23,27,36,0.92)] hover:shadow-[0_14px_32px_rgba(0,0,0,0.42)] active:scale-[0.98] opacity-0 translate-y-6 animate-[cardReveal_0.7s_ease-out_forwards]"
+              className="pressable group relative overflow-hidden rounded-2xl border border-white/10 bg-[rgba(18,21,28,0.78)] backdrop-blur-md transition-all duration-500 hover:-translate-y-1 hover:border-white/20 hover:bg-[rgba(23,27,36,0.92)] hover:shadow-[0_14px_32px_rgba(0,0,0,0.42)] active:scale-[0.985] opacity-0 translate-y-6 animate-[cardReveal_0.95s_cubic-bezier(0.22,1,0.36,1)_forwards]"
             >
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.10),transparent_45%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 

@@ -33,9 +33,9 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="relative min-h-full flex flex-col overflow-x-hidden bg-[#05070d]">
         <SpaceScene />
-        {children}
+        <div className="relative z-10">{children}</div>
       </body>
     </html>
   );

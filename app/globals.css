@@ -50,12 +50,12 @@ body {
 @keyframes twinkleStar {
   0%,
   100% {
-    opacity: 0.2;
+    opacity: 0.42;
     transform: scale(1);
   }
   50% {
     opacity: 1;
-    transform: scale(1.35);
+    transform: scale(1.2);
   }
 }
 
@@ -65,19 +65,19 @@ body {
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-12px);
+    transform: translateY(-8px);
   }
 }
 
 .pressable {
   transition:
-    transform 160ms ease,
-    filter 160ms ease,
-    box-shadow 160ms ease;
+    transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 320ms cubic-bezier(0.22, 1, 0.36, 1);
   will-change: transform;
 }
 
 .pressable:active {
-  transform: scale(0.94) translateY(1px);
-  filter: brightness(0.95);
+  transform: scale(0.975) translateY(1px);
+  filter: brightness(0.98);
 }
