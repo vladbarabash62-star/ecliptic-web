@@ -21,49 +21,25 @@ function buildTelegramMessage(
   product: { name: string; slug: string },
   offer: Offer
 ) {
-  const withPrice = (text: string) =>
-    `Здравствуйте, хочу ${text} по цене ${offer.priceRub} рублей`;
+  const cleanedLabel = offer.label
+    .replace(new RegExp(product.name, "ig"), "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
 
-  switch (product.slug) {
-    case "steam":
-    case "world-of-tanks":
-    case "tiktok-coins":
-    case "standoff-2":
-      return withPrice(`пополнить ${product.name} на ${offer.label}`);
-    case "pubg-mobile":
-      if (/\buc\b/i.test(offer.label)) {
-        return withPrice(`пополнить ${product.name} на ${offer.label}`);
-      }
-      return withPrice(`приобрести ${offer.label} в ${product.name}`);
-    case "roblox":
-      if (/robux/i.test(offer.label)) {
-        return withPrice(`пополнить ${product.name} на ${offer.label}`);
-      }
-      return withPrice(`приобрести ${offer.label} в ${product.name}`);
-    case "mobile-legends":
-    case "free-fire":
-    case "clash-royale":
-    case "clash-of-clans":
-      if (/гем|алмаз/i.test(offer.label)) {
-        return withPrice(`пополнить ${product.name} на ${offer.label}`);
-      }
-      return withPrice(`приобрести ${offer.label} в ${product.name}`);
-    case "youtube-premium":
-    case "spotify-premium":
-    case "telegram-premium":
-    case "chatgpt-plus":
-    case "discord-nitro":
-      return withPrice(`оформить ${offer.label} в ${product.name}`);
-    case "telegram-accounts":
-      return withPrice(`приобрести Telegram аккаунт (${offer.label})`);
-    case "gta-5-rp-majestic-rp":
-    case "radmir-rp":
-    case "amazing-rp":
-    case "black-russia":
-      return withPrice(`пополнить ${product.name} на ${offer.label}`);
-    default:
-      return withPrice(`приобрести ${product.name} — ${offer.label}`);
+  const topUpLabel =
+    /\$|uc|coins?|robux|гем|алмаз|голд|золот|донат валют|dp|mc/i.test(cleanedLabel);
+  const passOrSubscription =
+    /pass|premium|подписк|месяц|дней|дня|день/i.test(cleanedLabel);
+
+  if (topUpLabel) {
+    return `Здравствуйте, хочу пополнить ${product.name} на ${cleanedLabel} по цене ${offer.priceRub} рублей`;
   }
+
+  if (passOrSubscription) {
+    return `Здравствуйте, хочу оформить ${cleanedLabel} для ${product.name} по цене ${offer.priceRub} рублей`;
+  }
+
+  return `Здравствуйте, хочу приобрести ${cleanedLabel} для ${product.name} по цене ${offer.priceRub} рублей`;
 }
 
 function splitOffersByGroups(slug: string, offers: Offer[]): OfferGroup[] {
