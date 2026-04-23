@@ -21,6 +21,9 @@ function buildTelegramMessage(
   product: { name: string; slug: string },
   offer: Offer
 ) {
+  const normalizeDuration = (value: string) =>
+    value.replace(/\b(\d+)\s*(дней|дня|день|месяц|месяца|месяцев)\b/gi, "на $1 $2");
+
   if (product.slug === "telegram-accounts") {
     return `Здравствуйте, хочу приобрести Telegram аккаунт, регион ${offer.label} по цене ${offer.priceRub} рублей`;
   }
@@ -40,10 +43,10 @@ function buildTelegramMessage(
   }
 
   if (passOrSubscription) {
-    return `Здравствуйте, хочу оформить ${cleanedLabel} для ${product.name} по цене ${offer.priceRub} рублей`;
+    return `Здравствуйте, хочу приобрести ${normalizeDuration(cleanedLabel)} по цене ${offer.priceRub} рублей`;
   }
 
-  return `Здравствуйте, хочу приобрести ${cleanedLabel} для ${product.name} по цене ${offer.priceRub} рублей`;
+  return `Здравствуйте, хочу приобрести ${cleanedLabel} по цене ${offer.priceRub} рублей`;
 }
 
 function splitOffersByGroups(slug: string, offers: Offer[]): OfferGroup[] {
