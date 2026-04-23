@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getProductBySlug } from "../../../lib/products";
+import { getProductBySlug, products } from "../../../lib/products";
 
 type ProductPageProps = {
   params: Promise<{ slug: string }>;
@@ -21,8 +21,14 @@ export async function generateMetadata({
 
   return {
     title: product.name,
-    description: `Страница товара ${product.name}`,
+    description: `Прайс и предложения для ${product.name}`,
   };
+}
+
+export function generateStaticParams() {
+  return products.map((product) => ({
+    slug: product.slug,
+  }));
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
@@ -34,8 +40,32 @@ export default async function ProductPage({ params }: ProductPageProps) {
   }
 
   return (
-    <main className="min-h-screen bg-[#0b0d12] px-4 py-12 text-white">
-      <div className="mx-auto flex max-w-3xl flex-col items-center rounded-3xl border border-white/10 bg-white/5 p-8 text-center backdrop-blur-md">
+    <main className="min-h-screen bg-[#0b0d12] px-4 py-12 text-white animate-[pageFade_0.55s_ease-out]">
+      <style jsx global>{`
+        @keyframes pageFade {
+          from {
+            opacity: 0;
+            transform: translateY(8px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        @keyframes itemFade {
+          from {
+            opacity: 0;
+            transform: translateY(14px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
+
+      <div className="mx-auto max-w-3xl rounded-3xl border border-white/10 bg-white/5 p-8 backdrop-blur-md">
+        <div className="flex flex-col items-center text-center">
         <img
           src={product.icon}
           alt={product.name}
@@ -46,13 +76,45 @@ export default async function ProductPage({ params }: ProductPageProps) {
         <p className="mt-3 text-white/65">
           Вы открыли страницу товара: {product.name}
         </p>
+        </div>
 
-        <Link
-          href="/"
-          className="mt-8 inline-flex rounded-xl border border-white/15 px-4 py-2 text-sm text-white/90 transition hover:bg-white/10"
-        >
-          Назад к товарам
-        </Link>
+        <section className="mt-8">
+          <h2 className="mb-4 text-lg font-semibold text-white/95">
+            Доступные варианты
+          </h2>
+
+          {product.offers.length === 0 ? (
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-4 text-white/70">
+              Для этого товара прайс пока не добавлен.
+            </div>
+          ) : (
+            <div className="grid gap-3">
+              {product.offers.map((offer, index) => (
+                <div
+                  key={`${offer.label}-${offer.priceRub}`}
+                  className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/20 px-4 py-3 opacity-0 animate-[itemFade_0.45s_ease-out_forwards]"
+                  style={{ animationDelay: `${0.08 + index * 0.04}s` }}
+                >
+                  <span className="text-sm text-white/90 sm:text-base">
+                    {offer.label}
+                  </span>
+                  <span className="rounded-lg bg-white/10 px-3 py-1 text-sm font-semibold text-white sm:text-base">
+                    {offer.priceRub}₽
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <div className="mt-8 flex justify-center">
+          <Link
+            href="/"
+            className="inline-flex rounded-xl border border-white/15 px-4 py-2 text-sm text-white/90 transition hover:bg-white/10"
+          >
+            Назад к товарам
+          </Link>
+        </div>
       </div>
     </main>
   );
