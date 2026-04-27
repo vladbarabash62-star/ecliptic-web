@@ -80,12 +80,19 @@ export default function HomePage() {
           </div>
 
           <h1 className="text-2xl font-bold tracking-tight sm:text-4xl">
-            <span className="block text-white/90">Добро пожаловать в</span>
-            <span className="mt-1 block text-white">Ecliptic Store</span>
+            <span className="block text-white/90">
+              Ecliptic Store — донат в игры в ПМР
+            </span>
+            <span className="mt-1 block text-white">
+              Пополнение Steam, Brawl Stars, Roblox и других игр
+            </span>
           </h1>
 
-          <p className="mx-auto mt-3 max-w-2xl text-sm text-white/60 sm:text-base">
-            Выберите нужный товар
+          <p className="mx-auto mt-3 max-w-3xl text-sm text-white/60 sm:text-base">
+            Ecliptic Store — игровой магазин для пополнения игр в Тирасполе и
+            ПМР. Донат Steam, Telegram Premium, Brawl Stars, Roblox, Standoff 2,
+            PUBG Mobile, Free Fire, Fortnite, Genshin Impact, Valorant и других
+            популярных игр.
           </p>
         </div>
 
@@ -110,7 +117,7 @@ export default function HomePage() {
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={product.icon}
-                    alt={product.name}
+                    alt={`${product.name} — Ecliptic Store`}
                     className="block h-[90px] w-[90px] object-contain transition-all duration-500 ease-out group-hover:scale-110 group-hover:drop-shadow-[0_0_18px_rgba(255,255,255,0.18)] sm:h-[120px] sm:w-[120px] md:h-[150px] md:w-[150px]"
                     loading="lazy"
                     draggable={false}
@@ -118,9 +125,9 @@ export default function HomePage() {
                   />
                 </div>
 
-                <h3 className="min-h-[32px] text-center text-[11px] font-semibold leading-tight text-white/90 transition-all duration-300 ease-out group-hover:text-white sm:text-xs md:text-sm">
+                <h2 className="min-h-[32px] text-center text-[11px] font-semibold leading-tight text-white/90 transition-all duration-300 ease-out group-hover:text-white sm:text-xs md:text-sm">
                   {product.name}
-                </h3>
+                </h2>
               </div>
             </Link>
           ))}
