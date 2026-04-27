@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getProductBySlug, products } from "../../../lib/products";
 
@@ -90,6 +91,15 @@ export default async function ProductPage({ params }: PageProps) {
             </div>
           )}
         </section>
+
+        <div className="mt-8 flex justify-center">
+          <Link
+            href="/"
+            className="rounded-xl border border-white/15 bg-white/5 px-5 py-3 text-sm font-semibold text-white/90 transition-all duration-300 hover:bg-white/10 active:scale-95"
+          >
+            Назад к товарам
+          </Link>
+        </div>
       </div>
     </main>
   );
