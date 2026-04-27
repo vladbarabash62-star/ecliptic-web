@@ -1,28 +1,27 @@
 import { notFound } from "next/navigation";
-import { getProductBySlug } from "../../../lib/products";
+import { getProductBySlug, products } from "../../../lib/products";
 
 type PageProps = {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 };
 
-type ProductOption = {
-  label: string;
-  price?: string;
-  priceRub?: number;
-};
+export function generateStaticParams() {
+  return products.map((product) => ({
+    slug: product.slug,
+  }));
+}
 
-export default function ProductPage({ params }: PageProps) {
-  const product = getProductBySlug(params.slug);
+export default async function ProductPage({ params }: PageProps) {
+  const { slug } = await params;
+  const product = getProductBySlug(slug);
 
   if (!product) {
     notFound();
   }
 
-  const options: ProductOption[] =
-    (product as any).options || (product as any).offers || [];
-
+  const offers = product.offers || [];
   const telegramUsername = "Ecliptic_Store_PMR";
 
   return (
@@ -51,31 +50,27 @@ export default function ProductPage({ params }: PageProps) {
             Доступные варианты
           </h2>
 
-          {options.length === 0 ? (
+          {offers.length === 0 ? (
             <div className="rounded-2xl border border-white/10 bg-[#0f1420] p-4 text-white/70">
               Для этого товара прайс пока не добавлен.
             </div>
           ) : (
             <div className="grid w-full gap-3">
-              {options.map((option, index) => {
-                const price =
-                  option.price ||
-                  (option.priceRub ? `${option.priceRub}₽` : "");
-
-                const message = `Здравствуйте, хочу купить ${product.name}: ${option.label} ${price}`;
+              {offers.map((offer, index) => {
+                const message = `Здравствуйте, хочу купить ${product.name}: ${offer.label} по цене ${offer.priceRub} рублей`;
 
                 return (
                   <div
-                    key={`${option.label}-${index}`}
+                    key={`${offer.label}-${index}`}
                     className="grid w-full grid-cols-[1fr_auto] items-center gap-3 rounded-2xl border border-white/15 bg-[#0f1420]/90 px-3 py-3"
                   >
                     <div className="min-w-0">
                       <p className="break-words text-sm font-medium text-white sm:text-base">
-                        {option.label}
+                        {offer.label}
                       </p>
 
                       <p className="mt-1 text-sm font-bold text-emerald-300">
-                        {price}
+                        {offer.priceRub}₽
                       </p>
                     </div>
 
