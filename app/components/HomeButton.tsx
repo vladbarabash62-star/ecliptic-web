@@ -1,28 +1,37 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 export default function HomeButton() {
   const pathname = usePathname();
-  const [isTelegram, setIsTelegram] = useState(false);
+  const [hideButton, setHideButton] = useState(true);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && (window as any).Telegram?.WebApp) {
-      setIsTelegram(true);
-    }
-  }, []);
+    const isTelegram =
+      typeof window !== "undefined" &&
+      (
+        (window as any).Telegram?.WebApp ||
+        window.location.hash.includes("tgWebAppData") ||
+        window.navigator.userAgent.toLowerCase().includes("telegram")
+      );
 
-  // ❌ скрываем на главной и в Telegram
-  if (pathname === "/" || isTelegram) return null;
+    setHideButton(pathname === "/" || isTelegram);
+  }, [pathname]);
+
+  if (hideButton) return null;
 
   return (
-    <Link href="/" className="fixed left-2 top-2 z-50">
+    <Link
+      href="/"
+      aria-label="На главную"
+      className="fixed left-2 top-3 z-50 block transition-all duration-300 hover:scale-105 active:scale-95"
+    >
       <img
         src="/ecliptic-logo.svg"
-        alt="Home"
-        className="w-12 h-12 object-contain opacity-90 hover:opacity-100 transition"
+        alt="Ecliptic Store"
+        className="h-[3cm] w-[6cm] object-contain"
       />
     </Link>
   );
