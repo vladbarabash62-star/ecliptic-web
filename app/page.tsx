@@ -19,8 +19,57 @@ export default function HomePage() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-[#05070d] text-white">
-      <div className="mx-auto w-full max-w-[1400px] px-3 py-6 sm:px-4">
+    <main className="relative min-h-screen bg-[#04060c] text-white overflow-hidden">
+      
+      {/* ⭐ ЗВЕЗДЫ */}
+      <div className="stars" />
+
+      <style jsx global>{`
+        .stars {
+          position: absolute;
+          inset: 0;
+          z-index: 0;
+          background: transparent;
+        }
+
+        .stars::before,
+        .stars::after {
+          content: "";
+          position: absolute;
+          width: 100%;
+          height: 100%;
+          background-image:
+            radial-gradient(1px 1px at 20px 30px, white, transparent),
+            radial-gradient(1.5px 1.5px at 100px 150px, white, transparent),
+            radial-gradient(1px 1px at 200px 80px, white, transparent),
+            radial-gradient(1.5px 1.5px at 300px 200px, white, transparent),
+            radial-gradient(1px 1px at 400px 120px, white, transparent),
+            radial-gradient(1.5px 1.5px at 600px 300px, white, transparent),
+            radial-gradient(1px 1px at 800px 400px, white, transparent),
+            radial-gradient(1px 1px at 1200px 200px, white, transparent),
+            radial-gradient(1.5px 1.5px at 1400px 350px, white, transparent),
+            radial-gradient(1px 1px at 1600px 100px, white, transparent);
+          background-repeat: repeat;
+          animation: twinkle 6s infinite ease-in-out;
+          opacity: 0.6;
+        }
+
+        .stars::after {
+          animation-duration: 10s;
+          opacity: 0.3;
+        }
+
+        @keyframes twinkle {
+          0%, 100% {
+            opacity: 0.2;
+          }
+          50% {
+            opacity: 0.8;
+          }
+        }
+      `}</style>
+
+      <div className="relative z-10 mx-auto w-full max-w-[1400px] px-3 py-6 sm:px-4">
         
         {/* HEADER */}
         <div className="mb-8 text-center">
@@ -32,7 +81,7 @@ export default function HomePage() {
             Интернет магазин
           </p>
 
-          {/* SEO скрытый текст */}
+          {/* SEO */}
           <p className="hidden">
             Ecliptic Store — донат в игры в ПМР, пополнение Steam, Brawl Stars, Roblox, Telegram Premium, Standoff 2, PUBG Mobile, Free Fire, Fortnite, Genshin Impact, Valorant
           </p>
