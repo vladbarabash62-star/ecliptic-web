@@ -14,44 +14,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://ecliptic.website"),
-
   title: {
     default: "Ecliptic Store",
     template: "%s | Ecliptic Store",
   },
-
   description:
     "Ecliptic Store — интернет магазин. Пополнение Steam, Brawl Stars, Roblox, Telegram Premium и других игр.",
-
-  keywords: [
-    "Ecliptic Store",
-    "эклиптик стор",
-    "донат в игры",
-    "пополнение Steam",
-    "Brawl Stars донат",
-    "Roblox донат",
-    "Telegram Premium",
-    "Standoff 2",
-    "донат ПМР",
-    "донат Тирасполь",
-  ],
-
-  alternates: {
-    canonical: "/",
-  },
-
-  openGraph: {
-    title: "Ecliptic Store",
-    description: "Донат в игры в ПМР",
-    url: "https://ecliptic.website",
-    siteName: "Ecliptic Store",
-    type: "website",
-  },
-
-  icons: {
-    icon: "/favicon.ico",
-  },
 };
 
 export default function RootLayout({
@@ -65,17 +33,17 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="relative min-h-screen overflow-x-hidden bg-[#04060c] text-white">
-
+        
         {/* ЗВЕЗДЫ */}
         <div className="stars-layer stars-layer-1" />
         <div className="stars-layer stars-layer-2" />
         <div className="stars-layer stars-layer-3" />
 
-        {/* КНОПКА НА ГЛАВНУЮ */}
+        {/* КНОПКА */}
         <HomeButton />
 
         {/* КОНТЕНТ */}
-        <div className="relative z-10 min-h-screen">
+        <div className="relative z-10 min-h-screen w-full">
           {children}
         </div>
 

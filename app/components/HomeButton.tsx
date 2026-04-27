@@ -2,22 +2,27 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function HomeButton() {
   const pathname = usePathname();
+  const [isTelegram, setIsTelegram] = useState(false);
 
-  if (pathname === "/") return null;
+  useEffect(() => {
+    if (typeof window !== "undefined" && (window as any).Telegram?.WebApp) {
+      setIsTelegram(true);
+    }
+  }, []);
+
+  // ❌ скрываем на главной и в Telegram
+  if (pathname === "/" || isTelegram) return null;
 
   return (
-    <Link
-      href="/"
-      aria-label="На главную"
-      className="fixed left-2 top-3 z-50 block transition-all duration-300 hover:scale-105 active:scale-95"
-    >
+    <Link href="/" className="fixed left-2 top-2 z-50">
       <img
         src="/ecliptic-logo.svg"
-        alt="Ecliptic Store"
-        className="h-[3cm] w-[6cm] object-contain"
+        alt="Home"
+        className="w-12 h-12 object-contain opacity-90 hover:opacity-100 transition"
       />
     </Link>
   );

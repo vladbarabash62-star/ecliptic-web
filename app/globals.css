@@ -178,3 +178,19 @@ body {
 main {
   background: transparent !important;
 }
+/* TELEGRAM FIX */
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* убираем кривые отступы Telegram */
+body {
+  margin: 0;
+  padding: 0;
+}
+
+/* фикс flex/grid съезда */
+* {
+  box-sizing: border-box;
+}
