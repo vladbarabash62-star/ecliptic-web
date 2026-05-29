@@ -23,6 +23,51 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  -webkit-user-select: none;
+  user-select: none;
+  caret-color: transparent;
+}
+
+input,
+textarea,
+select,
+[contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+  caret-color: auto;
+}
+
+img,
+a,
+button {
+  -webkit-user-drag: none;
+}
+
+::selection {
+  background: transparent;
+  color: inherit;
+}
+
+html {
+  scrollbar-gutter: stable;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #050913;
+}
+
+::-webkit-scrollbar-thumb {
+  border: 3px solid #050913;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.34);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(186, 230, 253, 0.48);
 }
 
 @keyframes pageFade {
@@ -47,132 +92,206 @@ body {
   }
 }
 
-@keyframes twinkleStar {
+.twinkle-dot {
+  opacity: 0.08;
+  box-shadow: 0 0 7px rgba(255, 255, 255, 0.75);
+  animation-name: starBlink;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+@keyframes starBlink {
   0%,
   100% {
-    opacity: 0.42;
-    transform: scale(1);
+    opacity: 0.05;
+    transform: scale(0.72);
   }
-  50% {
-    opacity: 1;
-    transform: scale(1.2);
+  34% {
+    opacity: 0.95;
+    transform: scale(1.18);
+  }
+  58% {
+    opacity: 0.24;
+    transform: scale(0.86);
   }
 }
 
-@keyframes orbitFloat {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-8px);
-  }
+.site-loader {
+  animation: loaderFadeOut 650ms ease both;
+  animation-delay: 520ms;
 }
 
-.pressable {
-  transition:
-    transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
-    filter 320ms cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 320ms cubic-bezier(0.22, 1, 0.36, 1);
+.site-loader__icon {
+  filter: drop-shadow(0 0 24px rgba(255, 255, 255, 0.22));
+  animation: loaderSpin 780ms linear infinite;
+  transform-origin: 50% 50%;
   will-change: transform;
 }
 
-.pressable:active {
-  transform: scale(0.975) translateY(1px);
-  filter: brightness(0.98);
-}
-.stars-layer {
-  pointer-events: none;
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  background-repeat: repeat;
-}
-
-.stars-layer-1 {
-  background-image:
-    radial-gradient(2px 2px at 2% 6%, rgba(255,255,255,1), transparent),
-    radial-gradient(1px 1px at 5% 22%, rgba(255,255,255,0.95), transparent),
-    radial-gradient(2px 2px at 8% 47%, rgba(255,255,255,1), transparent),
-    radial-gradient(1px 1px at 4% 78%, rgba(255,255,255,0.9), transparent),
-    radial-gradient(2px 2px at 14% 14%, rgba(255,255,255,1), transparent),
-    radial-gradient(1px 1px at 18% 36%, rgba(255,255,255,0.9), transparent),
-    radial-gradient(2px 2px at 86% 10%, rgba(255,255,255,1), transparent),
-    radial-gradient(1px 1px at 92% 25%, rgba(255,255,255,0.95), transparent),
-    radial-gradient(2px 2px at 96% 52%, rgba(255,255,255,1), transparent),
-    radial-gradient(1px 1px at 90% 76%, rgba(255,255,255,0.9), transparent);
-  animation: twinkleFast 1.5s infinite ease-in-out;
-}
-
-.stars-layer-2 {
-  background-image:
-    radial-gradient(1.5px 1.5px at 1% 35%, rgba(255,255,255,0.95), transparent),
-    radial-gradient(2px 2px at 7% 63%, rgba(255,255,255,1), transparent),
-    radial-gradient(1px 1px at 12% 88%, rgba(255,255,255,0.9), transparent),
-    radial-gradient(2px 2px at 21% 8%, rgba(255,255,255,1), transparent),
-    radial-gradient(1.5px 1.5px at 78% 18%, rgba(255,255,255,0.95), transparent),
-    radial-gradient(2px 2px at 84% 42%, rgba(255,255,255,1), transparent),
-    radial-gradient(1px 1px at 95% 70%, rgba(255,255,255,0.9), transparent),
-    radial-gradient(2px 2px at 98% 90%, rgba(255,255,255,1), transparent);
-  animation: twinkleMedium 2.1s infinite ease-in-out;
-}
-
-.stars-layer-3 {
-  background-image:
-    radial-gradient(1px 1px at 3% 12%, rgba(255,255,255,0.85), transparent),
-    radial-gradient(1px 1px at 6% 55%, rgba(255,255,255,0.85), transparent),
-    radial-gradient(1px 1px at 10% 30%, rgba(255,255,255,0.85), transparent),
-    radial-gradient(1px 1px at 16% 68%, rgba(255,255,255,0.85), transparent),
-    radial-gradient(1px 1px at 82% 6%, rgba(255,255,255,0.85), transparent),
-    radial-gradient(1px 1px at 88% 34%, rgba(255,255,255,0.85), transparent),
-    radial-gradient(1px 1px at 94% 58%, rgba(255,255,255,0.85), transparent),
-    radial-gradient(1px 1px at 99% 82%, rgba(255,255,255,0.85), transparent);
-  animation: twinkleSlow 2.8s infinite ease-in-out;
-}
-
-@keyframes twinkleFast {
-  0%, 100% {
-    opacity: 0.15;
+@keyframes loaderSpin {
+  to {
+    transform: rotate(360deg);
   }
-  50% {
+}
+
+@keyframes loaderFadeOut {
+  0%,
+  62% {
     opacity: 1;
   }
-}
-
-@keyframes twinkleMedium {
-  0%, 100% {
-    opacity: 0.25;
-  }
-  50% {
-    opacity: 0.9;
+  100% {
+    opacity: 0;
   }
 }
 
-@keyframes twinkleSlow {
-  0%, 100% {
-    opacity: 0.1;
-  }
-  50% {
-    opacity: 0.75;
-  }
-}
-html,
-body {
-  background: #04060c !important;
+.page-intro {
+  animation: pageFade 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-main {
-  background: transparent !important;
+.product-card {
+  position: relative;
+  display: flex;
+  overflow: hidden;
+  opacity: 1;
+  align-items: stretch;
 }
 
-.page-bg,
-.product-bg,
-.product-page {
-  background: transparent !important;
+.products-grid {
+  animation: itemFade 420ms cubic-bezier(0.22, 1, 0.36, 1) 80ms both;
 }
-html,
-body {
-  background-color: #04060c !important;
+
+.desktop-trust-panel {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 18% 20%, rgba(56, 189, 248, 0.22), transparent 30%),
+    radial-gradient(circle at 82% 70%, rgba(99, 102, 241, 0.2), transparent 28%),
+    linear-gradient(110deg, rgba(8, 16, 32, 0.92), rgba(12, 22, 42, 0.94));
+  animation: itemFade 760ms cubic-bezier(0.22, 1, 0.36, 1) 120ms both;
+}
+
+.contact-float {
+  animation: contactPulse 2600ms ease-in-out infinite;
+}
+
+.product-icon-stage {
+  flex: 0 0 auto;
+  overflow: hidden;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 -18px 48px rgba(255, 255, 255, 0.025);
+}
+
+.product-icon {
+  transform: scale(var(--icon-scale, 1));
+  transform-origin: center;
+  transition:
+    transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.product-card:hover .product-icon {
+  filter: drop-shadow(0 12px 22px rgba(255, 255, 255, 0.16));
+  transform: scale(calc(var(--icon-scale, 1) * 1.06));
+}
+
+.product-card:hover .product-grid-icon {
+  transform: scale(1.04);
+}
+
+.product-title {
+  display: flex;
+  min-height: 3.4em;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  line-height: 1.18;
+  overflow: visible;
+  overflow-wrap: break-word;
+  text-wrap: balance;
+  white-space: normal;
+  word-break: normal;
+}
+
+.product-grid-icon {
+  transform: scale(1);
+}
+
+.offer-icon {
+  transform: scale(var(--offer-icon-scale, 1));
+  transform-origin: center;
+}
+
+.product-page-enter {
+  animation: pageFade 680ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.swipe-home-transition .site-content,
+.swipe-home-transition .contact-float,
+.swipe-home-transition .site-home-button {
+  pointer-events: none;
+  transform-origin: center center;
+  animation: swipeBackToHome 430ms cubic-bezier(0.2, 0.78, 0.24, 1) both !important;
+  will-change: transform, opacity;
+}
+
+.swipe-home-transition .product-page-enter {
+  animation: none !important;
+}
+
+.swipe-home-transition body {
+  overflow: hidden;
+}
+
+@keyframes swipeBackToHome {
+  0% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  72% {
+    opacity: 1;
+    transform: translateX(92vw) scale(0.992);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(128vw) scale(0.992);
+  }
+}
+
+.offer-row {
+  animation: itemFade 640ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.category-divider {
+  animation: itemFade 640ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.category-divider__line {
+  height: 1px;
+  width: 100%;
+  background: linear-gradient(90deg, transparent, rgba(94, 234, 212, 0.32), transparent);
+}
+
+.category-divider__content {
+  margin-top: 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(7, 12, 22, 0.78);
+  padding: 12px 14px;
+}
+
+.category-divider__content h3 {
+  color: rgba(255, 255, 255, 0.96);
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.category-divider__content p {
+  margin-top: 4px;
+  color: rgba(255, 255, 255, 0.54);
+  font-size: 13px;
+  line-height: 1.45;
 }
 
 main {
@@ -194,19 +313,89 @@ body {
 * {
   box-sizing: border-box;
 }
-html,
-body {
-  max-width: 100%;
-  overflow-x: hidden;
+
+@media (prefers-reduced-motion: reduce) {
+  .page-intro,
+  .product-card,
+  .desktop-trust-panel,
+  .product-page-enter,
+  .offer-row,
+  .category-divider {
+    animation: none;
+  }
 }
 
-* {
-  box-sizing: border-box;
+.is-telegram-webapp body {
+  background: var(--tg-theme-bg-color, #04060c) !important;
+}
+
+.is-telegram-webapp main {
+  padding-top: max(16px, env(safe-area-inset-top));
+}
+
+.is-telegram-webapp .contact-float {
+  bottom: max(18px, env(safe-area-inset-bottom));
+  right: 12px;
+  padding: 10px 14px;
+  font-size: 13px;
+}
+
+.is-telegram-webapp footer {
+  padding-bottom: calc(92px + env(safe-area-inset-bottom));
+}
+
+.is-telegram-webapp .product-title {
+  font-size: 13px;
+  line-height: 1.16;
+  min-height: 3.55em;
+  white-space: normal;
+}
+
+@media (max-width: 520px) {
+  .product-card {
+    border-radius: 14px;
+    min-height: 164px;
+    padding: 9px;
+  }
+
+  .product-icon-stage {
+    border-radius: 12px;
+  }
+
+  .product-title {
+    font-size: 13px;
+    line-height: 1.16;
+    min-height: 3.55em;
+    white-space: normal;
+  }
+}
+
+@media (min-width: 640px) {
+  .product-title {
+    font-size: 18px;
+  }
+}
+
+@keyframes contactPulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgba(56, 189, 248, 0.08),
+      0 18px 46px rgba(14, 165, 233, 0.18),
+      0 0 0 0 rgba(56, 189, 248, 0.22);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(56, 189, 248, 0.2),
+      0 22px 56px rgba(14, 165, 233, 0.28),
+      0 0 0 12px rgba(56, 189, 248, 0);
+  }
 }
 html,
 body {
   max-width: 100%;
   overflow-x: hidden;
+  color-scheme: dark;
 }
 
 * {

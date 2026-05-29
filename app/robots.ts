@@ -4,6 +4,7 @@ export default function robots() {
         {
           userAgent: "*",
           allow: "/",
+          disallow: ["/admin", "/admin/", "/api/admin", "/api/admin/"],
         },
       ],
       sitemap: "https://ecliptic.website/sitemap.xml",

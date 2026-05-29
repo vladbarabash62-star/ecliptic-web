@@ -36,6 +36,16 @@ yarn-error.log*
 # vercel
 .vercel
 
+# codex local tooling
+.npm-cache/
+.vercel-global/
+.vercel-xdg-cache/
+.vercel-xdg-config/
+.vercel-xdg-data/
+admin-backups/
+codex-dev-server.mjs
+local-*.log
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

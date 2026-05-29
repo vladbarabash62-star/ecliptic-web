@@ -1,8 +1,28 @@
+export type ProductOffer = {
+  type?: "offer";
+  label: string;
+  priceRub: number;
+  icon?: string;
+  iconScale?: number;
+  messageTemplate?: string;
+};
+
+export type ProductDivider = {
+  type: "divider";
+  title: string;
+  description?: string;
+};
+
+export type ProductItem = ProductOffer | ProductDivider;
+
 export type Product = {
   name: string;
   icon: string;
   slug: string;
-  offers: { label: string; priceRub: number }[];
+  iconScale?: number;
+  offerIcon?: string;
+  messageTemplate?: string;
+  offers: ProductItem[];
 };
 
 export const products: Product[] = [
@@ -23,6 +43,7 @@ export const products: Product[] = [
     name: "Telegram Premium",
     icon: "https://smmlaboratory.com/image/data/3/telegrammpremium.svg",
     slug: "telegram-premium",
+    iconScale: 1.14,
     offers: [
       { label: "1 месяц (со входом)", priceRub: 75 },
       { label: "1 месяц (без входа)", priceRub: 115 },
@@ -35,11 +56,14 @@ export const products: Product[] = [
     name: "World of Tanks",
     icon: "https://www.google.com/s2/favicons?sz=128&domain_url=https://worldoftanks.eu",
     slug: "world-of-tanks",
+    iconScale: 1.24,
     offers: [
+      { type: "divider", title: "Золото", description: "Пополнение золота World of Tanks." },
       { label: "1000 золота", priceRub: 55 },
       { label: "3000 золота", priceRub: 160 },
       { label: "5000 золота", priceRub: 265 },
       { label: "12500 золота", priceRub: 665 },
+      { type: "divider", title: "Подписка", description: "Отдельные варианты подписки." },
       { label: "Подписка", priceRub: 125 },
     ],
   },
@@ -47,16 +71,20 @@ export const products: Product[] = [
     name: "ChatGPT Plus",
     icon: "https://www.google.com/s2/favicons?sz=128&domain_url=https://chatgpt.com",
     slug: "chatgpt-plus",
+    iconScale: 1.24,
     offers: [{ label: "1 месяц", priceRub: 55 }],
   },
   {
     name: "Brawl Stars",
     icon: "https://static.vecteezy.com/system/resources/thumbnails/027/127/558/small_2x/brawl-stars-logo-brawl-stars-icon-transparent-free-png.png",
     slug: "brawl-stars",
+    iconScale: 1.1,
     offers: [
+      { type: "divider", title: "Пассы", description: "Brawl Pass, Brawl Pass Plus и Pro Pass." },
       { label: "Brawl Pass", priceRub: 195 },
       { label: "Brawl Pass Plus", priceRub: 285 },
       { label: "Pro Pass", priceRub: 545 },
+      { type: "divider", title: "Гемы", description: "Пакеты гемов Brawl Stars." },
       { label: "30 гемов", priceRub: 45 },
       { label: "80 гемов", priceRub: 105 },
       { label: "170 гемов", priceRub: 185 },
@@ -66,7 +94,9 @@ export const products: Product[] = [
     name: "Roblox",
     icon: "https://media.tenor.com/HO1YAH0_iMcAAAAj/roblox-logo.gif",
     slug: "roblox",
+    iconScale: 1.12,
     offers: [
+      { type: "divider", title: "Robux", description: "Пополнение Robux." },
       { label: "40 Robux", priceRub: 20 },
       { label: "80 Robux", priceRub: 40 },
       { label: "120 Robux", priceRub: 50 },
@@ -76,6 +106,7 @@ export const products: Product[] = [
       { label: "1200 Robux", priceRub: 295 },
       { label: "1700 Robux", priceRub: 410 },
       { label: "4500 Robux", priceRub: 1055 },
+      { type: "divider", title: "Roblox Premium", description: "Премиум-подписка Roblox отдельно от Robux." },
       { label: "Roblox Premium 1 месяц + 1000 Robux", priceRub: 245 },
     ],
   },
@@ -83,6 +114,7 @@ export const products: Product[] = [
     name: "Standoff 2",
     icon: "https://standof.ru/wp-content/uploads/2023/07/favicon.png",
     slug: "standoff-2",
+    iconScale: 1.18,
     offers: [
       { label: "100 голды", priceRub: 35 },
       { label: "500 голды", priceRub: 120 },
@@ -96,6 +128,7 @@ export const products: Product[] = [
     name: "TikTok Coins",
     icon: "https://cdn-icons-png.freepik.com/256/3621/3621450.png?semt=ais_white_label",
     slug: "tiktok-coins",
+    iconScale: 1.1,
     offers: [
       { label: "30 coins", priceRub: 20 },
       { label: "100 coins", priceRub: 50 },
@@ -114,27 +147,33 @@ export const products: Product[] = [
     icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Spotify_logo_without_text.svg/3840px-Spotify_logo_without_text.svg.png",
     slug: "spotify-premium",
     offers: [
+      { type: "divider", title: "Individual Premium", description: "Индивидуальная подписка Spotify Premium." },
       { label: "1 месяц", priceRub: 65 },
       { label: "3 месяца", priceRub: 180 },
       { label: "6 месяцев", priceRub: 295 },
       { label: "12 месяцев", priceRub: 475 },
+      { type: "divider", title: "Duo Premium", description: "Семейный Duo-тариф можно добавить отдельными вариантами в админке." },
     ],
   },
   {
     name: "PUBG Mobile",
     icon: "https://pnghdpro.com/wp-content/themes/pnghdpro/download/social-media-and-brands/pubg-mobile-logo.png",
     slug: "pubg-mobile",
+    iconScale: 1.12,
     offers: [
+      { type: "divider", title: "UC", description: "Пополнение UC для PUBG Mobile." },
       { label: "60 UC", priceRub: 30 },
       { label: "325 UC", priceRub: 100 },
       { label: "660 UC", priceRub: 190 },
       { label: "720 UC", priceRub: 220 },
       { label: "1320 UC", priceRub: 365 },
       { label: "1800 UC", priceRub: 470 },
+      { type: "divider", title: "Premium", description: "Premium и Premium+ отдельно от UC." },
       { label: "Premium 1 месяц", priceRub: 35 },
       { label: "Premium 3 месяца", priceRub: 75 },
       { label: "Premium+ 1 месяц", priceRub: 235 },
       { label: "Premium+ 3 месяца", priceRub: 615 },
+      { type: "divider", title: "Pass", description: "Elite Pass и его улучшенные версии." },
       { label: "Elite Pass", priceRub: 115 },
       { label: "Elite Pass Plus", priceRub: 225 },
       { label: "Elite Pass Max", priceRub: 535 },
@@ -144,6 +183,7 @@ export const products: Product[] = [
     name: "Discord Nitro",
     icon: "https://www.google.com/s2/favicons?sz=128&domain_url=https://discord.com",
     slug: "discord-nitro",
+    iconScale: 1.24,
     offers: [
       { label: "Nitro Basic 1 месяц", priceRub: 85 },
       { label: "Nitro Full 1 месяц", priceRub: 145 },
@@ -154,10 +194,12 @@ export const products: Product[] = [
     icon: "https://www.freepnglogos.com/uploads/logo-mobile-legend-png/logo-mobile-legend-nasce-team-psg-rrq-paris-saint-germain-sbarca-20.png",
     slug: "mobile-legends",
     offers: [
+      { type: "divider", title: "Алмазы", description: "Пакеты алмазов Mobile Legends." },
       { label: "50 + 50 алмазов", priceRub: 25 },
       { label: "150 + 150 алмазов", priceRub: 70 },
       { label: "250 + 250 алмазов", priceRub: 95 },
       { label: "500 + 500 алмазов", priceRub: 180 },
+      { type: "divider", title: "Пропуски", description: "Пропуски Mobile Legends отдельно от алмазов." },
       { label: "Алмазный пропуск 7 дней", priceRub: 55 },
       { label: "Элитный пропуск 7 дней", priceRub: 30 },
       { label: "Эпический пропуск 30 дней", priceRub: 115 },
@@ -167,10 +209,13 @@ export const products: Product[] = [
     name: "Clash of Clans",
     icon: "https://www.google.com/s2/favicons?sz=128&domain_url=https://supercell.com",
     slug: "clash-of-clans",
+    iconScale: 1.24,
     offers: [
+      { type: "divider", title: "Гемы", description: "Пакеты гемов Clash of Clans." },
       { label: "80 гемов", priceRub: 35 },
       { label: "160 гемов", priceRub: 55 },
       { label: "240 гемов", priceRub: 75 },
+      { type: "divider", title: "Оформление", description: "Оформление отдельно от гемов." },
       { label: "Оформление", priceRub: 195 },
     ],
   },
@@ -179,7 +224,9 @@ export const products: Product[] = [
     icon: "https://www.pngplay.com/wp-content/uploads/10/Clash-Royale-Logo-PNG-HD-Photos.png",
     slug: "clash-royale",
     offers: [
+      { type: "divider", title: "Пасс", description: "Pass Royale отдельно от гемов." },
       { label: "Pass Royale", priceRub: 225 },
+      { type: "divider", title: "Гемы", description: "Пакеты гемов Clash Royale." },
       { label: "80 гемов", priceRub: 25 },
       { label: "500 гемов", priceRub: 105 },
       { label: "1200 гемов", priceRub: 185 },
@@ -189,6 +236,7 @@ export const products: Product[] = [
     name: "Free Fire",
     icon: "https://images.seeklogo.com/logo-png/50/2/free-fire-logo-png_seeklogo-500424.png",
     slug: "free-fire",
+    iconScale: 1.12,
     offers: [
       { label: "110 алмазов", priceRub: 20 },
       { label: "341 алмаз", priceRub: 65 },
@@ -203,6 +251,7 @@ export const products: Product[] = [
     icon: "https://gta5rp.com/_next/image?url=%2Fimages%2Flogo%2Fmain.png&w=1920&q=100",
     slug: "gta-5-rp-majestic-rp",
     offers: [
+      { type: "divider", title: "Донат валюта", description: "Пополнение валюты для RP-проектов." },
       { label: "10000$", priceRub: 30 },
       { label: "100 DP", priceRub: 30 },
       { label: "20000$", priceRub: 30 },
@@ -213,24 +262,36 @@ export const products: Product[] = [
     name: "Radmir RP",
     icon: "https://www.google.com/s2/favicons?sz=128&domain_url=https://radmir.online",
     slug: "radmir-rp",
-    offers: [{ label: "100 донат валюты", priceRub: 30 }],
+    iconScale: 1.24,
+    offers: [
+      { type: "divider", title: "Донат валюта", description: "Пополнение донат валюты Radmir RP." },
+      { label: "100 донат валюты", priceRub: 30 },
+    ],
   },
   {
     name: "Amazing RP",
     icon: "https://www.google.com/s2/favicons?sz=128&domain_url=https://amazing-rp.ru",
     slug: "amazing-rp",
-    offers: [{ label: "100 донат валюты", priceRub: 30 }],
+    iconScale: 1.24,
+    offers: [
+      { type: "divider", title: "Донат валюта", description: "Пополнение донат валюты Amazing RP." },
+      { label: "100 донат валюты", priceRub: 30 },
+    ],
   },
   {
     name: "Black Russia",
     icon: "https://cdn140.picsart.com/327485001024211.png",
     slug: "black-russia",
-    offers: [{ label: "100 донат валюты", priceRub: 30 }],
+    offers: [
+      { type: "divider", title: "Донат валюта", description: "Пополнение донат валюты Black Russia." },
+      { label: "100 донат валюты", priceRub: 30 },
+    ],
   },
   {
     name: "Telegram аккаунты",
     icon: "https://static.vecteezy.com/system/resources/previews/023/986/562/non_2x/telegram-logo-telegram-logo-transparent-telegram-icon-transparent-free-free-png.png",
     slug: "telegram-accounts",
+    iconScale: 1.12,
     offers: [
       { label: "Молдова", priceRub: 50 },
       { label: "Украина", priceRub: 55 },
@@ -256,12 +317,18 @@ export const products: Product[] = [
     name: "Telegram Stars",
     icon: "https://lztcdn.com/files/6514f1e6-dab4-4d49-806a-3ff22d7793e5.webp",
     slug: "telegram-stars",
-    offers: [],
+    iconScale: 1.1,
+    offers: [
+      { label: "200 Telegram Stars", priceRub: 75 },
+      { label: "500 Telegram Stars", priceRub: 175 },
+      { label: "1000 Telegram Stars", priceRub: 345 },
+    ],
   },
   {
     name: "Epic Games пополнение",
     icon: "https://cms-assets.unrealengine.com/AjTAN1C8SLWRn7fg4wnzlz/cmd6p7ipv3hl707ohjnyhwki2",
     slug: "epic-games-topup",
+    iconScale: 1.08,
     offers: [],
   },
   {
@@ -271,15 +338,45 @@ export const products: Product[] = [
     offers: [],
   },
   {
+    name: "Oxide",
+    icon: "/loading-icon.png",
+    slug: "oxide",
+    iconScale: 1.08,
+    offers: [],
+  },
+  {
+    name: "Пополнение сайтов",
+    icon: "/loading-icon.png",
+    slug: "site-topups",
+    iconScale: 1.08,
+    offers: [],
+  },
+  {
+    name: "Переводы",
+    icon: "/loading-icon.png",
+    slug: "transfers",
+    iconScale: 1.08,
+    offers: [],
+  },
+  {
+    name: "NFT",
+    icon: "/loading-icon.png",
+    slug: "nft",
+    iconScale: 1.08,
+    offers: [],
+  },
+  {
     name: "PlayStation",
     icon: "https://www.pngkey.com/png/full/7-74293_la-siguiente-playstation-playstation-4-logo-png.png",
     slug: "playstation",
+    iconScale: 1.08,
     offers: [],
   },
   {
     name: "Boosty",
     icon: "https://images.live.vkvideo.ru/image/31715c5a-91c0-455b-994f-31650954caee?change_time=1729181151&mw=640",
     slug: "boosty",
+    iconScale: 1.12,
     offers: [],
   },
   {

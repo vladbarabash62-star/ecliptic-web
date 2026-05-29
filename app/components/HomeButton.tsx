@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 
 export default function HomeButton() {
@@ -9,16 +9,19 @@ export default function HomeButton() {
   if (pathname === "/") return null;
 
   return (
-    <Link
+    <a
       href="/"
       aria-label="На главную"
-      className="fixed left-2 top-3 z-50 hidden transition-all duration-300 hover:scale-105 active:scale-95 md:block"
+      className="site-home-button fixed left-5 top-4 z-50 hidden transition-all duration-300 hover:scale-105 active:scale-95 md:block"
     >
-      <img
-        src="/ecliptic-logo.svg"
+      <Image
+        src="/loading-icon.png"
         alt="Ecliptic Store"
-        className="h-[3cm] w-[6cm] object-contain"
+        width={280}
+        height={210}
+        className="h-[4.2cm] w-[5.6cm] object-contain"
+        priority
       />
-    </Link>
+    </a>
   );
 }

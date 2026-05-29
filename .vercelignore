@@ -1,0 +1,7 @@
+.npm-cache
+.vercel-global
+.vercel-xdg-cache
+.vercel-xdg-config
+.vercel-xdg-data
+codex-dev-server.mjs
+admin-backups
