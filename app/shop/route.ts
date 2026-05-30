@@ -1,11 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getProductBySlug } from "../../../lib/productStore";
-
-type RouteContext = {
-  params: Promise<{
-    slug: string;
-  }>;
-};
 
 function isMobileUserAgent(userAgent: string) {
   return /android|iphone|ipad|ipod|mobile|windows phone/i.test(userAgent);
@@ -30,40 +23,23 @@ function getTelegramMiniAppShortName() {
   return /^[a-zA-Z0-9_]{3,64}$/.test(shortName) ? shortName : "";
 }
 
-function getTelegramMiniAppUrl(botUsername: string, miniAppShortName: string, startParam: string) {
-  const telegramUrl = new URL("tg://resolve");
-  telegramUrl.searchParams.set("domain", botUsername);
-  telegramUrl.searchParams.set("appname", miniAppShortName);
-  telegramUrl.searchParams.set("startapp", startParam);
-  telegramUrl.searchParams.set("mode", "fullscreen");
-  return telegramUrl;
-}
-
-export async function GET(request: NextRequest, context: RouteContext) {
-  const { slug } = await context.params;
-  const product = await getProductBySlug(slug, { cached: true });
-
-  if (!product) {
-    return NextResponse.redirect(new URL("/", request.url), 307);
-  }
-
+export function GET(request: NextRequest) {
   const userAgent = request.headers.get("user-agent") || "";
   const telegramBot = getTelegramBotUsername();
   const miniAppShortName = getTelegramMiniAppShortName();
 
   if (isMobileUserAgent(userAgent) && telegramBot && miniAppShortName) {
-    const response = NextResponse.redirect(
-      getTelegramMiniAppUrl(telegramBot, miniAppShortName, product.slug),
-      307
-    );
+    const telegramUrl = new URL("tg://resolve");
+    telegramUrl.searchParams.set("domain", telegramBot);
+    telegramUrl.searchParams.set("appname", miniAppShortName);
+    telegramUrl.searchParams.set("mode", "fullscreen");
+
+    const response = NextResponse.redirect(telegramUrl, 307);
     response.headers.set("Cache-Control", "private, no-store, max-age=0");
     return response;
   }
 
-  const productUrl = new URL(`/products/${product.slug}`, request.url);
-  productUrl.searchParams.set("app", "1");
-
-  const response = NextResponse.redirect(productUrl, 307);
+  const response = NextResponse.redirect(new URL("/", request.url), 307);
   response.headers.set("Cache-Control", "private, no-cache, max-age=0, must-revalidate");
   return response;
 }

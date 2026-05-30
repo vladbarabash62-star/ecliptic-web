@@ -14,10 +14,12 @@ type TelegramBridgeWindow = Window & {
 };
 
 const START_PARAM_KEYS = ["tgWebAppStartParam", "startapp", "start_param"];
+const HOME_START_PARAMS = new Set(["home", "main", "shop", "store"]);
 
 function normalizeProductSlug(value: string | null | undefined) {
   const slug = (value || "").trim().toLowerCase();
-  return /^[a-z0-9-]{1,80}$/.test(slug) ? slug : "";
+  if (!/^[a-z0-9-]{1,80}$/.test(slug)) return "";
+  return HOME_START_PARAMS.has(slug) ? "" : slug;
 }
 
 function readStartParamFromParams(params: URLSearchParams) {
