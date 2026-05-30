@@ -11,10 +11,6 @@ const FALLBACK_ADMIN_PASSWORD = {
   salt: "d22b99b65d854c5e7c98afe76bb855c0",
   hash: "866b4bcc969a166dab06cf3ab13b76e7879b23eabea5c4020d2664b5cfef2301",
 };
-const FALLBACK_BACKUP_PASSWORD = {
-  salt: "43ab25a48d65301c8e62d8d2b4c80a33",
-  hash: "76ac9553bc4859a92fe1a8dbf5590742a41da1cfe24abc0b3afa6fa45d7027ad",
-};
 
 const TRUSTED_ORIGINS = new Set([
   "https://ecliptic.website",
@@ -90,10 +86,9 @@ function hashPassword(password: string, salt: string) {
   return createHash("sha256").update(`${salt}|${password}`).digest("hex");
 }
 
-function passwordRecord(kind: "admin" | "backup") {
-  const fallback = kind === "admin" ? FALLBACK_ADMIN_PASSWORD : FALLBACK_BACKUP_PASSWORD;
-  const envHash = kind === "admin" ? process.env.ADMIN_PASSWORD_HASH : process.env.BACKUP_PASSWORD_HASH;
-  const envSalt = kind === "admin" ? process.env.ADMIN_PASSWORD_SALT : process.env.BACKUP_PASSWORD_SALT;
+function passwordRecord() {
+  const envHash = process.env.ADMIN_PASSWORD_HASH;
+  const envSalt = process.env.ADMIN_PASSWORD_SALT;
 
   if (envHash && envSalt) {
     return {
@@ -102,21 +97,16 @@ function passwordRecord(kind: "admin" | "backup") {
     };
   }
 
-  return fallback;
+  return FALLBACK_ADMIN_PASSWORD;
 }
 
 export function verifyAdminPassword(password: string) {
-  const record = passwordRecord("admin");
-  return safeEqual(hashPassword(password, record.salt), record.hash);
-}
-
-export function verifyBackupPassword(password: string) {
-  const record = passwordRecord("backup");
+  const record = passwordRecord();
   return safeEqual(hashPassword(password, record.salt), record.hash);
 }
 
 export function getAdminSessionSecret() {
-  return passwordRecord("admin").hash;
+  return passwordRecord().hash;
 }
 
 export function getAdminPathSecret() {

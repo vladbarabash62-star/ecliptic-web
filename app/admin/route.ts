@@ -163,7 +163,6 @@ const ADMIN_HTML = `<!doctype html>
       </div>
       <div class="toolbar">
         <a class="btn secondary" href="/" target="_blank" rel="noreferrer">Открыть сайт</a>
-        <button class="btn secondary" id="backupBtn" type="button">Скачать полный бекап</button>
         <button class="btn secondary" id="reloadBtn" type="button">Обновить</button>
         <button class="btn red" id="logoutBtn" type="button">Выйти</button>
       </div>
@@ -585,41 +584,6 @@ const ADMIN_HTML = `<!doctype html>
         $('saveSettingsBtn').disabled = false;
       }
     }
-    async function downloadBackup() {
-      var password = prompt('Введите отдельный пароль для бекапа');
-      if (!password) return;
-      $('backupBtn').disabled = true;
-      showNotice('Готовлю бекап...', false);
-      try {
-        var response = await fetch('/api/admin/backup', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ backupPassword: password })
-        });
-        if (!response.ok) {
-          var data = await response.json().catch(function() { return {}; });
-          throw new Error(data.error || 'Не удалось сделать бекап.');
-        }
-        var blob = await response.blob();
-        var disposition = response.headers.get('Content-Disposition') || '';
-        var match = disposition.match(/filename="([^"]+)"/);
-        var filename = match ? match[1] : 'ecliptic-backup.json';
-        var url = URL.createObjectURL(blob);
-        var link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        URL.revokeObjectURL(url);
-        showNotice('Полный бекап скачан.', false);
-        hideNoticeSoon();
-      } catch (error) {
-        showNotice(error.message || 'Не удалось скачать бекап.', true);
-      } finally {
-        $('backupBtn').disabled = false;
-      }
-    }
     async function logout() {
       await fetch('/api/admin/logout', { method: 'POST' }).catch(function() {});
       window.location.replace('/admin');
@@ -633,7 +597,6 @@ const ADMIN_HTML = `<!doctype html>
       });
     });
     $('reloadBtn').addEventListener('click', loadAll);
-    $('backupBtn').addEventListener('click', downloadBackup);
     $('logoutBtn').addEventListener('click', logout);
     $('addProductBtn').addEventListener('click', addProduct);
     $('saveProductsBtn').addEventListener('click', saveProducts);
