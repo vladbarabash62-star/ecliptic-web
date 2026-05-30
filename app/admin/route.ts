@@ -1,4 +1,4 @@
-import { ADMIN_SESSION_COOKIE, getAdminPin, getAdminSessionValue, safeEqual } from "../../lib/security";
+import { ADMIN_SESSION_COOKIE, getAdminSessionSecret, getAdminSessionValue, safeEqual } from "../../lib/security";
 
 export const dynamic = "force-dynamic";
 
@@ -163,7 +163,7 @@ const ADMIN_HTML = `<!doctype html>
       </div>
       <div class="toolbar">
         <a class="btn secondary" href="/" target="_blank" rel="noreferrer">Открыть сайт</a>
-        <button class="btn secondary" id="backupBtn" type="button">Сделать бекап</button>
+        <button class="btn secondary" id="backupBtn" type="button">Скачать полный бекап</button>
         <button class="btn secondary" id="reloadBtn" type="button">Обновить</button>
         <button class="btn red" id="logoutBtn" type="button">Выйти</button>
       </div>
@@ -612,7 +612,7 @@ const ADMIN_HTML = `<!doctype html>
         link.click();
         link.remove();
         URL.revokeObjectURL(url);
-        showNotice('Бекап скачан.', false);
+        showNotice('Полный бекап скачан.', false);
         hideNoticeSoon();
       } catch (error) {
         showNotice(error.message || 'Не удалось скачать бекап.', true);
@@ -659,8 +659,7 @@ function readCookie(request: Request, name: string) {
 }
 
 function hasAdminSession(request: Request) {
-  const password = getAdminPin();
-  const expected = getAdminSessionValue(password, request.headers.get("user-agent") || "");
+  const expected = getAdminSessionValue(getAdminSessionSecret(), request.headers.get("user-agent") || "");
   const actual = readCookie(request, ADMIN_SESSION_COOKIE);
 
   return safeEqual(actual, expected);

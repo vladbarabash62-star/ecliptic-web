@@ -67,14 +67,6 @@ async function copyOrderText(message: string) {
 }
 
 function openSellerChat(href: string, deepHref: string) {
-  if (isMobileTelegramTarget()) {
-    window.location.href = deepHref;
-    window.setTimeout(() => {
-      if (!document.hidden) window.location.href = href;
-    }, 700);
-    return;
-  }
-
   const webApp = getTelegramWebApp();
 
   if (webApp?.openTelegramLink) {
@@ -86,6 +78,15 @@ function openSellerChat(href: string, deepHref: string) {
     webApp.openLink(href);
     return;
   }
+
+  if (isMobileTelegramTarget()) {
+    window.location.href = deepHref;
+    window.setTimeout(() => {
+      if (!document.hidden) window.location.href = href;
+    }, 700);
+    return;
+  }
+
   window.open(href, "_blank", "noopener,noreferrer");
 }
 

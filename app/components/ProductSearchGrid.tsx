@@ -50,7 +50,7 @@ export default function ProductSearchGrid({ products }: { products: Product[] })
             return (
               <Link
                 key={product.slug}
-                href={`/go/${product.slug}`}
+                href={`/products/${product.slug}`}
                 prefetch
                 data-analytics="product_open"
                 data-haptic-direct="true"

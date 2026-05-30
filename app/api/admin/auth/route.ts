@@ -3,10 +3,10 @@ import {
   ADMIN_SESSION_COOKIE,
   assertTrustedOrigin,
   checkRateLimit,
-  getAdminPin,
+  getAdminSessionSecret,
   getAdminSessionValue,
   jsonError,
-  safeEqual,
+  verifyAdminPassword,
 } from "../../../../lib/security";
 
 export const runtime = "nodejs";
@@ -18,19 +18,18 @@ type RequestBody = {
 };
 
 function adminSessionCookie(request: Request) {
-  const password = getAdminPin();
   const userAgent = request.headers.get("user-agent") || "";
   const secure = new URL(request.url).protocol === "https:";
 
   return {
     name: ADMIN_SESSION_COOKIE,
-    value: getAdminSessionValue(password, userAgent),
+    value: getAdminSessionValue(getAdminSessionSecret(), userAgent),
     options: {
       httpOnly: true,
       secure,
       sameSite: "strict" as const,
       path: "/",
-      maxAge: 60 * 60 * 12,
+      maxAge: 60 * 60 * 24 * 30,
     },
   };
 }
@@ -53,7 +52,7 @@ export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as RequestBody;
   const password = body.password || body.pin || "";
 
-  if (!safeEqual(password, getAdminPin())) {
+  if (!verifyAdminPassword(password)) {
     return jsonError("Wrong password", 403);
   }
 

@@ -2,6 +2,27 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  outputFileTracingIncludes: {
+    "/api/admin/backup": [
+      "./app/**/*",
+      "./components/**/*",
+      "./lib/**/*",
+      "./models/**/*",
+      "./public/**/*",
+      "./services/**/*",
+      "./.gitignore",
+      "./.vercelignore",
+      "./eslint.config.mjs",
+      "./middleware.ts",
+      "./next.config.ts",
+      "./package-lock.json",
+      "./package.json",
+      "./postcss.config.mjs",
+      "./README.md",
+      "./tsconfig.json",
+      "./vercel.json",
+    ],
+  },
   async headers() {
     return [
       {

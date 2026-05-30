@@ -7,8 +7,14 @@ type RedisConfig = {
   token: string;
 };
 
-const DEFAULT_ADMIN_PASSWORD = "ADMIN-4BnLK-B5wuy-TiBEU-ZSHtv";
-const DEFAULT_BACKUP_PASSWORD = "BACKUP-pHfDp-GJQ49-kNLPv-oAR7j";
+const FALLBACK_ADMIN_PASSWORD = {
+  salt: "d22b99b65d854c5e7c98afe76bb855c0",
+  hash: "866b4bcc969a166dab06cf3ab13b76e7879b23eabea5c4020d2664b5cfef2301",
+};
+const FALLBACK_BACKUP_PASSWORD = {
+  salt: "43ab25a48d65301c8e62d8d2b4c80a33",
+  hash: "76ac9553bc4859a92fe1a8dbf5590742a41da1cfe24abc0b3afa6fa45d7027ad",
+};
 
 const TRUSTED_ORIGINS = new Set([
   "https://ecliptic.website",
@@ -80,12 +86,37 @@ export function safeEqual(a = "", b = "") {
   return timingSafeEqual(left, right);
 }
 
-export function getAdminPin() {
-  return process.env.ADMIN_PASSWORD || DEFAULT_ADMIN_PASSWORD;
+function hashPassword(password: string, salt: string) {
+  return createHash("sha256").update(`${salt}|${password}`).digest("hex");
 }
 
-export function getBackupPassword() {
-  return process.env.BACKUP_PASSWORD || DEFAULT_BACKUP_PASSWORD;
+function passwordRecord(kind: "admin" | "backup") {
+  const fallback = kind === "admin" ? FALLBACK_ADMIN_PASSWORD : FALLBACK_BACKUP_PASSWORD;
+  const envHash = kind === "admin" ? process.env.ADMIN_PASSWORD_HASH : process.env.BACKUP_PASSWORD_HASH;
+  const envSalt = kind === "admin" ? process.env.ADMIN_PASSWORD_SALT : process.env.BACKUP_PASSWORD_SALT;
+
+  if (envHash && envSalt) {
+    return {
+      salt: envSalt,
+      hash: envHash,
+    };
+  }
+
+  return fallback;
+}
+
+export function verifyAdminPassword(password: string) {
+  const record = passwordRecord("admin");
+  return safeEqual(hashPassword(password, record.salt), record.hash);
+}
+
+export function verifyBackupPassword(password: string) {
+  const record = passwordRecord("backup");
+  return safeEqual(hashPassword(password, record.salt), record.hash);
+}
+
+export function getAdminSessionSecret() {
+  return passwordRecord("admin").hash;
 }
 
 export function getAdminPathSecret() {
@@ -98,8 +129,8 @@ function getAdminGateValue(secret: string, userAgent: string) {
 
 export const ADMIN_SESSION_COOKIE = "ecliptic_admin_session";
 
-export function getAdminSessionValue(adminPin: string, userAgent: string) {
-  return createHash("sha256").update(`admin-session|${adminPin}|${userAgent || "unknown-agent"}`).digest("hex");
+export function getAdminSessionValue(sessionSecret: string, userAgent: string) {
+  return createHash("sha256").update(`admin-session|${sessionSecret}|${userAgent || "unknown-agent"}`).digest("hex");
 }
 
 export async function getClientIpHash() {
@@ -163,14 +194,13 @@ export async function validateAdminRequest(request: Request, pin?: string) {
     return jsonError("Admin gate required", 404);
   }
 
-  const adminPin = getAdminPin();
   const adminSession = cookieStore.get(ADMIN_SESSION_COOKIE)?.value || "";
-  const expectedSession = adminPin ? getAdminSessionValue(adminPin, headerList.get("user-agent") || "") : "";
+  const expectedSession = getAdminSessionValue(getAdminSessionSecret(), headerList.get("user-agent") || "");
   if (safeEqual(adminSession, expectedSession)) {
     return null;
   }
 
-  if (!safeEqual(pin || "", adminPin)) {
+  if (!verifyAdminPassword(pin || "")) {
     const failedLimit = await checkRateLimit("admin-failed-pin", 8, 300);
     if (!failedLimit.allowed) {
       return jsonError("Too many failed attempts", 429);
