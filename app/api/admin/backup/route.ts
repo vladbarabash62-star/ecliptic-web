@@ -179,7 +179,7 @@ async function collectDirectory(root: string, relativeDir: string, files: ZipFil
     if (!info || info.size > 18_000_000) continue;
 
     files.push({
-      name: `site-files/${normalizeZipName(relativePath)}`,
+      name: normalizeZipName(relativePath),
       data: await readFile(absolutePath),
       mtime: info.mtime,
     });
@@ -200,7 +200,7 @@ async function collectProjectFiles() {
     const info = await stat(absolutePath).catch(() => null);
     if (!info?.isFile()) continue;
     files.push({
-      name: `site-files/${file}`,
+      name: normalizeZipName(file),
       data: await readFile(absolutePath),
       mtime: info.mtime,
     });
@@ -255,10 +255,33 @@ export async function POST(request: Request) {
 
   const createdAt = new Date().toISOString();
   const dataFiles = [
-    jsonFile("data/products.json", products),
-    jsonFile("data/settings.json", settings),
-    jsonFile("data/analytics-events.json", analyticsEvents),
-    jsonFile("data/full-state.json", {
+    {
+      name: "README-БЕКАП.txt",
+      data: Buffer.from(
+        [
+          "Ecliptic Store full backup",
+          "",
+          "В архиве лежит полная рабочая копия сайта:",
+          "- app, components, lib, public и остальные файлы проекта;",
+          "- package.json и package-lock.json для установки зависимостей;",
+          "- backup-data/products.json с товарами;",
+          "- backup-data/settings.json с настройками главной;",
+          "- backup-data/analytics-events.json с аналитикой;",
+          "- backup-data/full-state.json со всеми текущими данными вместе.",
+          "",
+          "Что специально НЕ кладется в архив:",
+          "- node_modules, потому что они восстанавливаются командой npm install;",
+          "- .next и build-кэш, потому что они создаются заново при сборке;",
+          "- .env и токены Vercel/Redis, чтобы пароль и секреты нельзя было украсть из бекапа.",
+        ].join("\n"),
+        "utf8"
+      ),
+      mtime: new Date(),
+    },
+    jsonFile("backup-data/products.json", products),
+    jsonFile("backup-data/settings.json", settings),
+    jsonFile("backup-data/analytics-events.json", analyticsEvents),
+    jsonFile("backup-data/full-state.json", {
       ok: true,
       createdAt,
       site: "ecliptic.website",
@@ -272,15 +295,16 @@ export async function POST(request: Request) {
         events: analyticsEvents,
       },
     }),
-    jsonFile("data/backup-manifest.json", {
+    jsonFile("backup-data/backup-manifest.json", {
       createdAt,
       includes: [
-        "site source files",
+        "full site source files",
         "public assets",
         "package/config files",
         "current products",
         "current main-page settings",
         "analytics events from Redis",
+        "restore readme",
       ],
       excludes: [
         "node_modules",
