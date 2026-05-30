@@ -1,12 +1,40 @@
 import ProductSearchGrid from "./components/ProductSearchGrid";
-import { getProducts } from "../lib/productStore";
+import { redirect } from "next/navigation";
+import { getProductBySlug, getProducts } from "../lib/productStore";
 import { getSiteSettings } from "../lib/siteSettings";
 import { defaultSiteSettings } from "../lib/siteSettingsDefaults";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export default async function HomePage() {
+type HomePageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+function firstSearchParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function normalizeStartSlug(value: string | undefined) {
+  const slug = (value || "").trim().toLowerCase();
+  return /^[a-z0-9-]{1,80}$/.test(slug) ? slug : "";
+}
+
+export default async function HomePage({ searchParams }: HomePageProps) {
+  const params: Record<string, string | string[] | undefined> = searchParams
+    ? await searchParams
+    : {};
+  const startSlug = normalizeStartSlug(
+    firstSearchParam(params.tgWebAppStartParam) ||
+      firstSearchParam(params.startapp) ||
+      firstSearchParam(params.start_param)
+  );
+
+  if (startSlug) {
+    const product = await getProductBySlug(startSlug, { cached: true });
+    if (product) redirect(`/products/${product.slug}?app=1`);
+  }
+
   const [products, settings] = await Promise.all([
     getProducts({ cached: true }),
     getSiteSettings({ cached: true }).catch(() => defaultSiteSettings),

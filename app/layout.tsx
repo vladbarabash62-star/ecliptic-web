@@ -6,6 +6,7 @@ import HomeButton from "./components/HomeButton";
 import PageLoader from "./components/PageLoader";
 import SiteFooter from "./components/SiteFooter";
 import SwipeHomeGesture from "./components/SwipeHomeGesture";
+import TelegramStartRouter from "./components/TelegramStartRouter";
 import SpaceScene from "../components/space-scene";
 import "./globals.css";
 
@@ -132,6 +133,7 @@ export default function RootLayout({
         <HomeButton />
         <ContactButton />
         <SwipeHomeGesture />
+        <TelegramStartRouter />
         <AnalyticsTracker />
 
         {/* КОНТЕНТ */}
