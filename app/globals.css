@@ -121,6 +121,14 @@ html {
   animation-delay: 520ms;
 }
 
+.site-loader__orbit {
+  display: grid;
+  width: 150px;
+  height: 150px;
+  place-items: center;
+  transform-origin: 50% 50%;
+}
+
 .site-loader__icon {
   filter: drop-shadow(0 0 24px rgba(255, 255, 255, 0.22));
   animation: loaderSpin 780ms linear infinite;
@@ -352,6 +360,11 @@ body {
 }
 
 @media (max-width: 520px) {
+  .site-loader__orbit {
+    width: 138px;
+    height: 138px;
+  }
+
   .product-card {
     border-radius: 14px;
     min-height: 164px;
@@ -371,6 +384,11 @@ body {
 }
 
 @media (min-width: 640px) {
+  .site-loader__orbit {
+    width: 180px;
+    height: 180px;
+  }
+
   .product-title {
     font-size: 18px;
   }
