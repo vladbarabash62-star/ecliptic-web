@@ -2,7 +2,10 @@
 
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import type { CSSProperties } from "react";
 import { useEffect, useRef, useState } from "react";
+
+type LoaderPhase = "shown" | "leaving" | "hidden";
 
 function isInternalNavigationLink(anchor: HTMLAnchorElement) {
   if (anchor.target && anchor.target !== "_self") return false;
@@ -18,42 +21,69 @@ function isInternalNavigationLink(anchor: HTMLAnchorElement) {
 }
 
 export default function PageLoader() {
-  const [visible, setVisible] = useState(true);
+  const [phase, setPhase] = useState<LoaderPhase>("shown");
   const pathname = usePathname();
   const hideTimer = useRef<number | null>(null);
-  const fallbackTimer = useRef<number | null>(null);
+  const removeTimer = useRef<number | null>(null);
   const lastPathname = useRef(pathname);
 
   const clearTimers = () => {
     if (hideTimer.current) window.clearTimeout(hideTimer.current);
-    if (fallbackTimer.current) window.clearTimeout(fallbackTimer.current);
+    if (removeTimer.current) window.clearTimeout(removeTimer.current);
     hideTimer.current = null;
-    fallbackTimer.current = null;
+    removeTimer.current = null;
   };
 
-  const hideSoon = (delay = 760) => {
+  const beginHide = () => {
+    setPhase("leaving");
+    if (removeTimer.current) window.clearTimeout(removeTimer.current);
+    removeTimer.current = window.setTimeout(() => setPhase("hidden"), 640);
+  };
+
+  const showLoader = () => {
+    clearTimers();
+    setPhase("shown");
+  };
+
+  const hideSoon = (delay = 420) => {
     if (hideTimer.current) window.clearTimeout(hideTimer.current);
-    hideTimer.current = window.setTimeout(() => setVisible(false), delay);
+    hideTimer.current = window.setTimeout(beginHide, delay);
   };
 
   useEffect(() => {
-    hideSoon(760);
+    hideSoon(580);
     return clearTimers;
   }, []);
 
   useEffect(() => {
+    document.documentElement.classList.toggle("route-loader-active", phase === "shown");
+    document.documentElement.classList.toggle("route-loader-leaving", phase === "leaving");
+
+    const content = document.querySelector<HTMLElement>(".site-content");
+    if (content) {
+      content.style.transition =
+        "opacity 620ms cubic-bezier(0.22, 1, 0.36, 1), transform 620ms cubic-bezier(0.22, 1, 0.36, 1), filter 620ms cubic-bezier(0.22, 1, 0.36, 1)";
+      content.style.opacity = phase === "shown" ? "0.5" : "1";
+      content.style.filter = phase === "shown" ? "blur(2px)" : "blur(0)";
+      content.style.transform = phase === "shown" ? "translateY(10px) scale(0.996)" : "translateY(0) scale(1)";
+    }
+
+    return () => {
+      document.documentElement.classList.remove("route-loader-active", "route-loader-leaving");
+    };
+  }, [phase]);
+
+  useEffect(() => {
     if (lastPathname.current === pathname) return;
     lastPathname.current = pathname;
-    setVisible(true);
-    hideSoon(680);
+    showLoader();
+    hideSoon(360);
   }, [pathname]);
 
   useEffect(() => {
     const showForNavigation = () => {
-      if (hideTimer.current) window.clearTimeout(hideTimer.current);
-      if (fallbackTimer.current) window.clearTimeout(fallbackTimer.current);
-      setVisible(true);
-      fallbackTimer.current = window.setTimeout(() => setVisible(false), 2400);
+      showLoader();
+      hideSoon(2400);
     };
 
     const handleClick = (event: MouseEvent) => {
@@ -77,11 +107,30 @@ export default function PageLoader() {
     };
   }, []);
 
-  if (!visible) return null;
+  if (phase === "hidden") return null;
+
+  const loaderStyle = {
+    opacity: phase === "leaving" ? 0 : 1,
+    backgroundColor: phase === "leaving" ? "rgba(4, 6, 12, 0)" : "#04060c",
+    backdropFilter: phase === "leaving" ? "blur(6px)" : "blur(0px)",
+    transition:
+      "opacity 620ms cubic-bezier(0.22, 1, 0.36, 1), background-color 620ms cubic-bezier(0.22, 1, 0.36, 1), backdrop-filter 620ms cubic-bezier(0.22, 1, 0.36, 1)",
+  } satisfies CSSProperties;
+
+  const orbitStyle = {
+    opacity: phase === "leaving" ? 0 : 1,
+    filter: phase === "leaving" ? "blur(2px)" : "blur(0)",
+    transform: phase === "leaving" ? "scale(0.92)" : "scale(1)",
+    transition:
+      "opacity 560ms cubic-bezier(0.22, 1, 0.36, 1), transform 640ms cubic-bezier(0.22, 1, 0.36, 1), filter 640ms cubic-bezier(0.22, 1, 0.36, 1)",
+  } satisfies CSSProperties;
 
   return (
-    <div className="site-loader fixed inset-0 z-[999] flex items-center justify-center bg-[#04060c]">
-      <div className="site-loader__orbit">
+    <div
+      className={`site-loader fixed inset-0 z-[999] flex items-center justify-center bg-[#04060c] ${phase === "leaving" ? "site-loader--leaving" : ""}`}
+      style={loaderStyle}
+    >
+      <div className="site-loader__orbit" style={orbitStyle}>
         <Image
           src="/loading-icon.png"
           alt="Ecliptic"
