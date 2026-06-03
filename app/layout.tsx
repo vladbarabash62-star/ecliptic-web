@@ -3,7 +3,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import AnalyticsTracker from "./components/AnalyticsTracker";
 import ContactButton from "./components/ContactButton";
 import HomeButton from "./components/HomeButton";
-import PageLoader from "./components/PageLoader";
 import SiteFooter from "./components/SiteFooter";
 import SwipeHomeGesture from "./components/SwipeHomeGesture";
 import TelegramStartRouter from "./components/TelegramStartRouter";
@@ -129,7 +128,6 @@ export default function RootLayout({
         <SpaceScene />
 
         {/* КНОПКА */}
-        <PageLoader />
         <HomeButton />
         <ContactButton />
         <SwipeHomeGesture />
