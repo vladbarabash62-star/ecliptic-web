@@ -4,6 +4,7 @@
 import type { CSSProperties, MouseEvent, ReactNode } from "react";
 import { useMemo, useState } from "react";
 import type { ProductItem } from "../../../lib/products";
+import { realOfferIcon } from "../../../lib/offerImages";
 import { playBuyHaptic } from "../../components/haptics";
 
 const TELEGRAM_USERNAME = "Ecliptic_Store_PMR";
@@ -170,66 +171,8 @@ function formatPurchaseMessage(
   return filledDetails.length ? `${base}\n${filledDetails.join("\n")}` : base;
 }
 
-function firstNumber(value: string) {
-  const match = value.replace(/\s+/g, "").match(/\d+/);
-  return match ? Number(match[0]) : 0;
-}
-
-function amountTierIcon(label: string, small: string, medium: string, large: string) {
-  const amount = firstNumber(label);
-  if (amount >= 1000) return large;
-  if (amount >= 300) return medium;
-  return small;
-}
-
 function fallbackOfferIcon(productSlug: string, label: string) {
-  const normalized = label.toLocaleLowerCase("ru");
-
-  if (productSlug === "playstation") {
-    if (normalized.includes("аккаунт")) return "/offer-icons/ps-account.svg";
-    if (normalized.includes("deluxe")) return "/offer-icons/ps-plus-deluxe.svg";
-    if (normalized.includes("extra")) return "/offer-icons/ps-plus-extra.svg";
-    if (normalized.includes("plus") || normalized.includes("essential")) return "/offer-icons/ps-plus-essential.svg";
-    return "/offer-icons/gift-card-blue.svg";
-  }
-
-  if (productSlug === "roblox") {
-    if (normalized.includes("premium")) return "/offer-icons/robux-premium.svg";
-    return amountTierIcon(label, "/offer-icons/robux-small.svg", "/offer-icons/robux-medium.svg", "/offer-icons/robux-large.svg");
-  }
-
-  if (productSlug === "oxide") {
-    if (normalized.includes("elite")) return "/offer-icons/oxide-elite-pass.svg";
-    if (normalized.includes("боевой пропуск")) return "/offer-icons/oxide-pass.svg";
-    if (normalized.includes("подпис")) return "/offer-icons/oxide-premium.svg";
-    if (normalized.includes("билет")) return "/offer-icons/oxide-ticket.svg";
-    return amountTierIcon(label, "/offer-icons/coins-small.svg", "/offer-icons/coins-medium.svg", "/offer-icons/coins-large.svg");
-  }
-
-  if (normalized.includes("gem") || normalized.includes("гем") || normalized.includes("алмаз")) {
-    return amountTierIcon(label, "/offer-icons/gems-small.svg", "/offer-icons/gems-medium.svg", "/offer-icons/gems-large.svg");
-  }
-
-  if (
-    normalized.includes("coin") ||
-    normalized.includes("uc") ||
-    normalized.includes("монет") ||
-    normalized.includes("голд") ||
-    normalized.includes("золота") ||
-    normalized.includes("донат")
-  ) {
-    return amountTierIcon(label, "/offer-icons/coins-small.svg", "/offer-icons/coins-medium.svg", "/offer-icons/coins-large.svg");
-  }
-
-  if (normalized.includes("pass") || normalized.includes("пасс") || normalized.includes("пропуск")) {
-    return "/offer-icons/subscription.svg";
-  }
-
-  if (normalized.includes("месяц") || normalized.includes("premium") || normalized.includes("nitro")) {
-    return "/offer-icons/subscription.svg";
-  }
-
-  return "";
+  return realOfferIcon(productSlug, label);
 }
 
 function OfferIcon({ icon, scale = 1 }: { icon?: string; scale?: number }) {
