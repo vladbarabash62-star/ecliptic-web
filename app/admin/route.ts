@@ -3,10 +3,10 @@ import { ADMIN_SESSION_COOKIE, getAdminSessionSecret, getAdminSessionValue, safe
 export const dynamic = "force-dynamic";
 
 const BASE_STYLE = `
-  :root { color-scheme: dark; --bg:#05070d; --panel:#0b0f18; --panel2:#111827; --line:rgba(255,255,255,.12); --text:#fff; --muted:rgba(255,255,255,.64); --blue:#0ea5e9; --green:#10b981; --red:#ef4444; --amber:#f59e0b; }
+  :root { color-scheme: dark; --bg:#000; --panel:#0b0f18; --panel2:#111827; --line:rgba(255,255,255,.12); --text:#fff; --muted:rgba(255,255,255,.64); --blue:#0ea5e9; --green:#10b981; --red:#ef4444; --amber:#f59e0b; }
   * { box-sizing:border-box; }
   html,body { margin:0; min-height:100%; }
-  body { min-height:100vh; background:radial-gradient(circle at 50% 18%, rgba(14,165,233,.08), transparent 34%), var(--bg); color:var(--text); font-family:Inter,Segoe UI,Arial,sans-serif; }
+  body { min-height:100vh; background:var(--bg); color:var(--text); font-family:Inter,Segoe UI,Arial,sans-serif; }
   body:before { content:""; position:fixed; inset:0; pointer-events:none; background-image:radial-gradient(#fff 1px, transparent 1.5px); background-size:92px 92px; opacity:.24; }
   button,input,textarea { font:inherit; }
   button { cursor:pointer; border:0; }

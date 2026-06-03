@@ -8,7 +8,7 @@ export default function GlobalError({
 }) {
   return (
     <html lang="ru" suppressHydrationWarning>
-      <body className="min-h-screen bg-[#04060c] text-white" suppressHydrationWarning>
+      <body className="min-h-screen bg-black text-white" suppressHydrationWarning>
         <main className="flex min-h-screen items-center justify-center px-4">
           <div className="w-full max-w-[420px] rounded-3xl border border-white/10 bg-[#0a0d14]/90 p-6 text-center shadow-[0_24px_90px_rgba(0,0,0,0.34)]">
             <p className="text-sm font-bold uppercase text-sky-200/80">Ecliptic Store</p>

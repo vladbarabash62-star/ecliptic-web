@@ -122,7 +122,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body
-        className="relative min-h-screen overflow-x-hidden bg-[#04060c] text-white"
+        className="relative min-h-screen overflow-x-hidden bg-black text-white"
         suppressHydrationWarning
       >
         {/* ЗВЕЗДЫ */}

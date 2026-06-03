@@ -21,7 +21,7 @@ function isInternalNavigationLink(anchor: HTMLAnchorElement) {
 }
 
 export default function PageLoader() {
-  const [phase, setPhase] = useState<LoaderPhase>("shown");
+  const [phase, setPhase] = useState<LoaderPhase>("hidden");
   const pathname = usePathname();
   const hideTimer = useRef<number | null>(null);
   const removeTimer = useRef<number | null>(null);
@@ -37,7 +37,10 @@ export default function PageLoader() {
   const beginHide = () => {
     setPhase("leaving");
     if (removeTimer.current) window.clearTimeout(removeTimer.current);
-    removeTimer.current = window.setTimeout(() => setPhase("hidden"), 640);
+    removeTimer.current = window.setTimeout(() => {
+      removeTimer.current = null;
+      setPhase("hidden");
+    }, 640);
   };
 
   const showLoader = () => {
@@ -47,13 +50,23 @@ export default function PageLoader() {
 
   const hideSoon = (delay = 420) => {
     if (hideTimer.current) window.clearTimeout(hideTimer.current);
-    hideTimer.current = window.setTimeout(beginHide, delay);
+    hideTimer.current = window.setTimeout(() => {
+      hideTimer.current = null;
+      beginHide();
+    }, delay);
   };
 
   useEffect(() => {
+    showLoader();
     hideSoon(580);
     return clearTimers;
   }, []);
+
+  useEffect(() => {
+    if (phase !== "shown") return;
+    const fallbackTimer = window.setTimeout(beginHide, 1600);
+    return () => window.clearTimeout(fallbackTimer);
+  }, [phase, pathname]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("route-loader-active", phase === "shown");
@@ -111,8 +124,8 @@ export default function PageLoader() {
 
   const loaderStyle = {
     opacity: phase === "leaving" ? 0 : 1,
-    backgroundColor: phase === "leaving" ? "rgba(4, 6, 12, 0)" : "#04060c",
-    backdropFilter: phase === "leaving" ? "blur(6px)" : "blur(0px)",
+    backgroundColor: phase === "leaving" ? "rgba(0, 0, 0, 0)" : "rgba(0, 0, 0, 0.28)",
+    backdropFilter: phase === "leaving" ? "blur(4px)" : "blur(0px)",
     transition:
       "opacity 620ms cubic-bezier(0.22, 1, 0.36, 1), background-color 620ms cubic-bezier(0.22, 1, 0.36, 1), backdrop-filter 620ms cubic-bezier(0.22, 1, 0.36, 1)",
   } satisfies CSSProperties;
@@ -127,7 +140,7 @@ export default function PageLoader() {
 
   return (
     <div
-      className={`site-loader fixed inset-0 z-[999] flex items-center justify-center bg-[#04060c] ${phase === "leaving" ? "site-loader--leaving" : ""}`}
+      className={`site-loader fixed inset-0 z-[999] flex items-center justify-center bg-transparent ${phase === "leaving" ? "site-loader--leaving" : ""}`}
       style={loaderStyle}
     >
       <div className="site-loader__orbit" style={orbitStyle}>

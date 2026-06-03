@@ -13,6 +13,7 @@ const stars = Array.from({ length: 95 }, (_, index) => {
 export default function SpaceScene() {
   return (
     <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+      <div className="absolute inset-0 bg-black" />
       {stars.map((star, index) => (
         <span
           key={`star-${index}`}
@@ -27,7 +28,7 @@ export default function SpaceScene() {
           }}
         />
       ))}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(6,8,14,0.12)_62%,rgba(5,7,13,0.38)_100%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.08)_62%,rgba(0,0,0,0.42)_100%)]" />
     </div>
   );
 }

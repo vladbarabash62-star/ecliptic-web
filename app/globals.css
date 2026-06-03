@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #000000;
+  --foreground: #ffffff;
 }
 
 @theme inline {
@@ -14,13 +14,17 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #000000;
+    --foreground: #ffffff;
   }
 }
 
+html {
+  background: #000;
+}
+
 body {
-  background: var(--background);
+  background: #000;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
   -webkit-user-select: none;
@@ -57,11 +61,11 @@ html {
 }
 
 ::-webkit-scrollbar-track {
-  background: #050913;
+  background: #000;
 }
 
 ::-webkit-scrollbar-thumb {
-  border: 3px solid #050913;
+  border: 3px solid #000;
   border-radius: 999px;
   background: rgba(148, 163, 184, 0.34);
 }
@@ -147,8 +151,8 @@ html {
 .site-loader--leaving {
   pointer-events: none;
   opacity: 0;
-  background-color: rgba(4, 6, 12, 0);
-  backdrop-filter: blur(6px);
+  background-color: rgba(0, 0, 0, 0);
+  backdrop-filter: blur(4px);
 }
 
 .site-loader--leaving .site-loader__orbit {
@@ -364,7 +368,7 @@ body {
 }
 
 .is-telegram-webapp body {
-  background: var(--tg-theme-bg-color, #04060c) !important;
+  background: #000 !important;
 }
 
 .is-telegram-webapp main {

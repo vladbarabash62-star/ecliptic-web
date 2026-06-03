@@ -7,7 +7,7 @@ export default function ErrorPage({
   reset: () => void;
 }) {
   return (
-    <main className="flex min-h-screen flex-1 items-center justify-center bg-[#04060c] px-4 text-white">
+    <main className="flex min-h-screen flex-1 items-center justify-center bg-transparent px-4 text-white">
       <div className="w-full max-w-[420px] rounded-3xl border border-white/10 bg-[#0a0d14]/90 p-6 text-center shadow-[0_24px_90px_rgba(0,0,0,0.34)]">
         <p className="text-sm font-bold uppercase text-sky-200/80">Ecliptic Store</p>
         <h1 className="mt-3 text-2xl font-black">Страница не открылась</h1>
