@@ -22,6 +22,7 @@ export default function PageLoader() {
   const pathname = usePathname();
   const hideTimer = useRef<number | null>(null);
   const fallbackTimer = useRef<number | null>(null);
+  const lastPathname = useRef(pathname);
 
   const clearTimers = () => {
     if (hideTimer.current) window.clearTimeout(hideTimer.current);
@@ -41,14 +42,17 @@ export default function PageLoader() {
   }, []);
 
   useEffect(() => {
+    if (lastPathname.current === pathname) return;
+    lastPathname.current = pathname;
     setVisible(true);
     hideSoon(680);
   }, [pathname]);
 
   useEffect(() => {
     const showForNavigation = () => {
-      setVisible(true);
+      if (hideTimer.current) window.clearTimeout(hideTimer.current);
       if (fallbackTimer.current) window.clearTimeout(fallbackTimer.current);
+      setVisible(true);
       fallbackTimer.current = window.setTimeout(() => setVisible(false), 2400);
     };
 
