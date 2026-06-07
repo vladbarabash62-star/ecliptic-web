@@ -52,12 +52,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             Интернет-магазин цифровых товаров
           </p>
 
-          <p className="hidden">
-            Ecliptic Store — интернет магазин. Оформление интернет-покупок в
-            Приднестровье. Пополнение Steam, Telegram Premium, Telegram Stars,
-            Brawl Stars, Roblox, Standoff 2, PUBG Mobile, Free Fire, Minecraft,
-            PlayStation, Epic Games и другие цифровые товары.
-          </p>
         </div>
 
         <div className="desktop-trust-panel mb-7 hidden w-full items-center justify-center gap-5 rounded-2xl border border-white/10 px-6 py-4 text-sm font-bold uppercase shadow-[0_18px_70px_rgba(14,165,233,0.14)] md:flex">

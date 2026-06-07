@@ -1,9 +1,16 @@
 /* eslint-disable @next/next/no-img-element */
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { CSSProperties } from "react";
 import { getProductBySlug } from "../../../lib/productStore";
 import { products } from "../../../lib/products";
+import {
+  buildProductJsonLd,
+  buildProductMetadata,
+  SITE_NAME,
+  stringifyJsonLd,
+} from "../../../lib/seo";
 import {
   EpicTopupForm,
   ManagerLinkForm,
@@ -25,6 +32,23 @@ export function generateStaticParams() {
   return products.map((product) => ({
     slug: product.slug,
   }));
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const product = await getProductBySlug(slug);
+
+  if (!product) {
+    return {
+      title: `Товар не найден | ${SITE_NAME}`,
+      robots: {
+        index: false,
+        follow: false,
+      },
+    };
+  }
+
+  return buildProductMetadata(product);
 }
 
 export default async function ProductPage({ params }: PageProps) {
@@ -53,9 +77,17 @@ export default async function ProductPage({ params }: PageProps) {
   const iconStyle = {
     "--icon-scale": product.iconScale ?? 1,
   } as CSSProperties;
+  const productJsonLd = buildProductJsonLd(product);
 
   return (
     <main className="product-page-enter relative min-h-screen w-full overflow-x-hidden bg-transparent px-3 py-6 text-white sm:px-4 sm:py-12">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: stringifyJsonLd(productJsonLd),
+        }}
+      />
+
       <div className="mx-auto w-full max-w-[680px] rounded-3xl border border-white/10 bg-[#0a0d14]/82 p-4 shadow-[0_24px_90px_rgba(0,0,0,0.34)] backdrop-blur-md sm:p-8">
         <div className="mb-8 flex flex-col items-center text-center">
           <div className="product-icon-stage mb-5 flex h-[132px] w-[132px] items-center justify-center rounded-3xl border border-white/15 bg-[#0f1420] shadow-inner sm:h-[156px] sm:w-[156px]">

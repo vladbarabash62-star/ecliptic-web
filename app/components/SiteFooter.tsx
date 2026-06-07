@@ -8,6 +8,11 @@ export default function SiteFooter() {
             Ecliptic Store — интернет магазин. Оформление интернет-покупок в
             Приднестровье.
           </p>
+          <p className="mt-3 max-w-[560px] text-sm leading-6 text-white/55">
+            Цифровые товары, игровые пополнения и подписки: Steam, Telegram
+            Premium, Telegram Stars, Roblox, PUBG Mobile, Brawl Stars, Standoff
+            2, PlayStation, Minecraft и другие направления.
+          </p>
         </div>
 
         <div>

@@ -8,6 +8,14 @@ import SiteFooter from "./components/SiteFooter";
 import SwipeHomeGesture from "./components/SwipeHomeGesture";
 import TelegramStartRouter from "./components/TelegramStartRouter";
 import SpaceScene from "../components/space-scene";
+import {
+  buildSeoKeywords,
+  buildStoreJsonLd,
+  SITE_DESCRIPTION,
+  SITE_NAME,
+  SITE_URL,
+  stringifyJsonLd,
+} from "../lib/seo";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -78,35 +86,41 @@ const seoProducts = [
   "Twitch",
 ];
 
-const seoKeywords = [
-  ...seoKeywordBase,
-  ...seoProducts.flatMap((product) => [
-    product,
-    `купить ${product}`,
-    `${product} ПМР`,
-    `${product} Приднестровье`,
-    `пополнить ${product}`,
-    `донат ${product}`,
-    `${product} онлайн`,
-    `${product} Ecliptic Store`,
-  ]),
-];
+const seoKeywords = Array.from(
+  new Set([
+    ...seoKeywordBase,
+    ...seoProducts,
+    ...buildSeoKeywords(1000),
+  ])
+).slice(0, 1000);
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://ecliptic.website"),
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "Ecliptic Store",
-    template: "%s | Ecliptic Store",
+    default: SITE_NAME,
+    template: `%s | ${SITE_NAME}`,
   },
-  description: "Ecliptic Store — интернет магазин. Оформление интернет-покупок в Приднестровье.",
+  description: SITE_DESCRIPTION,
   keywords: seoKeywords,
+  alternates: {
+    canonical: SITE_URL,
+  },
   openGraph: {
-    title: "Ecliptic Store",
-    description: "Ecliptic Store — интернет магазин. Оформление интернет-покупок в Приднестровье.",
-    url: "https://ecliptic.website",
-    siteName: "Ecliptic Store",
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+    url: SITE_URL,
+    siteName: SITE_NAME,
     locale: "ru_RU",
     type: "website",
+  },
+  twitter: {
+    card: "summary",
+    title: SITE_NAME,
+    description: SITE_DESCRIPTION,
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 
@@ -125,6 +139,13 @@ export default function RootLayout({
         className="relative min-h-screen overflow-x-hidden bg-black text-white"
         suppressHydrationWarning
       >
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: stringifyJsonLd(buildStoreJsonLd()),
+          }}
+        />
+
         {/* ЗВЕЗДЫ */}
         <SpaceScene />
 
