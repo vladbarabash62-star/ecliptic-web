@@ -249,7 +249,7 @@ html {
 }
 
 .product-card:hover .product-grid-icon {
-  transform: scale(1.04);
+  transform: scale(calc(var(--icon-scale, 1) * 1.06));
 }
 
 .product-title {
@@ -267,7 +267,7 @@ html {
 }
 
 .product-grid-icon {
-  transform: scale(1);
+  transform: scale(var(--icon-scale, 1));
 }
 
 .offer-icon {

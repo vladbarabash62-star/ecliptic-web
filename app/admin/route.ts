@@ -140,7 +140,7 @@ const ADMIN_HTML = `<!doctype html>
     .two { display:grid; grid-template-columns:minmax(0,1fr) minmax(150px,220px); gap:12px; }
     .upload-row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; align-items:center; }
     .image-preview { width:58px; height:58px; display:grid; place-items:center; margin-top:8px; border:1px solid rgba(255,255,255,.1); border-radius:14px; background:#07101d; overflow:hidden; color:rgba(255,255,255,.45); font-size:12px; }
-    .image-preview img { max-width:80%; max-height:80%; object-fit:contain; }
+    .image-preview img { max-width:80%; max-height:80%; object-fit:contain; transform-origin:center; transition:transform .18s ease; }
     .offer { border:1px solid var(--line); background:rgba(7,16,29,.72); border-radius:14px; padding:12px; margin-top:10px; }
     .offer-head { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px; }
     .mini-actions { display:flex; flex-wrap:wrap; gap:7px; }
@@ -345,20 +345,21 @@ const ADMIN_HTML = `<!doctype html>
         '</button>';
       }).join('');
     }
-    function previewHtml(value) {
-      return '<div class="image-preview">' + (value ? '<img src="' + esc(value) + '" alt="">' : 'нет') + '</div>';
+    function previewHtml(value, scale, attrs) {
+      var imageScale = clampNumber(scale, 1, 0, 2);
+      return '<div class="image-preview" ' + (attrs || '') + '>' + (value ? '<img src="' + esc(value) + '" alt="" style="transform:scale(' + esc(imageScale) + ')">' : 'нет') + '</div>';
     }
-    function productImageField(key, label, value) {
+    function productImageField(key, label, value, scale) {
       return '<div><label>' + label + '</label><div class="upload-row">' +
         '<input value="' + esc(value || '') + '" data-product-field="' + esc(key) + '" placeholder="Ссылка на картинку или загрузка с ПК">' +
         '<button class="btn secondary" type="button" data-action="pick-image" data-kind="product" data-key="' + esc(key) + '">Загрузить с ПК</button>' +
-      '</div>' + previewHtml(value) + '</div>';
+      '</div>' + previewHtml(value, scale || 1, 'data-product-preview="' + esc(key) + '"') + '</div>';
     }
-    function offerImageField(index, value) {
+    function offerImageField(index, value, scale) {
       return '<div style="margin-top:10px"><label>Картинка этого варианта</label><div class="upload-row">' +
         '<input value="' + esc(value || '') + '" data-offer-index="' + index + '" data-offer-field="icon" placeholder="Пусто = общая иконка вариантов">' +
         '<button class="btn secondary" type="button" data-action="pick-image" data-kind="offer" data-index="' + index + '" data-key="icon">Загрузить с ПК</button>' +
-      '</div>' + previewHtml(value) + '</div>';
+      '</div>' + previewHtml(value, scale || 1, 'data-offer-preview="' + index + '"') + '</div>';
     }
     function renderProductEditor() {
       var product = currentProduct();
@@ -372,8 +373,8 @@ const ADMIN_HTML = `<!doctype html>
         '<div class="toolbar" style="justify-content:space-between"><h3>' + esc(product.name) + '</h3><button class="btn red" type="button" data-action="delete-product">Удалить товар</button></div>' +
         '<div><label>Название</label><input value="' + esc(product.name) + '" data-product-field="name"></div>' +
         '<div><label>Адрес товара</label><input value="' + esc(product.slug) + '" data-action="update-slug"></div>' +
-        productImageField('icon', 'Иконка товара', product.icon) +
-        '<div class="two">' + productImageField('offerIcon', 'Общая иконка вариантов', product.offerIcon || '') +
+        productImageField('icon', 'Иконка товара', product.icon, product.iconScale || 1) +
+        '<div class="two">' + productImageField('offerIcon', 'Общая иконка вариантов', product.offerIcon || '', 1) +
         '<div><label>Размер иконки товара (%)</label><input type="number" step="1" min="-100" max="100" value="' + esc(scaleToPercent(product.iconScale || 1)) + '" data-product-field="iconScale"></div></div>' +
         '<div><label>Общий текст Telegram</label><textarea data-product-field="messageTemplate">' + esc(product.messageTemplate || '') + '</textarea></div>' +
         '<div class="toolbar" style="justify-content:space-between;margin-top:8px"><h3>Варианты покупки</h3><div class="toolbar"><button class="btn secondary" type="button" data-action="add-divider">Раздел</button><button class="btn secondary" type="button" data-action="add-offer">Вариант</button></div></div>' +
@@ -390,7 +391,7 @@ const ADMIN_HTML = `<!doctype html>
         return '<div class="offer"><div class="offer-head"><strong>Вариант</strong>' + controls + '</div>' +
           '<div class="two"><div><label>Название</label><input value="' + esc(offer.label || '') + '" data-offer-index="' + index + '" data-offer-field="label"></div>' +
           '<div><label>Цена</label><input type="number" min="0" value="' + esc(offer.priceRub || 0) + '" data-offer-index="' + index + '" data-offer-field="priceRub"></div></div>' +
-          offerImageField(index, offer.icon || '') +
+          offerImageField(index, offer.icon || '', offer.iconScale || 1) +
           '<div style="margin-top:10px"><label>Размер картинки варианта (%)</label><input type="number" step="1" min="-100" max="100" value="' + esc(scaleToPercent(offer.iconScale || 1)) + '" data-offer-index="' + index + '" data-offer-field="iconScale"></div>' +
           '<div style="margin-top:10px"><label>Текст Telegram</label><textarea data-offer-index="' + index + '" data-offer-field="messageTemplate">' + esc(offer.messageTemplate || '') + '</textarea></div></div>';
       }).join('');
@@ -434,6 +435,10 @@ const ADMIN_HTML = `<!doctype html>
       if (target.dataset.productField) {
         var key = target.dataset.productField;
         product[key] = key === 'iconScale' ? percentToScale(target.value, product.iconScale || 1) : target.value;
+        if (key === 'iconScale') {
+          var productPreview = document.querySelector('[data-product-preview="icon"] img');
+          if (productPreview) productPreview.style.transform = 'scale(' + product[key] + ')';
+        }
         if (key === 'name' || key === 'icon') renderProductList();
         return;
       }
@@ -443,6 +448,8 @@ const ADMIN_HTML = `<!doctype html>
         if (!product.offers || !product.offers[index]) return;
         if (field === 'iconScale') {
           product.offers[index][field] = percentToScale(target.value, product.offers[index][field] || 1);
+          var offerPreview = document.querySelector('[data-offer-preview="' + index + '"] img');
+          if (offerPreview) offerPreview.style.transform = 'scale(' + product.offers[index][field] + ')';
           return;
         }
         if (field === 'priceRub') {
