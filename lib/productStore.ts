@@ -144,6 +144,30 @@ function safeSlug(value: unknown) {
     .replace(/^-+|-+$/g, "");
 }
 
+function offerSignature(offers: Product["offers"] = []) {
+  return offers
+    .filter((offer) => offer.type !== "divider")
+    .map((offer) => offer.label.trim().toLowerCase())
+    .filter(Boolean)
+    .join("|");
+}
+
+function inferBaseProduct(product: Pick<Product, "name" | "icon" | "offers">, usedBaseSlugs = new Set<string>()) {
+  const productIcon = trimLimit(product.icon, "", 280_000).trim().toLowerCase();
+  const productOffers = offerSignature(product.offers);
+  const productName = trimLimit(product.name, "", 90).trim().toLowerCase();
+
+  return products.find((baseProduct) => {
+    if (usedBaseSlugs.has(baseProduct.slug)) return false;
+
+    const iconMatches = productIcon && productIcon === baseProduct.icon.trim().toLowerCase();
+    const offersMatch = productOffers && productOffers === offerSignature(baseProduct.offers);
+    const nameMatches = productName && productName === baseProduct.name.trim().toLowerCase();
+
+    return (iconMatches && offersMatch) || (nameMatches && (iconMatches || offersMatch));
+  });
+}
+
 function normalizeOfferItem(item: Product["offers"][number]) {
   if (item.type === "divider") {
     const title = trimLimit(item.title, "", 80);
@@ -207,9 +231,10 @@ export async function getProducts(options: ProductReadOptions = {}) {
       if (!slug || usedSlugs.has(slug)) return null;
       usedSlugs.add(slug);
 
-      const baseProduct = baseBySlug.get(safeSlug(override.baseSlug)) || baseBySlug.get(slug);
+      const baseProduct = baseBySlug.get(safeSlug(override.baseSlug)) || baseBySlug.get(slug) || inferBaseProduct(override, usedBaseSlugs);
 
       if (baseProduct) {
+        if (usedBaseSlugs.has(baseProduct.slug)) return null;
         usedBaseSlugs.add(baseProduct.slug);
         return {
           ...baseProduct,
@@ -248,7 +273,8 @@ export async function saveProducts(nextProducts: Product[]) {
     const slug = safeSlug(product.slug);
     if (!slug || usedSlugs.has(slug)) continue;
     usedSlugs.add(slug);
-    const baseProduct = baseBySlug.get(safeSlug(product.baseSlug)) || baseBySlug.get(slug);
+    const baseProduct = baseBySlug.get(safeSlug(product.baseSlug)) || baseBySlug.get(slug) || inferBaseProduct(product, usedBaseSlugs);
+    if (baseProduct && usedBaseSlugs.has(baseProduct.slug)) continue;
 
     overrides[slug] = {
       ...(baseProduct ? { baseSlug: baseProduct.slug } : {}),
