@@ -31,13 +31,13 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   );
 
   if (startSlug) {
-    const product = await getProductBySlug(startSlug, { cached: true });
+    const product = await getProductBySlug(startSlug);
     if (product) redirect(`/products/${product.slug}?app=1`);
   }
 
   const [products, settings] = await Promise.all([
-    getProducts({ cached: true }),
-    getSiteSettings({ cached: true }).catch(() => defaultSiteSettings),
+    getProducts(),
+    getSiteSettings().catch(() => defaultSiteSettings),
   ]);
 
   return (

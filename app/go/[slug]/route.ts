@@ -41,7 +41,7 @@ function getTelegramMiniAppUrl(botUsername: string, miniAppShortName: string, st
 
 export async function GET(request: NextRequest, context: RouteContext) {
   const { slug } = await context.params;
-  const product = await getProductBySlug(slug, { cached: true });
+  const product = await getProductBySlug(slug);
 
   if (!product) {
     return NextResponse.redirect(new URL("/", request.url), 307);

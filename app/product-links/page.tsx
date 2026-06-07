@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 const SITE_URL = "https://ecliptic.website";
 
 export default async function ProductLinksPage() {
-  const products = await getProducts({ cached: true });
+  const products = await getProducts();
   const listText = products
     .map((product) => `${product.name}: ${SITE_URL}/go/${product.slug}`)
     .join("\n");

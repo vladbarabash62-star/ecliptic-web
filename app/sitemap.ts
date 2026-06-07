@@ -4,7 +4,7 @@ import { getProducts } from "../lib/productStore";
 const SITE_URL = "https://ecliptic.website";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const products = await getProducts({ cached: true });
+  const products = await getProducts();
   const now = new Date();
 
   return [

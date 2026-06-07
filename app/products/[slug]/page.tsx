@@ -29,7 +29,7 @@ export function generateStaticParams() {
 
 export default async function ProductPage({ params }: PageProps) {
   const { slug } = await params;
-  const product = await getProductBySlug(slug, { cached: true });
+  const product = await getProductBySlug(slug);
 
   if (!product) {
     notFound();
