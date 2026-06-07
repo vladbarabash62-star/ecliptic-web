@@ -152,6 +152,26 @@ function canonicalProductSlug(value: unknown) {
   return PRODUCT_SLUG_ALIASES[slug] || slug;
 }
 
+function isAliasSlug(value: unknown) {
+  const slug = safeSlug(value);
+  return Boolean(PRODUCT_SLUG_ALIASES[slug]);
+}
+
+function getCanonicalOverrideEntries(overrides: ProductOverrides) {
+  const directSlugs = new Set(
+    Object.keys(overrides)
+      .map(safeSlug)
+      .filter((slug) => slug && !PRODUCT_SLUG_ALIASES[slug])
+  );
+
+  return Object.entries(overrides).filter(([rawSlug]) => {
+    const slug = canonicalProductSlug(rawSlug);
+    if (!slug) return false;
+
+    return !isAliasSlug(rawSlug) || !directSlugs.has(slug);
+  });
+}
+
 function offerSignature(offers: Product["offers"] = []) {
   return offers
     .filter((offer) => offer.type !== "divider")
@@ -233,7 +253,7 @@ export async function getProducts(options: ProductReadOptions = {}) {
   const usedSlugs = new Set<string>();
   const usedBaseSlugs = new Set<string>();
   const baseBySlug = new Map(products.map((product) => [product.slug, product]));
-  const orderedProducts = Object.entries(overrides)
+  const orderedProducts = getCanonicalOverrideEntries(overrides)
     .map(([rawSlug, override]) => {
       const slug = canonicalProductSlug(rawSlug);
       if (!slug || usedSlugs.has(slug)) return null;
