@@ -254,6 +254,16 @@ const ADMIN_HTML = `<!doctype html>
         .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
     }
+    function parseDecimal(value, fallback) {
+      var text = String(value == null ? '' : value).trim().replace(',', '.');
+      if (!text) return fallback;
+      var number = Number(text);
+      return Number.isFinite(number) ? number : fallback;
+    }
+    function clampNumber(value, fallback, min, max) {
+      var number = parseDecimal(value, fallback);
+      return Math.min(max, Math.max(min, number));
+    }
     function showNotice(text, isError) {
       var el = $('notice');
       el.textContent = text;
@@ -414,7 +424,7 @@ const ADMIN_HTML = `<!doctype html>
       }
       if (target.dataset.productField) {
         var key = target.dataset.productField;
-        product[key] = key === 'iconScale' ? Number(target.value) || 1 : target.value;
+        product[key] = key === 'iconScale' ? clampNumber(target.value, product.iconScale || 1, 0.6, 1.8) : target.value;
         if (key === 'name' || key === 'icon') renderProductList();
         return;
       }
@@ -422,7 +432,15 @@ const ADMIN_HTML = `<!doctype html>
         var index = Number(target.dataset.offerIndex);
         var field = target.dataset.offerField;
         if (!product.offers || !product.offers[index]) return;
-        product.offers[index][field] = field === 'priceRub' || field === 'iconScale' ? Number(target.value) || (field === 'iconScale' ? 1 : 0) : target.value;
+        if (field === 'iconScale') {
+          product.offers[index][field] = clampNumber(target.value, product.offers[index][field] || 1, 0.45, 2.4);
+          return;
+        }
+        if (field === 'priceRub') {
+          product.offers[index][field] = Math.max(0, Math.min(999999, parseDecimal(target.value, 0)));
+          return;
+        }
+        product.offers[index][field] = target.value;
       }
     }
     function addOffer() {

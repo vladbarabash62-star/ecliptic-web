@@ -2,6 +2,7 @@
 "use client";
 
 import Link from "next/link";
+import type { CSSProperties } from "react";
 import { useMemo, useState } from "react";
 import type { Product } from "../../lib/products";
 import { playProductHaptic } from "./haptics";
@@ -56,6 +57,7 @@ export default function ProductSearchGrid({ products }: { products: Product[] })
                 data-haptic-direct="true"
                 data-product={product.slug}
                 onPointerDown={playProductHaptic}
+                style={{ "--icon-scale": product.iconScale ?? 1 } as CSSProperties}
                 className="product-card group flex min-h-[154px] min-w-0 rounded-2xl border border-white/10 bg-[#0a0d14] p-3 transition-all duration-300 hover:scale-105 hover:border-white/20"
               >
                 <div className="flex h-full w-full min-w-0 flex-col items-center">

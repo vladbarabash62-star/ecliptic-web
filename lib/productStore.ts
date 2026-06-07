@@ -99,7 +99,9 @@ function safeOptionalIconUrl(value: unknown) {
 }
 
 function safeScale(value: unknown, fallback = 1, min = 0.45, max = 2.4) {
-  const scale = Number(value);
+  const normalized = typeof value === "string" ? value.trim().replace(",", ".") : value;
+  if (normalized === "") return fallback;
+  const scale = Number(normalized);
   if (!Number.isFinite(scale)) return fallback;
   return Math.min(max, Math.max(min, scale));
 }
