@@ -98,7 +98,7 @@ function safeOptionalIconUrl(value: unknown) {
   return icon === FALLBACK_ICON ? undefined : icon;
 }
 
-function safeScale(value: unknown, fallback = 1, min = 0.45, max = 2.4) {
+function safeScale(value: unknown, fallback = 1, min = 0, max = 2) {
   const normalized = typeof value === "string" ? value.trim().replace(",", ".") : value;
   if (normalized === "") return fallback;
   const scale = Number(normalized);
@@ -131,7 +131,7 @@ function normalizeOfferItem(item: Product["offers"][number]) {
     label: trimLimit(item.label, "Вариант", 120),
     priceRub: Math.max(0, Math.min(999999, Number(item.priceRub) || 0)),
     icon: safeOptionalIconUrl((item as ProductOffer).icon),
-    iconScale: safeScale((item as ProductOffer).iconScale),
+    iconScale: safeScale((item as ProductOffer).iconScale, 1, 0, 2),
     messageTemplate: trimMultilineLimit(item.messageTemplate, "", 1000),
   };
 }
@@ -207,7 +207,7 @@ export async function saveProducts(nextProducts: Product[]) {
     overrides[slug] = {
       name: trimLimit(product.name, "Товар", 90),
       icon: safeIconUrl(product.icon),
-      iconScale: safeScale(product.iconScale, 1, 0.6, 1.8),
+      iconScale: safeScale(product.iconScale, 1, 0, 2),
       offerIcon: safeOptionalIconUrl(product.offerIcon),
       messageTemplate: trimMultilineLimit(product.messageTemplate, "", 1000),
       offers: product.offers

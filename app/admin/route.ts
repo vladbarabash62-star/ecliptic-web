@@ -264,6 +264,15 @@ const ADMIN_HTML = `<!doctype html>
       var number = parseDecimal(value, fallback);
       return Math.min(max, Math.max(min, number));
     }
+    function scaleToPercent(value) {
+      var scale = clampNumber(value, 1, 0, 2);
+      return Math.round((scale - 1) * 100);
+    }
+    function percentToScale(value, fallbackScale) {
+      var fallbackPercent = scaleToPercent(fallbackScale || 1);
+      var percent = clampNumber(value, fallbackPercent, -100, 100);
+      return Math.round((1 + percent / 100) * 1000) / 1000;
+    }
     function showNotice(text, isError) {
       var el = $('notice');
       el.textContent = text;
@@ -365,7 +374,7 @@ const ADMIN_HTML = `<!doctype html>
         '<div><label>Адрес товара</label><input value="' + esc(product.slug) + '" data-action="update-slug"></div>' +
         productImageField('icon', 'Иконка товара', product.icon) +
         '<div class="two">' + productImageField('offerIcon', 'Общая иконка вариантов', product.offerIcon || '') +
-        '<div><label>Размер иконки товара</label><input type="number" step="0.01" min="0.6" max="1.8" value="' + esc(product.iconScale || 1) + '" data-product-field="iconScale"></div></div>' +
+        '<div><label>Размер иконки товара (%)</label><input type="number" step="1" min="-100" max="100" value="' + esc(scaleToPercent(product.iconScale || 1)) + '" data-product-field="iconScale"></div></div>' +
         '<div><label>Общий текст Telegram</label><textarea data-product-field="messageTemplate">' + esc(product.messageTemplate || '') + '</textarea></div>' +
         '<div class="toolbar" style="justify-content:space-between;margin-top:8px"><h3>Варианты покупки</h3><div class="toolbar"><button class="btn secondary" type="button" data-action="add-divider">Раздел</button><button class="btn secondary" type="button" data-action="add-offer">Вариант</button></div></div>' +
         '<div>' + renderOffers(product) + '</div>';
@@ -382,7 +391,7 @@ const ADMIN_HTML = `<!doctype html>
           '<div class="two"><div><label>Название</label><input value="' + esc(offer.label || '') + '" data-offer-index="' + index + '" data-offer-field="label"></div>' +
           '<div><label>Цена</label><input type="number" min="0" value="' + esc(offer.priceRub || 0) + '" data-offer-index="' + index + '" data-offer-field="priceRub"></div></div>' +
           offerImageField(index, offer.icon || '') +
-          '<div style="margin-top:10px"><label>Размер картинки варианта</label><input type="number" step="0.01" min="0.45" max="2.4" value="' + esc(offer.iconScale || 1) + '" data-offer-index="' + index + '" data-offer-field="iconScale"></div>' +
+          '<div style="margin-top:10px"><label>Размер картинки варианта (%)</label><input type="number" step="1" min="-100" max="100" value="' + esc(scaleToPercent(offer.iconScale || 1)) + '" data-offer-index="' + index + '" data-offer-field="iconScale"></div>' +
           '<div style="margin-top:10px"><label>Текст Telegram</label><textarea data-offer-index="' + index + '" data-offer-field="messageTemplate">' + esc(offer.messageTemplate || '') + '</textarea></div></div>';
       }).join('');
     }
@@ -424,7 +433,7 @@ const ADMIN_HTML = `<!doctype html>
       }
       if (target.dataset.productField) {
         var key = target.dataset.productField;
-        product[key] = key === 'iconScale' ? clampNumber(target.value, product.iconScale || 1, 0.6, 1.8) : target.value;
+        product[key] = key === 'iconScale' ? percentToScale(target.value, product.iconScale || 1) : target.value;
         if (key === 'name' || key === 'icon') renderProductList();
         return;
       }
@@ -433,7 +442,7 @@ const ADMIN_HTML = `<!doctype html>
         var field = target.dataset.offerField;
         if (!product.offers || !product.offers[index]) return;
         if (field === 'iconScale') {
-          product.offers[index][field] = clampNumber(target.value, product.offers[index][field] || 1, 0.45, 2.4);
+          product.offers[index][field] = percentToScale(target.value, product.offers[index][field] || 1);
           return;
         }
         if (field === 'priceRub') {
