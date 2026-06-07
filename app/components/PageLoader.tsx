@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type LoaderPhase = "shown" | "leaving" | "hidden";
 
@@ -26,39 +26,39 @@ export default function PageLoader() {
   const removeTimer = useRef<number | null>(null);
   const lastPathname = useRef(pathname);
 
-  const clearTimers = () => {
+  const clearTimers = useCallback(() => {
     if (hideTimer.current) window.clearTimeout(hideTimer.current);
     if (removeTimer.current) window.clearTimeout(removeTimer.current);
     hideTimer.current = null;
     removeTimer.current = null;
-  };
+  }, []);
 
-  const hideLoader = () => {
+  const hideLoader = useCallback(() => {
     setPhase("leaving");
     if (removeTimer.current) window.clearTimeout(removeTimer.current);
     removeTimer.current = window.setTimeout(() => {
       removeTimer.current = null;
       setPhase("hidden");
     }, 460);
-  };
+  }, []);
 
-  const hideSoon = (delay: number) => {
+  const hideSoon = useCallback((delay: number) => {
     if (hideTimer.current) window.clearTimeout(hideTimer.current);
     hideTimer.current = window.setTimeout(() => {
       hideTimer.current = null;
       hideLoader();
     }, delay);
-  };
+  }, [hideLoader]);
 
-  const showLoader = () => {
+  const showLoader = useCallback(() => {
     clearTimers();
     setPhase("shown");
-  };
+  }, [clearTimers]);
 
   useEffect(() => {
     hideSoon(650);
     return clearTimers;
-  }, []);
+  }, [clearTimers, hideSoon]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("page-loader-active", phase === "shown");
@@ -74,7 +74,7 @@ export default function PageLoader() {
     lastPathname.current = pathname;
     showLoader();
     hideSoon(430);
-  }, [pathname]);
+  }, [hideSoon, pathname, showLoader]);
 
   useEffect(() => {
     const showForNavigation = () => {
@@ -101,7 +101,7 @@ export default function PageLoader() {
       window.removeEventListener("popstate", showForNavigation);
       document.removeEventListener("click", handleClick, true);
     };
-  }, []);
+  }, [hideSoon, showLoader]);
 
   if (phase === "hidden") return null;
 

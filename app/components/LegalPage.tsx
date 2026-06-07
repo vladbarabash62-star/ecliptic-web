@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 type LegalSection = {
   title: string;
   text: string;
@@ -13,12 +15,12 @@ export default function LegalPage({ title, lead, sections }: LegalPageProps) {
   return (
     <main className="product-page-enter relative w-full flex-1 overflow-x-hidden bg-transparent px-4 py-8 text-white sm:py-12">
       <article className="mx-auto w-full max-w-[860px] rounded-3xl border border-white/10 bg-[#0a0d14]/84 p-5 shadow-[0_24px_90px_rgba(0,0,0,0.34)] backdrop-blur-md sm:p-9">
-        <a
+        <Link
           href="/"
           className="inline-flex rounded-xl border border-white/12 bg-white/5 px-4 py-2 text-sm font-semibold text-white/78 transition hover:bg-white/10 hover:text-white"
         >
           Назад к магазину
-        </a>
+        </Link>
 
         <h1 className="mt-7 text-3xl font-black text-white sm:text-4xl">
           {title}

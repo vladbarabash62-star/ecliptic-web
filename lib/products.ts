@@ -19,6 +19,7 @@ export type Product = {
   name: string;
   icon: string;
   slug: string;
+  baseSlug?: string;
   iconScale?: number;
   offerIcon?: string;
   messageTemplate?: string;
