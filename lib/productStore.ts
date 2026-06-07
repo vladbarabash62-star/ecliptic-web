@@ -5,6 +5,9 @@ const PRODUCTS_KEY = "ecliptic:products:overrides";
 export const PRODUCTS_CACHE_TAG = "ecliptic-products";
 const FALLBACK_ICON =
   "https://static.vecteezy.com/system/resources/previews/023/986/562/non_2x/telegram-logo-telegram-logo-transparent-telegram-icon-transparent-free-free-png.png";
+const PRODUCT_SLUG_ALIASES: Record<string, string> = {
+  "tiktok-coins": "tiktok",
+};
 
 type ProductOverride = Pick<Product, "name" | "icon" | "offers"> & {
   baseSlug?: string;
@@ -62,7 +65,7 @@ function normalizeHiddenBaseSlugs(value: unknown) {
   if (!Array.isArray(value)) return [];
 
   const baseSlugs = new Set(products.map((product) => product.slug));
-  return Array.from(new Set(value.map((slug) => safeSlug(slug)).filter((slug) => baseSlugs.has(slug))));
+  return Array.from(new Set(value.map((slug) => canonicalProductSlug(slug)).filter((slug) => baseSlugs.has(slug))));
 }
 
 function normalizeProductStorage(value: unknown): ProductStorage {
@@ -142,6 +145,11 @@ function safeSlug(value: unknown) {
     .toLowerCase()
     .replace(/[^a-z0-9-]+/g, "-")
     .replace(/^-+|-+$/g, "");
+}
+
+function canonicalProductSlug(value: unknown) {
+  const slug = safeSlug(value);
+  return PRODUCT_SLUG_ALIASES[slug] || slug;
 }
 
 function offerSignature(offers: Product["offers"] = []) {
@@ -227,11 +235,11 @@ export async function getProducts(options: ProductReadOptions = {}) {
   const baseBySlug = new Map(products.map((product) => [product.slug, product]));
   const orderedProducts = Object.entries(overrides)
     .map(([rawSlug, override]) => {
-      const slug = safeSlug(rawSlug);
+      const slug = canonicalProductSlug(rawSlug);
       if (!slug || usedSlugs.has(slug)) return null;
       usedSlugs.add(slug);
 
-      const baseProduct = baseBySlug.get(safeSlug(override.baseSlug)) || baseBySlug.get(slug) || inferBaseProduct(override, usedBaseSlugs);
+      const baseProduct = baseBySlug.get(canonicalProductSlug(override.baseSlug)) || baseBySlug.get(slug) || inferBaseProduct(override, usedBaseSlugs);
 
       if (baseProduct) {
         if (usedBaseSlugs.has(baseProduct.slug)) return null;
@@ -260,7 +268,8 @@ export async function getProducts(options: ProductReadOptions = {}) {
 
 export async function getProductBySlug(slug: string, options: ProductReadOptions = {}) {
   const currentProducts = await getProducts(options);
-  return currentProducts.find((product) => product.slug === slug);
+  const normalizedSlug = canonicalProductSlug(slug);
+  return currentProducts.find((product) => product.slug === normalizedSlug);
 }
 
 export async function saveProducts(nextProducts: Product[]) {
@@ -270,10 +279,10 @@ export async function saveProducts(nextProducts: Product[]) {
   const baseBySlug = new Map(products.map((product) => [product.slug, product]));
 
   for (const product of nextProducts.slice(0, 90)) {
-    const slug = safeSlug(product.slug);
+    const slug = canonicalProductSlug(product.slug);
     if (!slug || usedSlugs.has(slug)) continue;
     usedSlugs.add(slug);
-    const baseProduct = baseBySlug.get(safeSlug(product.baseSlug)) || baseBySlug.get(slug) || inferBaseProduct(product, usedBaseSlugs);
+    const baseProduct = baseBySlug.get(canonicalProductSlug(product.baseSlug)) || baseBySlug.get(slug) || inferBaseProduct(product, usedBaseSlugs);
     if (baseProduct && usedBaseSlugs.has(baseProduct.slug)) continue;
 
     overrides[slug] = {

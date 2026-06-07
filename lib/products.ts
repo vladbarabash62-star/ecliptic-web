@@ -126,9 +126,9 @@ export const products: Product[] = [
     ],
   },
   {
-    name: "TikTok Coins",
+    name: "Тик ток",
     icon: "https://cdn-icons-png.freepik.com/256/3621/3621450.png?semt=ais_white_label",
-    slug: "tiktok-coins",
+    slug: "tiktok",
     iconScale: 1.1,
     offers: [
       { label: "30 coins", priceRub: 20 },
