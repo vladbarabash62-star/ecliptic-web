@@ -3,6 +3,8 @@ import { products, type Product, type ProductOffer } from "./products";
 
 export const SITE_URL = "https://ecliptic.website";
 export const SITE_NAME = "Ecliptic Store";
+export const SITE_IMAGE = `${SITE_URL}/ecliptic-search-image.png`;
+export const SITE_LOGO = `${SITE_URL}/icon.png`;
 export const SITE_DESCRIPTION =
   "Ecliptic Store — интернет-магазин цифровых товаров, игровых пополнений и подписок в Приднестровье: Тирасполь, Бендеры, Рыбница и весь ПМР.";
 
@@ -251,6 +253,8 @@ export function buildStoreJsonLd() {
       name: SITE_NAME,
       alternateName: seoBrandKeywords,
       url: SITE_URL,
+      logo: SITE_LOGO,
+      image: SITE_IMAGE,
       sameAs: [
         "https://t.me/Ecliptic_Store",
         "https://t.me/Ecliptic_Store_PMR",
@@ -263,6 +267,8 @@ export function buildStoreJsonLd() {
       name: SITE_NAME,
       alternateName: seoBrandKeywords,
       url: SITE_URL,
+      logo: SITE_LOGO,
+      image: SITE_IMAGE,
       description: SITE_DESCRIPTION,
       areaServed: ["Приднестровье", "ПМР", "Тирасполь", "Бендеры"],
       sameAs: [
@@ -283,7 +289,7 @@ export function buildProductJsonLd(product: Product) {
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.name,
-    image: product.icon,
+    image: product.icon.startsWith("http") ? product.icon : `${SITE_URL}${product.icon}`,
     description: buildProductDescription(product),
     sku: product.slug,
     brand: {

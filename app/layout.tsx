@@ -12,6 +12,8 @@ import {
   buildSeoKeywords,
   buildStoreJsonLd,
   SITE_DESCRIPTION,
+  SITE_IMAGE,
+  SITE_LOGO,
   SITE_NAME,
   SITE_URL,
   stringifyJsonLd,
@@ -107,6 +109,13 @@ export const metadata: Metadata = {
   alternates: {
     canonical: SITE_URL,
   },
+  icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/icon.png", type: "image/png", sizes: "512x512" },
+    ],
+    apple: [{ url: "/apple-icon.png", sizes: "512x512" }],
+  },
   openGraph: {
     title: siteSearchTitle,
     description: SITE_DESCRIPTION,
@@ -114,11 +123,26 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     locale: "ru_RU",
     type: "website",
+    images: [
+      {
+        url: SITE_IMAGE,
+        alt: `${SITE_NAME} - Эклиптик Стор`,
+        width: 1024,
+        height: 1024,
+      },
+      {
+        url: SITE_LOGO,
+        alt: `${SITE_NAME} logo`,
+        width: 512,
+        height: 512,
+      },
+    ],
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: siteSearchTitle,
     description: SITE_DESCRIPTION,
+    images: [SITE_IMAGE],
   },
   robots: {
     index: true,
