@@ -6,6 +6,7 @@ import type { CSSProperties } from "react";
 import { getProductBySlug } from "../../../lib/productStore";
 import { products } from "../../../lib/products";
 import {
+  buildProductDescription,
   buildProductJsonLd,
   buildProductMetadata,
   SITE_NAME,
@@ -78,6 +79,7 @@ export default async function ProductPage({ params }: PageProps) {
     "--icon-scale": product.iconScale ?? 1,
   } as CSSProperties;
   const productJsonLd = buildProductJsonLd(product);
+  const productDescription = buildProductDescription(product);
 
   return (
     <main className="product-page-enter relative min-h-screen w-full overflow-x-hidden bg-transparent px-3 py-6 text-white sm:px-4 sm:py-12">
@@ -102,6 +104,10 @@ export default async function ProductPage({ params }: PageProps) {
           <h1 className="text-3xl font-bold text-white sm:text-4xl">
             {product.name}
           </h1>
+
+          <p className="mt-3 max-w-[560px] text-sm leading-6 text-white/52">
+            {productDescription}
+          </p>
         </div>
 
         <section className="w-full">

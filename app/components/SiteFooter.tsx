@@ -13,6 +13,12 @@ export default function SiteFooter() {
             Premium, Telegram Stars, Roblox, PUBG Mobile, Brawl Stars, Standoff
             2, PlayStation, Minecraft и другие направления.
           </p>
+          <p className="mt-3 max-w-[620px] text-sm leading-6 text-white/48">
+            Нас ищут как Ecliptic Store, Эклиптик Стор, Эклиптик магазин или
+            донат игры в Тирасполе. Мы работаем для покупателей из ПМР и
+            Приднестровья, помогаем быстро оформить игровые услуги, подписки и
+            интернет-покупки через менеджера.
+          </p>
         </div>
 
         <div>
