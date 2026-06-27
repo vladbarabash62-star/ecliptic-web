@@ -4,34 +4,76 @@ import { products, type Product, type ProductOffer } from "./products";
 export const SITE_URL = "https://ecliptic.website";
 export const SITE_NAME = "Ecliptic Store";
 export const SITE_DESCRIPTION =
-  "Ecliptic Store — интернет магазин. Оформление интернет-покупок в Приднестровье.";
+  "Ecliptic Store — интернет-магазин цифровых товаров, игровых пополнений и подписок в Приднестровье: Тирасполь, Бендеры, Рыбница и весь ПМР.";
+
+const seoBrandKeywords = [
+  SITE_NAME,
+  "Ecliptic",
+  "Ecliptic Store PMR",
+  "Ecliptic Store Tiraspol",
+  "Ecliptic Store Tiraspol PMR",
+  "ecliptic.website",
+  "эклиптик",
+  "эклиптик стор",
+  "эклиптик стор пмр",
+  "эклиптик стор тирасполь",
+  "эклиптик магазин",
+  "эклиптик донат",
+  "еклиптик стор",
+  "еклиптик магазин",
+  "эклиптик сторе",
+  "эклиптик тсор",
+  "эклиптек стор",
+  "эклиптки стор",
+  "эклиптикстор",
+  "еклиптикстор",
+  "жэклиптик стор",
+  "ecliptic stor",
+  "ecliptic stroe",
+  "ecliptik store",
+  "eclipticstore",
+  "ecliptic shop",
+];
 
 const seoBaseKeywords = [
-  SITE_NAME,
-  "ecliptic.website",
+  ...seoBrandKeywords,
   "Ecliptic Store Приднестровье",
   "Ecliptic Store ПМР",
   "интернет магазин ПМР",
   "интернет магазин Приднестровье",
+  "интернет магазин Тирасполь",
   "цифровые товары ПМР",
   "цифровые товары Приднестровье",
+  "цифровые товары Тирасполь",
   "донат ПМР",
   "донат Приднестровье",
+  "донат Тирасполь",
+  "донат игры Тирасполь",
+  "донат игр Тирасполь",
+  "донат игры ПМР",
+  "донат игр ПМР",
   "пополнение игр ПМР",
   "пополнение игр Приднестровье",
+  "пополнение игр Тирасполь",
   "покупка подписок ПМР",
   "подписки Приднестровье",
+  "подписки Тирасполь",
   "Telegram магазин ПМР",
+  "Telegram магазин Тирасполь",
   "магазин цифровых товаров",
   "игровые товары онлайн",
+  "игровой донат онлайн",
+  "игровые пополнения онлайн",
   "оформление интернет покупок ПМР",
   "оформление интернет покупок Приднестровье",
+  "оформление интернет покупок Тирасполь",
 ];
 
 const seoRegions = [
   "ПМР",
   "Приднестровье",
   "Тирасполь",
+  "Тирасроль",
   "Бендеры",
   "Рыбница",
   "Дубоссары",
@@ -53,35 +95,56 @@ const seoActions = [
   "быстро купить",
   "купить онлайн",
   "оформить онлайн",
+  "дешево купить",
+  "прайс",
 ];
 
 const seoServiceWords = [
   "Steam",
+  "Стим",
+  "пополнение Steam",
+  "пополнение Стим",
   "Telegram Premium",
   "Telegram Stars",
   "Telegram аккаунты",
   "Epic Games",
   "PlayStation",
   "Standoff 2",
+  "Стандофф 2",
+  "Standoff донат",
   "Тик ток",
   "TikTok",
   "PUBG Mobile",
+  "Пабг мобайл",
   "Brawl Stars",
+  "Бравл Старс",
+  "Brawl Stars донат",
+  "донат Бравл Старс",
   "Clash of Clans",
+  "Клеш оф Кленс",
   "Clash Royale",
+  "Клеш Рояль",
   "Mobile Legends",
+  "Мобайл Легендс",
   "Roblox",
+  "Роблокс",
+  "робуксы",
   "Free Fire",
+  "Фри Фаер",
   "Minecraft",
+  "Майнкрафт",
   "GTA 5 RP",
   "Majestic RP",
   "Radmir RP",
   "Amazing RP",
   "Black Russia",
   "World of Tanks",
+  "Мир танков",
   "Spotify Premium",
   "ChatGPT Plus",
+  "Чат ГПТ плюс",
   "Discord Nitro",
+  "Дискорд Нитро",
   "Fortnite",
   "Genshin Impact",
   "Valorant",
@@ -136,7 +199,7 @@ export function buildProductDescription(product: Product) {
   const labels = productOfferLabels(product);
   const suffix = labels ? ` Доступные варианты: ${labels}.` : "";
 
-  return `${product.name} в Ecliptic Store: оформление интернет-покупок, цифровых товаров, подписок и игровых услуг в Приднестровье.${suffix}`.slice(
+  return `${product.name} в Ecliptic Store: купить, оформить или пополнить онлайн в Приднестровье, Тирасполе и ПМР. Цифровые товары, подписки и игровые услуги.${suffix}`.slice(
     0,
     260
   );
@@ -149,14 +212,23 @@ export function buildProductKeywords(product: Product) {
     `${product.name} Ecliptic Store`,
     `${product.name} ПМР`,
     `${product.name} Приднестровье`,
+    `${product.name} Тирасполь`,
+    `${product.name} Ecliptic`,
+    `${product.name} Эклиптик`,
     `купить ${product.name}`,
     `заказать ${product.name}`,
     `пополнить ${product.name}`,
     `донат ${product.name}`,
+    `купить ${product.name} ПМР`,
+    `купить ${product.name} Тирасполь`,
+    `донат ${product.name} ПМР`,
+    `донат ${product.name} Тирасполь`,
     ...productOffers(product).flatMap((offer) => [
       offer.label,
       `${product.name} ${offer.label}`,
       `купить ${product.name} ${offer.label}`,
+      `${product.name} ${offer.label} ПМР`,
+      `${product.name} ${offer.label} Тирасполь`,
     ]),
     ...buildSeoKeywords(120),
   ]).slice(0, 220);
@@ -168,6 +240,7 @@ export function buildStoreJsonLd() {
       "@context": "https://schema.org",
       "@type": "WebSite",
       name: SITE_NAME,
+      alternateName: seoBrandKeywords,
       url: SITE_URL,
       inLanguage: "ru",
       description: SITE_DESCRIPTION,
@@ -176,6 +249,7 @@ export function buildStoreJsonLd() {
       "@context": "https://schema.org",
       "@type": "Organization",
       name: SITE_NAME,
+      alternateName: seoBrandKeywords,
       url: SITE_URL,
       sameAs: [
         "https://t.me/Ecliptic_Store",
@@ -187,6 +261,7 @@ export function buildStoreJsonLd() {
       "@context": "https://schema.org",
       "@type": "Store",
       name: SITE_NAME,
+      alternateName: seoBrandKeywords,
       url: SITE_URL,
       description: SITE_DESCRIPTION,
       areaServed: ["Приднестровье", "ПМР", "Тирасполь", "Бендеры"],
@@ -240,7 +315,7 @@ export function stringifyJsonLd(value: unknown) {
 }
 
 export function buildProductMetadata(product: Product): Metadata {
-  const title = `${product.name} купить онлайн`;
+  const title = `${product.name} купить онлайн в ПМР`;
   const description = buildProductDescription(product);
   const url = `${SITE_URL}/products/${product.slug}`;
 
