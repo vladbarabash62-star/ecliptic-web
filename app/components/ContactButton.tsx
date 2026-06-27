@@ -8,16 +8,17 @@ const TELEGRAM_USERNAME = "Ecliptic_Store_PMR";
 const QUESTION_MESSAGE = "Здравствуйте, хочу задать вопрос по Ecliptic Store.";
 
 function sellerChatHref(message?: string) {
-  const url = new URL(`https://t.me/${TELEGRAM_USERNAME}`);
-  if (message?.trim()) url.searchParams.set("text", message);
-  return url.toString();
+  const text = message?.trim();
+  return text
+    ? `https://t.me/${TELEGRAM_USERNAME}?text=${encodeURIComponent(text)}`
+    : `https://t.me/${TELEGRAM_USERNAME}`;
 }
 
 function sellerChatDeepHref(message?: string) {
-  const url = new URL("tg://resolve");
-  url.searchParams.set("domain", TELEGRAM_USERNAME);
-  if (message?.trim()) url.searchParams.set("text", message);
-  return url.toString();
+  const text = message?.trim();
+  return text
+    ? `tg://resolve?domain=${encodeURIComponent(TELEGRAM_USERNAME)}&text=${encodeURIComponent(text)}`
+    : `tg://resolve?domain=${encodeURIComponent(TELEGRAM_USERNAME)}`;
 }
 
 type TelegramWebApp = {
