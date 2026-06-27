@@ -58,12 +58,12 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             Интернет-магазин цифровых товаров
           </p>
 
-          <p className="mx-auto mt-3 max-w-3xl text-sm leading-6 text-white/52 sm:text-base">
+          {/*
             Ecliptic Store помогает оформить донат, игровые пополнения и
             подписки в Тирасполе, Приднестровье и ПМР: Steam, Telegram Premium,
             Telegram Stars, Brawl Stars, Roblox, PUBG Mobile, Standoff 2,
             PlayStation, Minecraft, Discord Nitro и другие цифровые товары.
-          </p>
+          */}
 
         </div>
 
