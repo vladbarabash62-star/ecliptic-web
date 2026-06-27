@@ -304,7 +304,7 @@ export function buildProductJsonLd(product: Product) {
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.name,
-    image: product.icon.startsWith("http") ? product.icon : `${SITE_URL}${product.icon}`,
+    image: SITE_IMAGE,
     description: buildProductDescription(product),
     sku: product.slug,
     brand: {
@@ -318,6 +318,24 @@ export function buildProductJsonLd(product: Product) {
       price: offer.priceRub,
       name: offer.label,
       availability: "https://schema.org/InStock",
+      itemCondition: "https://schema.org/NewCondition",
+      shippingDetails: {
+        "@type": "OfferShippingDetails",
+        shippingRate: {
+          "@type": "MonetaryAmount",
+          value: 0,
+          currency: "RUB",
+        },
+        shippingDestination: {
+          "@type": "DefinedRegion",
+          addressCountry: "MD",
+        },
+      },
+      hasMerchantReturnPolicy: {
+        "@type": "MerchantReturnPolicy",
+        applicableCountry: "MD",
+        returnPolicyCategory: "https://schema.org/MerchantReturnNotPermitted",
+      },
     })),
   };
 }
