@@ -185,6 +185,13 @@ function formatPurchaseMessage(
   return filledDetails.length ? `${base}\n${filledDetails.join("\n")}` : base;
 }
 
+function topupServiceName(productName: string) {
+  return productName
+    .replace(/^Пополнение\s+/i, "")
+    .replace(/\s+пополнение$/i, "")
+    .trim() || productName;
+}
+
 function fallbackOfferIcon(productSlug: string, label: string) {
   return realOfferIcon(productSlug, label);
 }
@@ -213,8 +220,10 @@ export function SteamTopupForm({ productName, productSlug }: { productName: stri
   const hasAmount = amount.trim().length > 0 && numericAmount > 0;
 
   const message = useMemo(
-    () =>
-      `🛍 Новый заказ\n👋 Здравствуйте, хочу пополнить баланс\n📦 Сервис: ${productName}\n💎 Вариант: ${hasAmount ? `${numericAmount}$` : "сумма не указана"}\n🆔 Steam логин: ${login.trim() || "не указан"}\n💰 К оплате: ${hasAmount ? `${priceRub} ₽` : "уточнить"}`,
+    () => {
+      const serviceName = topupServiceName(productName);
+      return `🛍 Новый заказ\n👋 Здравствуйте, хочу пополнить баланс ${serviceName}\n📦 Сервис: ${serviceName}\n💎 Сумма: ${hasAmount ? `${numericAmount}$` : "не указана"}\n🆔 Steam логин: ${login.trim() || "не указан"}\n💰 К оплате: ${hasAmount ? `${priceRub} ₽` : "уточнить"}`;
+    },
     [hasAmount, login, numericAmount, priceRub, productName]
   );
 
@@ -258,8 +267,10 @@ export function EpicTopupForm({ productName, productSlug }: { productName: strin
   const hasAmount = amount.trim().length > 0 && numericAmount > 0;
 
   const message = useMemo(
-    () =>
-      `🛍 Новый заказ\n👋 Здравствуйте, хочу пополнить баланс\n📦 Сервис: ${productName}\n💎 Вариант: ${hasAmount ? `${numericAmount}$` : "сумма не указана"}\n💰 К оплате: ${hasAmount ? `${priceRub} ₽` : "уточнить"}`,
+    () => {
+      const serviceName = topupServiceName(productName);
+      return `🛍 Новый заказ\n👋 Здравствуйте, хочу пополнить баланс ${serviceName}\n📦 Сервис: ${serviceName}\n💎 Сумма: ${hasAmount ? `${numericAmount}$` : "не указана"}\n💰 К оплате: ${hasAmount ? `${priceRub} ₽` : "уточнить"}`;
+    },
     [hasAmount, numericAmount, priceRub, productName]
   );
 
