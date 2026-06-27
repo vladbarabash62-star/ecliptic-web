@@ -214,7 +214,7 @@ export function SteamTopupForm({ productName, productSlug }: { productName: stri
 
   const message = useMemo(
     () =>
-      `Здравствуйте, хочу пополнить ${productName}.\nСумма: ${hasAmount ? `${numericAmount}$` : "не указана"}.\nSteam логин: ${login.trim()}.\nЦена: ${hasAmount ? `${priceRub} ₽` : "уточнить"}.`,
+      `🛍 Новый заказ\n👋 Здравствуйте, хочу пополнить баланс\n📦 Сервис: ${productName}\n💎 Вариант: ${hasAmount ? `${numericAmount}$` : "сумма не указана"}\n🆔 Steam логин: ${login.trim() || "не указан"}\n💰 К оплате: ${hasAmount ? `${priceRub} ₽` : "уточнить"}`,
     [hasAmount, login, numericAmount, priceRub, productName]
   );
 
@@ -258,7 +258,8 @@ export function EpicTopupForm({ productName, productSlug }: { productName: strin
   const hasAmount = amount.trim().length > 0 && numericAmount > 0;
 
   const message = useMemo(
-    () => `Здравствуйте, хочу пополнить ${productName}. Сумма: ${hasAmount ? `${numericAmount}$` : "не указана"}. Цена: ${hasAmount ? `${priceRub} ₽` : "уточнить"}.`,
+    () =>
+      `🛍 Новый заказ\n👋 Здравствуйте, хочу пополнить баланс\n📦 Сервис: ${productName}\n💎 Вариант: ${hasAmount ? `${numericAmount}$` : "сумма не указана"}\n💰 К оплате: ${hasAmount ? `${priceRub} ₽` : "уточнить"}`,
     [hasAmount, numericAmount, priceRub, productName]
   );
 
@@ -383,7 +384,7 @@ export function MinecraftOrderForm({ productName, productSlug }: { productName: 
     server: "",
   });
 
-  const message = `🛍 Новый заказ\n📦 Игра: ${productName}\n🆔 Ник: ${values.nick.trim()}\n🌐 Сервер: ${values.server.trim()}`;
+  const message = `🛍 Новый заказ\n👋 Здравствуйте, хочу оформить заказ\n🎮 Игра: ${productName}\n🆔 Ник: ${values.nick.trim() || "не указан"}\n🌐 Сервер: ${values.server.trim() || "не указан"}`;
 
   return (
     <div className="grid w-full gap-3 rounded-2xl border border-cyan-300/18 bg-cyan-950/20 p-4">
@@ -419,7 +420,7 @@ export function MinecraftOrderForm({ productName, productSlug }: { productName: 
 
 export function ManagerLinkForm({ productName, productSlug }: { productName: string; productSlug: string }) {
   const [link, setLink] = useState("");
-  const message = `Здравствуйте, хочу купить ${productName}. Ссылка: ${link}`;
+  const message = `🛍 Новый заказ\n👋 Здравствуйте, хочу задонатить стримеру\n🎁 Сервис: ${productName}\n🔗 Ссылка: ${link.trim() || "не указана"}`;
 
   return (
     <div className="grid w-full gap-3 rounded-2xl border border-white/15 bg-[#0f1420]/90 p-4 sm:grid-cols-[1fr_auto] sm:items-end">
