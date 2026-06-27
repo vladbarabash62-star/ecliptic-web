@@ -8,8 +8,8 @@ type RedisConfig = {
 };
 
 const FALLBACK_ADMIN_PASSWORD = {
-  salt: "d22b99b65d854c5e7c98afe76bb855c0",
-  hash: "866b4bcc969a166dab06cf3ab13b76e7879b23eabea5c4020d2664b5cfef2301",
+  salt: "8f4b7d1a9c2e6f0b5a3d9e1c7b4a2f60",
+  hash: "753859bdae2d6fc3965bf2647fed1fb2115bd4fb8c5850a32aedc990f69e26f5",
 };
 
 const TRUSTED_ORIGINS = new Set([
