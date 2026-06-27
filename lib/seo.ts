@@ -293,11 +293,10 @@ export function buildStoreJsonLd() {
 }
 
 export function buildProductJsonLd(product: Product) {
-  const offers = productOffers(product);
-  const prices = offers.map((offer) => offer.priceRub).filter((price) => Number.isFinite(price) && price > 0);
+  const pricedOffers = productOffers(product).filter((offer) => Number.isFinite(offer.priceRub) && offer.priceRub > 0);
   const productUrl = `${SITE_URL}/products/${product.slug}`;
 
-  if (prices.length === 0) {
+  if (pricedOffers.length === 0) {
     return null;
   }
 
@@ -312,15 +311,14 @@ export function buildProductJsonLd(product: Product) {
       "@type": "Brand",
       name: SITE_NAME,
     },
-    offers: {
-      "@type": "AggregateOffer",
+    offers: pricedOffers.map((offer) => ({
+      "@type": "Offer",
       url: productUrl,
       priceCurrency: "RUB",
-      lowPrice: Math.min(...prices),
-      highPrice: Math.max(...prices),
-      offerCount: prices.length,
+      price: offer.priceRub,
+      name: offer.label,
       availability: "https://schema.org/InStock",
-    },
+    })),
   };
 }
 
