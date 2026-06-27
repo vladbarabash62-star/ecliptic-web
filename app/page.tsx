@@ -48,6 +48,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             Ecliptic Store
           </h1>
 
+          <p className="mt-1 text-base font-semibold text-white/72 sm:text-lg">
+            Эклиптик Стор
+          </p>
+
           <p className="mt-2 text-sm text-white/60 sm:text-base">
             Интернет-магазин цифровых товаров
           </p>

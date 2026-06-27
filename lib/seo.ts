@@ -315,7 +315,7 @@ export function stringifyJsonLd(value: unknown) {
 }
 
 export function buildProductMetadata(product: Product): Metadata {
-  const title = `${product.name} купить онлайн в ПМР`;
+  const title = `${product.name} купить онлайн в ПМР - Эклиптик Стор`;
   const description = buildProductDescription(product);
   const url = `${SITE_URL}/products/${product.slug}`;
 

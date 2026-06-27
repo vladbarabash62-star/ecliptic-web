@@ -94,11 +94,13 @@ const seoKeywords = Array.from(
   ])
 ).slice(0, 1000);
 
+const siteSearchTitle = `${SITE_NAME} - Эклиптик Стор`;
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: SITE_NAME,
-    template: `%s | ${SITE_NAME}`,
+    default: siteSearchTitle,
+    template: `%s | ${siteSearchTitle}`,
   },
   description: SITE_DESCRIPTION,
   keywords: seoKeywords,
@@ -106,7 +108,7 @@ export const metadata: Metadata = {
     canonical: SITE_URL,
   },
   openGraph: {
-    title: SITE_NAME,
+    title: siteSearchTitle,
     description: SITE_DESCRIPTION,
     url: SITE_URL,
     siteName: SITE_NAME,
@@ -115,7 +117,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary",
-    title: SITE_NAME,
+    title: siteSearchTitle,
     description: SITE_DESCRIPTION,
   },
   robots: {
