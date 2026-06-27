@@ -463,7 +463,7 @@ const ADMIN_HTML = `<!doctype html>
       var product = currentProduct();
       if (!product) return;
       product.offers = product.offers || [];
-      product.offers.push({ label: 'Новый вариант', priceRub: 0, icon: '', iconScale: 1, messageTemplate: 'Здравствуйте, хочу купить {product}: {offer}. Цена: {price}р.' });
+      product.offers.push({ label: 'Новый вариант', priceRub: 0, icon: '', iconScale: 1, messageTemplate: '🛍 Новый заказ\n📦 Сервис: {product}\n💎 Товар: {offer}\n💰 К оплате: {price}р' });
       renderProductEditor();
     }
     function addDivider() {

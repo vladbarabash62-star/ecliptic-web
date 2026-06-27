@@ -16,16 +16,17 @@ type DetailField = {
 };
 
 function sellerChatHref(message?: string) {
-  const url = new URL(`https://t.me/${TELEGRAM_USERNAME}`);
-  if (message?.trim()) url.searchParams.set("text", message);
-  return url.toString();
+  const text = message?.trim();
+  return text
+    ? `https://t.me/${TELEGRAM_USERNAME}?text=${encodeURIComponent(text)}`
+    : `https://t.me/${TELEGRAM_USERNAME}`;
 }
 
 function sellerChatDeepHref(message?: string) {
-  const url = new URL("tg://resolve");
-  url.searchParams.set("domain", TELEGRAM_USERNAME);
-  if (message?.trim()) url.searchParams.set("text", message);
-  return url.toString();
+  const text = message?.trim();
+  return text
+    ? `tg://resolve?domain=${encodeURIComponent(TELEGRAM_USERNAME)}&text=${encodeURIComponent(text)}`
+    : `tg://resolve?domain=${encodeURIComponent(TELEGRAM_USERNAME)}`;
 }
 
 function isMobileTelegramTarget() {
@@ -144,6 +145,19 @@ function normalizeMessageLayout(message: string) {
     .trim();
 }
 
+function normalizeOrderMessage(message: string) {
+  return normalizeMessageLayout(message)
+    .replace(/[ \t]+/g, " ")
+    .replace(/\s+(📦\s*(?:Игра|Сервис):)/g, "\n$1")
+    .replace(/\s+(🎮\s*(?:Игра|Сервис):)/g, "\n$1")
+    .replace(/\s+(💎\s*Товар:)/g, "\n$1")
+    .replace(/\s+(💰\s*К оплате:)/g, "\n$1")
+    .replace(/\s+(💳\s*К оплате:)/g, "\n$1")
+    .replace(/\s+(🆔\s*(?:ID|Ник):)/g, "\n$1")
+    .replace(/\s+(🌐\s*Сервер:)/g, "\n$1")
+    .trim();
+}
+
 function formatPurchaseMessage(
   productName: string,
   offerLabel: string,
@@ -163,11 +177,11 @@ function formatPurchaseMessage(
       .replaceAll("{offer}", offerLabel.trim())
       .replaceAll("{price}", String(priceRub));
 
-    const normalizedMessage = normalizeMessageLayout(message);
+    const normalizedMessage = normalizeOrderMessage(message);
     return filledDetails.length ? `${normalizedMessage}\n${filledDetails.join("\n")}` : normalizedMessage;
   }
 
-  const base = `🛍 Новый заказ\n📦 Игра: ${productName}\n💎 Товар: ${offerLabel.trim()}\n💰 К оплате: ${priceRub}р`;
+  const base = `🛍 Новый заказ\n📦 Сервис: ${productName}\n💎 Товар: ${offerLabel.trim()}\n💰 К оплате: ${priceRub}р`;
   return filledDetails.length ? `${base}\n${filledDetails.join("\n")}` : base;
 }
 
