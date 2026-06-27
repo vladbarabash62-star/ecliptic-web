@@ -51,6 +51,10 @@ function preparePageResponse(request: NextRequest, response: NextResponse) {
   response.headers.set("Pragma", "no-cache");
   response.headers.set("Expires", "0");
 
+  if (request.nextUrl.pathname === "/admin" || request.nextUrl.pathname.startsWith("/admin/")) {
+    response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive, nosnippet");
+  }
+
   return response;
 }
 
@@ -97,7 +101,11 @@ export async function middleware(request: NextRequest) {
   }
 
   if (pathname === "/api/admin" || pathname.startsWith("/api/admin/")) {
-    return hasAdminGate ? NextResponse.next() : notFound(request);
+    if (!hasAdminGate) return notFound(request);
+
+    const response = NextResponse.next();
+    response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive, nosnippet");
+    return response;
   }
 
   return preparePageResponse(request, NextResponse.next());

@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getProducts } from "../lib/productStore";
+import { productShouldBeIndexed } from "../lib/seo";
 
 const SITE_URL = "https://ecliptic.website";
 
@@ -14,12 +15,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "daily",
       priority: 1,
     },
-    ...products.map((product) => ({
-      url: `${SITE_URL}/products/${product.slug}`,
-      lastModified: now,
-      changeFrequency: "weekly" as const,
-      priority: 0.8,
-    })),
+    ...products
+      .filter(productShouldBeIndexed)
+      .map((product) => ({
+        url: `${SITE_URL}/products/${product.slug}`,
+        lastModified: now,
+        changeFrequency: "weekly" as const,
+        priority: 0.8,
+      })),
     {
       url: `${SITE_URL}/policy`,
       lastModified: now,

@@ -83,12 +83,14 @@ export default async function ProductPage({ params }: PageProps) {
 
   return (
     <main className="product-page-enter relative min-h-screen w-full overflow-x-hidden bg-transparent px-3 py-6 text-white sm:px-4 sm:py-12">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: stringifyJsonLd(productJsonLd),
-        }}
-      />
+      {productJsonLd ? (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: stringifyJsonLd(productJsonLd),
+          }}
+        />
+      ) : null}
 
       <div className="mx-auto w-full max-w-[680px] rounded-3xl border border-white/10 bg-[#0a0d14]/82 p-4 shadow-[0_24px_90px_rgba(0,0,0,0.34)] backdrop-blur-md sm:p-8">
         <div className="mb-8 flex flex-col items-center text-center">

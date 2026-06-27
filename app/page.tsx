@@ -1,6 +1,7 @@
 import ProductSearchGrid from "./components/ProductSearchGrid";
 import { redirect } from "next/navigation";
 import { getProductBySlug, getProducts } from "../lib/productStore";
+import { productShouldBeIndexed } from "../lib/seo";
 import { getSiteSettings } from "../lib/siteSettings";
 import { defaultSiteSettings } from "../lib/siteSettingsDefaults";
 
@@ -35,10 +36,11 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     if (product) redirect(`/products/${product.slug}?app=1`);
   }
 
-  const [products, settings] = await Promise.all([
+  const [allProducts, settings] = await Promise.all([
     getProducts(),
     getSiteSettings().catch(() => defaultSiteSettings),
   ]);
+  const products = allProducts.filter(productShouldBeIndexed);
 
   return (
     <main className="relative min-h-screen w-full overflow-x-hidden bg-transparent px-4 py-6 text-white">

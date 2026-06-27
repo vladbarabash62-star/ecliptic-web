@@ -186,8 +186,20 @@ export function buildSeoKeywords(limit = 1000) {
   return unique(keywords).slice(0, limit);
 }
 
-function productOffers(product: Product) {
+export function productOffers(product: Product) {
   return product.offers.filter((offer): offer is ProductOffer => offer.type !== "divider");
+}
+
+export function productHasPricedOffers(product: Product) {
+  return productOffers(product).some((offer) => Number.isFinite(offer.priceRub) && offer.priceRub > 0);
+}
+
+export function productHasOrderForm(product: Product) {
+  return ["steam", "epic-games-topup", "minecraft", "boosty", "twitch"].includes(product.slug);
+}
+
+export function productShouldBeIndexed(product: Product) {
+  return productHasPricedOffers(product) || productHasOrderForm(product);
 }
 
 function productOfferLabels(product: Product) {
@@ -285,6 +297,10 @@ export function buildProductJsonLd(product: Product) {
   const prices = offers.map((offer) => offer.priceRub).filter((price) => Number.isFinite(price) && price > 0);
   const productUrl = `${SITE_URL}/products/${product.slug}`;
 
+  if (prices.length === 0) {
+    return null;
+  }
+
   return {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -296,23 +312,15 @@ export function buildProductJsonLd(product: Product) {
       "@type": "Brand",
       name: SITE_NAME,
     },
-    offers:
-      prices.length > 0
-        ? {
-            "@type": "AggregateOffer",
-            url: productUrl,
-            priceCurrency: "RUB",
-            lowPrice: Math.min(...prices),
-            highPrice: Math.max(...prices),
-            offerCount: prices.length,
-            availability: "https://schema.org/InStock",
-          }
-        : {
-            "@type": "Offer",
-            url: productUrl,
-            priceCurrency: "RUB",
-            availability: "https://schema.org/InStock",
-          },
+    offers: {
+      "@type": "AggregateOffer",
+      url: productUrl,
+      priceCurrency: "RUB",
+      lowPrice: Math.min(...prices),
+      highPrice: Math.max(...prices),
+      offerCount: prices.length,
+      availability: "https://schema.org/InStock",
+    },
   };
 }
 
@@ -353,7 +361,7 @@ export function buildProductMetadata(product: Product): Metadata {
       images: [product.icon],
     },
     robots: {
-      index: true,
+      index: productShouldBeIndexed(product),
       follow: true,
     },
   };
