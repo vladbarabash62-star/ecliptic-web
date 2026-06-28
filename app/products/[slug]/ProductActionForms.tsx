@@ -147,15 +147,50 @@ function normalizeMessageLayout(message: string) {
 
 function normalizeOrderMessage(message: string) {
   return normalizeMessageLayout(message)
-    .replace(/[ \t]+/g, " ")
+    .replace(/\s+(?=(?:📱|📦|💵|💎|💰|🆔|🌐|🎮|🎁|🔗)\s*)/g, "\n")
     .replace(/\s+(📦\s*(?:Игра|Сервис):)/g, "\n$1")
     .replace(/\s+(🎮\s*(?:Игра|Сервис):)/g, "\n$1")
     .replace(/\s+(💎\s*Товар:)/g, "\n$1")
+    .replace(/\s+(💵\s*Сумма:)/g, "\n$1")
+    .replace(/\s+(📱\s*Платформа:)/g, "\n$1")
     .replace(/\s+(💰\s*К оплате:)/g, "\n$1")
     .replace(/\s+(💳\s*К оплате:)/g, "\n$1")
     .replace(/\s+(🆔\s*(?:ID|Ник):)/g, "\n$1")
     .replace(/\s+(🌐\s*Сервер:)/g, "\n$1")
+    .split("\n")
+    .map((line) => line.replace(/[ \t]+/g, " ").trim().replace(/[.。]+$/, ""))
+    .filter(Boolean)
+    .filter((line) => !/^👋\s*Здравствуйте\b/i.test(line))
+    .join("\n")
     .trim();
+}
+
+function appendDetails(message: string, details: string[]) {
+  return details.length ? `${message}\n${details.join("\n")}` : message;
+}
+
+function formatKnownPurchaseMessage(productName: string, offerLabel: string, priceRub: number) {
+  const offer = offerLabel.trim();
+
+  if (productName === "PlayStation") {
+    const service = offer.toLowerCase().includes("plus")
+      ? "PS Plus"
+      : offer.toLowerCase().includes("аккаунт")
+        ? "PSN аккаунт"
+        : "PSN";
+
+    return normalizeOrderMessage(
+      `🛍 Новый заказ\n📱 Платформа: PlayStation\n📦 Сервис: ${service}\n💵 Сумма: ${offer}\n💰 К оплате: ${priceRub}р`
+    );
+  }
+
+  if (productName.toLowerCase().includes("telegram аккаунт")) {
+    return normalizeOrderMessage(
+      `🛍 Новый заказ\n📱 Платформа: Telegram\n📦 Товар: аккаунт\n🌐 Регион: ${offer}\n💰 К оплате: ${priceRub}р`
+    );
+  }
+
+  return "";
 }
 
 function formatPurchaseMessage(
@@ -171,6 +206,9 @@ function formatPurchaseMessage(
         .map(([label, value]) => `${label}: ${value.trim()}`)
     : [];
 
+  const knownMessage = formatKnownPurchaseMessage(productName, offerLabel, priceRub);
+  if (knownMessage) return appendDetails(knownMessage, filledDetails);
+
   if (template?.trim()) {
     const message = template
       .replaceAll("{product}", productName)
@@ -178,11 +216,11 @@ function formatPurchaseMessage(
       .replaceAll("{price}", String(priceRub));
 
     const normalizedMessage = normalizeOrderMessage(message);
-    return filledDetails.length ? `${normalizedMessage}\n${filledDetails.join("\n")}` : normalizedMessage;
+    return appendDetails(normalizedMessage, filledDetails);
   }
 
   const base = `🛍 Новый заказ\n📦 Сервис: ${productName}\n💎 Товар: ${offerLabel.trim()}\n💰 К оплате: ${priceRub}р`;
-  return filledDetails.length ? `${base}\n${filledDetails.join("\n")}` : base;
+  return appendDetails(normalizeOrderMessage(base), filledDetails);
 }
 
 function topupServiceName(productName: string) {
@@ -222,7 +260,9 @@ export function SteamTopupForm({ productName, productSlug }: { productName: stri
   const message = useMemo(
     () => {
       const serviceName = topupServiceName(productName);
-      return `🛍 Новый заказ\n👋 Здравствуйте, хочу пополнить баланс ${serviceName}\n📦 Сервис: ${serviceName}\n💎 Сумма: ${hasAmount ? `${numericAmount}$` : "не указана"}\n🆔 Steam логин: ${login.trim() || "не указан"}\n💰 К оплате: ${hasAmount ? `${priceRub} ₽` : "уточнить"}`;
+      return normalizeOrderMessage(
+        `🛍 Новый заказ\n📦 Сервис: ${serviceName}\n💵 Сумма: ${hasAmount ? `${numericAmount}$` : "не указана"}\n🆔 Steam логин: ${login.trim() || "не указан"}\n💰 К оплате: ${hasAmount ? `${priceRub}р` : "уточнить"}`
+      );
     },
     [hasAmount, login, numericAmount, priceRub, productName]
   );
@@ -269,7 +309,9 @@ export function EpicTopupForm({ productName, productSlug }: { productName: strin
   const message = useMemo(
     () => {
       const serviceName = topupServiceName(productName);
-      return `🛍 Новый заказ\n👋 Здравствуйте, хочу пополнить баланс ${serviceName}\n📦 Сервис: ${serviceName}\n💎 Сумма: ${hasAmount ? `${numericAmount}$` : "не указана"}\n💰 К оплате: ${hasAmount ? `${priceRub} ₽` : "уточнить"}`;
+      return normalizeOrderMessage(
+        `🛍 Новый заказ\n📦 Сервис: ${serviceName}\n💵 Сумма: ${hasAmount ? `${numericAmount}$` : "не указана"}\n💰 К оплате: ${hasAmount ? `${priceRub}р` : "уточнить"}`
+      );
     },
     [hasAmount, numericAmount, priceRub, productName]
   );
@@ -395,7 +437,9 @@ export function MinecraftOrderForm({ productName, productSlug }: { productName: 
     server: "",
   });
 
-  const message = `🛍 Новый заказ\n👋 Здравствуйте, хочу оформить заказ\n🎮 Игра: ${productName}\n🆔 Ник: ${values.nick.trim() || "не указан"}\n🌐 Сервер: ${values.server.trim() || "не указан"}`;
+  const message = normalizeOrderMessage(
+    `🛍 Новый заказ\n🎮 Игра: ${productName}\n🆔 Ник: ${values.nick.trim() || "не указан"}\n🌐 Сервер: ${values.server.trim() || "не указан"}`
+  );
 
   return (
     <div className="grid w-full gap-3 rounded-2xl border border-cyan-300/18 bg-cyan-950/20 p-4">
@@ -431,7 +475,9 @@ export function MinecraftOrderForm({ productName, productSlug }: { productName: 
 
 export function ManagerLinkForm({ productName, productSlug }: { productName: string; productSlug: string }) {
   const [link, setLink] = useState("");
-  const message = `🛍 Новый заказ\n👋 Здравствуйте, хочу задонатить стримеру\n🎁 Сервис: ${productName}\n🔗 Ссылка: ${link.trim() || "не указана"}`;
+  const message = normalizeOrderMessage(
+    `🛍 Новый заказ\n🎁 Сервис: ${productName}\n🔗 Ссылка: ${link.trim() || "не указана"}`
+  );
 
   return (
     <div className="grid w-full gap-3 rounded-2xl border border-white/15 bg-[#0f1420]/90 p-4 sm:grid-cols-[1fr_auto] sm:items-end">
