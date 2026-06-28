@@ -96,7 +96,7 @@ export default function PageLoader() {
     removeTimer.current = window.setTimeout(() => {
       removeTimer.current = null;
       setPhase("hidden");
-    }, 460);
+    }, 760);
   }, []);
 
   const hideSoon = useCallback((delay: number) => {

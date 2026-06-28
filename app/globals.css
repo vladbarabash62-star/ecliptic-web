@@ -118,39 +118,6 @@ html {
   }
 }
 
-@keyframes siteLoaderFadeIn {
-  0% {
-    opacity: 1;
-    pointer-events: auto;
-  }
-  56% {
-    opacity: 1;
-    pointer-events: auto;
-  }
-  100% {
-    opacity: 0;
-    pointer-events: none;
-  }
-}
-
-@keyframes siteLoaderPlanetIn {
-  0% {
-    opacity: 1;
-    filter: blur(0);
-    transform: scale(1);
-  }
-  62% {
-    opacity: 1;
-    filter: blur(0);
-    transform: scale(1);
-  }
-  100% {
-    opacity: 0;
-    filter: blur(3px);
-    transform: scale(0.94);
-  }
-}
-
 @keyframes loaderSpin {
   to {
     transform: rotate(360deg);
@@ -162,11 +129,11 @@ html {
   opacity: 1;
   pointer-events: auto;
   backdrop-filter: blur(1px);
-  animation: siteLoaderFadeIn 1120ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
   transition:
-    opacity 460ms cubic-bezier(0.22, 1, 0.36, 1),
-    background-color 460ms cubic-bezier(0.22, 1, 0.36, 1),
-    backdrop-filter 460ms cubic-bezier(0.22, 1, 0.36, 1);
+    opacity 700ms cubic-bezier(0.22, 1, 0.36, 1),
+    background-color 700ms cubic-bezier(0.22, 1, 0.36, 1),
+    backdrop-filter 700ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, background-color, backdrop-filter;
 }
 
 .swipe-home-loader-suppressed .site-loader {
@@ -179,11 +146,11 @@ html {
   height: 150px;
   place-items: center;
   transform-origin: 50% 50%;
-  animation: siteLoaderPlanetIn 1120ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
   transition:
-    opacity 420ms cubic-bezier(0.22, 1, 0.36, 1),
-    transform 460ms cubic-bezier(0.22, 1, 0.36, 1),
-    filter 460ms cubic-bezier(0.22, 1, 0.36, 1);
+    opacity 680ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 700ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 700ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform, filter;
 }
 
 .site-loader__icon {
@@ -202,14 +169,12 @@ html {
   opacity: 0;
   pointer-events: none;
   backdrop-filter: blur(0);
-  animation: none;
 }
 
 .site-loader--leaving .site-loader__orbit {
   opacity: 0;
   filter: blur(3px);
   transform: scale(0.94);
-  animation: none;
 }
 
 .page-intro {
