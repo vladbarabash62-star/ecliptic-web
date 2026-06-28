@@ -44,9 +44,11 @@ export default function SwipeHomeGesture() {
 
       if (deltaX > 38 && deltaY < 56 && elapsed < 900) {
         document.documentElement.classList.add("swipe-home-transition");
+        document.documentElement.dataset.pageLoaderSkip = "swipe-home";
         navigationTimer = window.setTimeout(() => router.push("/"), 420);
         cleanupTimer = window.setTimeout(() => {
           document.documentElement.classList.remove("swipe-home-transition");
+          delete document.documentElement.dataset.pageLoaderSkip;
         }, 760);
       }
     };
@@ -58,6 +60,7 @@ export default function SwipeHomeGesture() {
       window.clearTimeout(navigationTimer);
       window.clearTimeout(cleanupTimer);
       document.documentElement.classList.remove("swipe-home-transition");
+      delete document.documentElement.dataset.pageLoaderSkip;
       window.removeEventListener("touchstart", handleTouchStart);
       window.removeEventListener("touchend", handleTouchEnd);
     };

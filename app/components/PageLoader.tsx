@@ -19,6 +19,13 @@ function isInternalNavigationLink(anchor: HTMLAnchorElement) {
   }
 }
 
+function shouldSkipLoaderForSwipeHome() {
+  return (
+    document.documentElement.dataset.pageLoaderSkip === "swipe-home" ||
+    document.documentElement.classList.contains("swipe-home-transition")
+  );
+}
+
 export default function PageLoader() {
   const [phase, setPhase] = useState<LoaderPhase>("shown");
   const pathname = usePathname();
@@ -72,12 +79,18 @@ export default function PageLoader() {
   useEffect(() => {
     if (lastPathname.current === pathname) return;
     lastPathname.current = pathname;
+    if (pathname === "/" && shouldSkipLoaderForSwipeHome()) {
+      clearTimers();
+      setPhase("hidden");
+      return;
+    }
     showLoader();
     hideSoon(430);
-  }, [hideSoon, pathname, showLoader]);
+  }, [clearTimers, hideSoon, pathname, showLoader]);
 
   useEffect(() => {
     const showForNavigation = () => {
+      if (shouldSkipLoaderForSwipeHome()) return;
       showLoader();
       hideSoon(1600);
     };
