@@ -21,15 +21,26 @@
 
 html {
   background: #000;
+  max-width: 100%;
+  overflow-x: hidden;
+  color-scheme: dark;
 }
 
 body {
   background: #000;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+  padding: 0;
   -webkit-user-select: none;
   user-select: none;
   caret-color: transparent;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 input,
@@ -354,22 +365,6 @@ html {
 main {
   background: transparent !important;
 }
-/* TELEGRAM FIX */
-html, body {
-  max-width: 100%;
-  overflow-x: hidden;
-}
-
-/* убираем кривые отступы Telegram */
-body {
-  margin: 0;
-  padding: 0;
-}
-
-/* фикс flex/grid съезда */
-* {
-  box-sizing: border-box;
-}
 
 @media (prefers-reduced-motion: reduce) {
   .page-intro,
@@ -457,14 +452,4 @@ body {
       0 22px 56px rgba(14, 165, 233, 0.28),
       0 0 0 12px rgba(56, 189, 248, 0);
   }
-}
-html,
-body {
-  max-width: 100%;
-  overflow-x: hidden;
-  color-scheme: dark;
-}
-
-* {
-  box-sizing: border-box;
 }

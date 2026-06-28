@@ -116,7 +116,7 @@ export default function PageLoader() {
     if (pathname === "/" && shouldSkipLoaderForSwipeHome()) {
       clearTimers();
       consumeSwipeHomeLoaderSkip();
-      setPhase("hidden");
+      window.setTimeout(() => setPhase("hidden"), 0);
       return clearTimers;
     }
 
@@ -142,7 +142,7 @@ export default function PageLoader() {
     if (isMobileProductToHome || (pathname === "/" && shouldSkipLoaderForSwipeHome())) {
       clearTimers();
       consumeSwipeHomeLoaderSkip();
-      setPhase("hidden");
+      window.setTimeout(() => setPhase("hidden"), 0);
       return;
     }
     showLoader();
@@ -181,7 +181,7 @@ export default function PageLoader() {
       window.removeEventListener("popstate", showForNavigation);
       document.removeEventListener("click", handleClick, true);
     };
-  }, [hideSoon, showLoader]);
+  }, [hideSoon, pathname, showLoader]);
 
   if (phase === "hidden") return null;
 

@@ -58,7 +58,7 @@ function preparePageResponse(request: NextRequest, response: NextResponse) {
   return response;
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const secretPath = process.env.ADMIN_SECRET_PATH;
   const pathname = request.nextUrl.pathname.replace(/\/+$/, "") || "/";
 
