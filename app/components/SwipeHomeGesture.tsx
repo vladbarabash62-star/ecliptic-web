@@ -59,10 +59,10 @@ export default function SwipeHomeGesture() {
       const elapsed = Date.now() - startTime;
       startTime = 0;
 
-      if (deltaX > 38 && deltaY < 56 && elapsed < 900) {
+      if (deltaX > 14 && deltaY < 72 && elapsed < 1200) {
         document.documentElement.classList.add("swipe-home-transition");
         markSwipeHomeLoaderSkip();
-        navigationTimer = window.setTimeout(() => router.push("/"), 420);
+        navigationTimer = window.setTimeout(() => router.push("/"), 180);
         cleanupTimer = window.setTimeout(() => {
           document.documentElement.classList.remove("swipe-home-transition");
           clearSwipeHomeLoaderSkipMarker();
