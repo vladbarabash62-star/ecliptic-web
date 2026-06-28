@@ -333,6 +333,11 @@ export function buildProductJsonLd(product: Product) {
       url: productUrl,
       priceCurrency: "RUB",
       price: offer.priceRub,
+      priceSpecification: {
+        "@type": "PriceSpecification",
+        price: offer.priceRub,
+        priceCurrency: "RUB",
+      },
       name: offer.label,
       availability: "https://schema.org/InStock",
       itemCondition: "https://schema.org/NewCondition",
