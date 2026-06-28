@@ -317,17 +317,52 @@ export function buildProductJsonLd(product: Product) {
     return null;
   }
 
+  const merchantReturnPolicy = {
+    "@type": "MerchantReturnPolicy",
+    applicableCountry: "MD",
+    returnPolicyCategory: "https://schema.org/MerchantReturnNotPermitted",
+  };
+
+  const shippingDetails = {
+    "@type": "OfferShippingDetails",
+    shippingRate: {
+      "@type": "MonetaryAmount",
+      value: 0,
+      currency: "RUB",
+    },
+    shippingDestination: {
+      "@type": "DefinedRegion",
+      addressCountry: "MD",
+    },
+    deliveryTime: {
+      "@type": "ShippingDeliveryTime",
+      handlingTime: {
+        "@type": "QuantitativeValue",
+        minValue: 0,
+        maxValue: 1,
+        unitCode: "d",
+      },
+      transitTime: {
+        "@type": "QuantitativeValue",
+        minValue: 0,
+        maxValue: 1,
+        unitCode: "d",
+      },
+    },
+  };
+
   return {
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.name,
-    image: SITE_IMAGE,
+    image: [SITE_IMAGE],
     description: buildProductDescription(product),
     sku: product.slug,
     brand: {
       "@type": "Brand",
       name: SITE_NAME,
     },
+    hasMerchantReturnPolicy: merchantReturnPolicy,
     offers: pricedOffers.map((offer) => ({
       "@type": "Offer",
       url: productUrl,
@@ -341,23 +376,8 @@ export function buildProductJsonLd(product: Product) {
       name: offer.label,
       availability: "https://schema.org/InStock",
       itemCondition: "https://schema.org/NewCondition",
-      shippingDetails: {
-        "@type": "OfferShippingDetails",
-        shippingRate: {
-          "@type": "MonetaryAmount",
-          value: 0,
-          currency: "RUB",
-        },
-        shippingDestination: {
-          "@type": "DefinedRegion",
-          addressCountry: "MD",
-        },
-      },
-      hasMerchantReturnPolicy: {
-        "@type": "MerchantReturnPolicy",
-        applicableCountry: "MD",
-        returnPolicyCategory: "https://schema.org/MerchantReturnNotPermitted",
-      },
+      shippingDetails,
+      hasMerchantReturnPolicy: merchantReturnPolicy,
     })),
   };
 }
