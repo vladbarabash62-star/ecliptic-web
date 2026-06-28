@@ -47,11 +47,10 @@ function isPageRequest(request: NextRequest) {
 function preparePageResponse(request: NextRequest, response: NextResponse) {
   if (!isPageRequest(request)) return response;
 
-  response.headers.set("Cache-Control", "private, no-cache, max-age=0, must-revalidate");
-  response.headers.set("Pragma", "no-cache");
-  response.headers.set("Expires", "0");
-
   if (request.nextUrl.pathname === "/admin" || request.nextUrl.pathname.startsWith("/admin/")) {
+    response.headers.set("Cache-Control", "private, no-cache, max-age=0, must-revalidate");
+    response.headers.set("Pragma", "no-cache");
+    response.headers.set("Expires", "0");
     response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive, nosnippet");
   }
 
