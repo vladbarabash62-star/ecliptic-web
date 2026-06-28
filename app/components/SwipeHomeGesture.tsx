@@ -3,9 +3,25 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 
+const SWIPE_HOME_LOADER_SKIP_KEY = "ecliptic:skip-loader-after-swipe-home";
+
 function isEditableTarget(target: EventTarget | null) {
   const element = target instanceof HTMLElement ? target : null;
   return Boolean(element?.closest("input, textarea, select, [contenteditable='true']"));
+}
+
+function markSwipeHomeLoaderSkip() {
+  document.documentElement.dataset.pageLoaderSkip = "swipe-home";
+
+  try {
+    window.sessionStorage.setItem(SWIPE_HOME_LOADER_SKIP_KEY, String(Date.now() + 2500));
+  } catch {
+    // Some browser privacy modes can block sessionStorage.
+  }
+}
+
+function clearSwipeHomeLoaderSkipMarker() {
+  delete document.documentElement.dataset.pageLoaderSkip;
 }
 
 export default function SwipeHomeGesture() {
@@ -44,12 +60,12 @@ export default function SwipeHomeGesture() {
 
       if (deltaX > 38 && deltaY < 56 && elapsed < 900) {
         document.documentElement.classList.add("swipe-home-transition");
-        document.documentElement.dataset.pageLoaderSkip = "swipe-home";
+        markSwipeHomeLoaderSkip();
         navigationTimer = window.setTimeout(() => router.push("/"), 420);
         cleanupTimer = window.setTimeout(() => {
           document.documentElement.classList.remove("swipe-home-transition");
-          delete document.documentElement.dataset.pageLoaderSkip;
-        }, 760);
+          clearSwipeHomeLoaderSkipMarker();
+        }, 1200);
       }
     };
 
@@ -60,7 +76,7 @@ export default function SwipeHomeGesture() {
       window.clearTimeout(navigationTimer);
       window.clearTimeout(cleanupTimer);
       document.documentElement.classList.remove("swipe-home-transition");
-      delete document.documentElement.dataset.pageLoaderSkip;
+      clearSwipeHomeLoaderSkipMarker();
       window.removeEventListener("touchstart", handleTouchStart);
       window.removeEventListener("touchend", handleTouchEnd);
     };

@@ -6,6 +6,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 type LoaderPhase = "shown" | "leaving" | "hidden";
 
+const SWIPE_HOME_LOADER_SKIP_KEY = "ecliptic:skip-loader-after-swipe-home";
+
 function isInternalNavigationLink(anchor: HTMLAnchorElement) {
   if (anchor.target && anchor.target !== "_self") return false;
   if (anchor.hasAttribute("download")) return false;
@@ -20,14 +22,42 @@ function isInternalNavigationLink(anchor: HTMLAnchorElement) {
 }
 
 function shouldSkipLoaderForSwipeHome() {
-  return (
-    document.documentElement.dataset.pageLoaderSkip === "swipe-home" ||
-    document.documentElement.classList.contains("swipe-home-transition")
-  );
+  if (typeof document === "undefined" || typeof window === "undefined") return false;
+  if (document.documentElement.dataset.pageLoaderSkip === "swipe-home") return true;
+  if (document.documentElement.classList.contains("swipe-home-transition")) return true;
+
+  try {
+    const expiresAt = Number(window.sessionStorage.getItem(SWIPE_HOME_LOADER_SKIP_KEY) || "0");
+    if (expiresAt > Date.now()) return true;
+    if (expiresAt) window.sessionStorage.removeItem(SWIPE_HOME_LOADER_SKIP_KEY);
+  } catch {
+    return false;
+  }
+
+  return false;
+}
+
+function consumeSwipeHomeLoaderSkip() {
+  if (typeof document === "undefined" || typeof window === "undefined") return;
+
+  try {
+    window.sessionStorage.removeItem(SWIPE_HOME_LOADER_SKIP_KEY);
+  } catch {
+    // Some browser privacy modes can block sessionStorage.
+  }
+
+  delete document.documentElement.dataset.pageLoaderSkip;
+  document.documentElement.classList.remove("page-loader-active", "page-loader-leaving");
 }
 
 export default function PageLoader() {
-  const [phase, setPhase] = useState<LoaderPhase>("shown");
+  const [phase, setPhase] = useState<LoaderPhase>(() => {
+    if (typeof window !== "undefined" && window.location.pathname === "/" && shouldSkipLoaderForSwipeHome()) {
+      return "hidden";
+    }
+
+    return "shown";
+  });
   const pathname = usePathname();
   const hideTimer = useRef<number | null>(null);
   const removeTimer = useRef<number | null>(null);
@@ -63,9 +93,16 @@ export default function PageLoader() {
   }, [clearTimers]);
 
   useEffect(() => {
+    if (pathname === "/" && shouldSkipLoaderForSwipeHome()) {
+      clearTimers();
+      consumeSwipeHomeLoaderSkip();
+      setPhase("hidden");
+      return clearTimers;
+    }
+
     hideSoon(650);
     return clearTimers;
-  }, [clearTimers, hideSoon]);
+  }, [clearTimers, hideSoon, pathname]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("page-loader-active", phase === "shown");
@@ -81,6 +118,7 @@ export default function PageLoader() {
     lastPathname.current = pathname;
     if (pathname === "/" && shouldSkipLoaderForSwipeHome()) {
       clearTimers();
+      consumeSwipeHomeLoaderSkip();
       setPhase("hidden");
       return;
     }
