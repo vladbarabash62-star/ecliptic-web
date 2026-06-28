@@ -8,6 +8,10 @@ type LoaderPhase = "shown" | "leaving" | "hidden";
 
 const SWIPE_HOME_LOADER_SKIP_KEY = "ecliptic:skip-loader-after-swipe-home";
 
+function isMobileViewport() {
+  return typeof window !== "undefined" && window.matchMedia("(max-width: 768px), (pointer: coarse)").matches;
+}
+
 function isInternalNavigationLink(anchor: HTMLAnchorElement) {
   if (anchor.target && anchor.target !== "_self") return false;
   if (anchor.hasAttribute("download")) return false;
@@ -48,6 +52,22 @@ function consumeSwipeHomeLoaderSkip() {
 
   delete document.documentElement.dataset.pageLoaderSkip;
   document.documentElement.classList.remove("page-loader-active", "page-loader-leaving");
+  window.setTimeout(() => {
+    document.documentElement.classList.remove("swipe-home-loader-suppressed");
+  }, 900);
+}
+
+function markSwipeHomeLoaderSkip() {
+  if (typeof document === "undefined" || typeof window === "undefined") return;
+
+  document.documentElement.classList.add("swipe-home-loader-suppressed");
+  document.documentElement.dataset.pageLoaderSkip = "swipe-home";
+
+  try {
+    window.sessionStorage.setItem(SWIPE_HOME_LOADER_SKIP_KEY, String(Date.now() + 2500));
+  } catch {
+    // Some browser privacy modes can block sessionStorage.
+  }
 }
 
 export default function PageLoader() {
@@ -114,9 +134,12 @@ export default function PageLoader() {
   }, [phase]);
 
   useEffect(() => {
-    if (lastPathname.current === pathname) return;
+    const previousPathname = lastPathname.current;
+    if (previousPathname === pathname) return;
     lastPathname.current = pathname;
-    if (pathname === "/" && shouldSkipLoaderForSwipeHome()) {
+
+    const isMobileProductToHome = isMobileViewport() && previousPathname.startsWith("/products/") && pathname === "/";
+    if (isMobileProductToHome || (pathname === "/" && shouldSkipLoaderForSwipeHome())) {
       clearTimers();
       consumeSwipeHomeLoaderSkip();
       setPhase("hidden");
@@ -127,7 +150,13 @@ export default function PageLoader() {
   }, [clearTimers, hideSoon, pathname, showLoader]);
 
   useEffect(() => {
-    const showForNavigation = () => {
+    const showForNavigation = (event?: Event) => {
+      if (event?.type === "popstate" && isMobileViewport() && pathname.startsWith("/products/")) {
+        markSwipeHomeLoaderSkip();
+        setPhase("hidden");
+        return;
+      }
+
       if (shouldSkipLoaderForSwipeHome()) return;
       showLoader();
       hideSoon(1600);

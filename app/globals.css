@@ -158,6 +158,10 @@ html {
     backdrop-filter 460ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+.swipe-home-loader-suppressed .site-loader {
+  display: none !important;
+}
+
 .site-loader__orbit {
   display: grid;
   width: 150px;

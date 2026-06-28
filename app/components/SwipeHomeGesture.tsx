@@ -11,6 +11,7 @@ function isEditableTarget(target: EventTarget | null) {
 }
 
 function markSwipeHomeLoaderSkip() {
+  document.documentElement.classList.add("swipe-home-loader-suppressed");
   document.documentElement.dataset.pageLoaderSkip = "swipe-home";
 
   try {
