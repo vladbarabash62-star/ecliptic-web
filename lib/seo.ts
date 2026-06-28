@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { products, type Product, type ProductOffer } from "./products";
+import { landingPageUrl, seoLandingPages } from "./seoLandingPages";
 
 export const SITE_URL = "https://ecliptic.website";
 export const SITE_NAME = "Ecliptic Store";
@@ -258,6 +259,11 @@ export function buildStoreJsonLd() {
       url: SITE_URL,
       inLanguage: "ru",
       description: SITE_DESCRIPTION,
+      potentialAction: {
+        "@type": "SearchAction",
+        target: `${SITE_URL}/?q={search_term_string}`,
+        "query-input": "required name=search_term_string",
+      },
     },
     {
       "@context": "https://schema.org",
@@ -288,6 +294,17 @@ export function buildStoreJsonLd() {
         "https://t.me/Ecliptic_Store_PMR",
         "https://t.me/Ecliptic_Store_Reviews",
       ],
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      name: `${SITE_NAME} search directions`,
+      itemListElement: seoLandingPages.map((page, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        name: page.h1,
+        url: landingPageUrl(page.slug),
+      })),
     },
   ];
 }

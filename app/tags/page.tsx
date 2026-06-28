@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { buildSearchTags } from "../../lib/searchTags";
 import { SITE_NAME, SITE_URL } from "../../lib/seo";
+import { seoLandingPages } from "../../lib/seoLandingPages";
 
 export const metadata: Metadata = {
   title: `Поисковые теги | ${SITE_NAME}`,
@@ -33,6 +35,19 @@ export default function TagsPage() {
             цифровые товары, донат и сервисы для покупателей из ПМР,
             Тирасполя и Приднестровья.
           </p>
+        </div>
+
+        <div className="mb-8 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+          {seoLandingPages.map((page) => (
+            <Link
+              key={page.slug}
+              href={`/search/${page.slug}`}
+              className="rounded-2xl border border-white/10 bg-white/[0.045] p-4 transition hover:border-emerald-300/35 hover:bg-white/[0.065]"
+            >
+              <h2 className="text-base font-black text-white">{page.h1}</h2>
+              <p className="mt-2 line-clamp-3 text-sm leading-6 text-white/62">{page.description}</p>
+            </Link>
+          ))}
         </div>
 
         <div className="flex flex-wrap gap-2">
