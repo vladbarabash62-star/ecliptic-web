@@ -11,6 +11,14 @@ function getTelegramWebApp() {
   return (window as Window & { Telegram?: { WebApp?: TelegramWebApp } }).Telegram?.WebApp;
 }
 
+function isMobileHapticDevice() {
+  return (
+    typeof window !== "undefined" &&
+    (window.matchMedia("(pointer: coarse)").matches ||
+      /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent))
+  );
+}
+
 export function pulseTelegram(styles: HapticStyle[], gap = 82) {
   const haptic = getTelegramWebApp()?.HapticFeedback;
   if (!haptic?.impactOccurred) return false;
@@ -40,8 +48,35 @@ export function vibrate(pattern: number | number[]) {
 }
 
 export function playLaunchHaptic() {
-  const usedTelegramHaptic = pulseTelegram(["light", "soft", "medium", "soft", "light", "medium", "light"], 105);
-  if (!usedTelegramHaptic) vibrate([14, 36, 18, 44, 28, 52, 18, 38, 24, 48, 32]);
+  if (!isMobileHapticDevice()) return;
+
+  const usedTelegramHaptic = pulseTelegram(
+    [
+      "light",
+      "soft",
+      "light",
+      "medium",
+      "soft",
+      "light",
+      "medium",
+      "soft",
+      "light",
+      "rigid",
+      "soft",
+      "light",
+      "medium",
+      "soft",
+      "light",
+      "medium",
+      "soft",
+      "light",
+      "heavy",
+    ],
+    132
+  );
+  if (!usedTelegramHaptic) {
+    vibrate([28, 64, 28, 72, 44, 84, 28, 58, 36, 92, 54, 112, 28, 58, 36, 84, 48, 104, 28, 64, 28, 72, 44, 92, 62]);
+  }
 }
 
 export function playProductHaptic() {
