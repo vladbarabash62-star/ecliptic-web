@@ -9,6 +9,7 @@ import { realOfferIcon } from "../../../lib/offerImages";
 import { playBuyHaptic } from "../../components/haptics";
 
 const TELEGRAM_USERNAME = "Ecliptic_Store_PMR";
+const REQUIRED_FIELDS_MESSAGE = "Заполните все поля.";
 
 type DetailField = {
   id: string;
@@ -319,10 +320,7 @@ export function SteamTopupForm({ productName, productSlug }: { productName: stri
   const hasLogin = login.trim().length > 0;
 
   function validateOrder() {
-    if (!hasAmount && !hasLogin) return "Укажите сумму пополнения и Steam логин.";
-    if (!hasAmount) return "Укажите сумму пополнения от 1$.";
-    if (!hasLogin) return "Введите Steam логин.";
-    return null;
+    return hasAmount && hasLogin ? null : REQUIRED_FIELDS_MESSAGE;
   }
 
   const message = useMemo(
@@ -383,7 +381,7 @@ export function EpicTopupForm({ productName, productSlug }: { productName: strin
   const hasAmount = amount.trim().length > 0 && numericAmount > 0;
 
   function validateOrder() {
-    return hasAmount ? null : "Укажите сумму пополнения от 1$.";
+    return hasAmount ? null : REQUIRED_FIELDS_MESSAGE;
   }
 
   const message = useMemo(
@@ -450,7 +448,7 @@ export function ProductOffersWithDetails({
 
   function validateDetails() {
     if (fields.some((field) => !(values[field.id] || "").trim())) {
-      return "Заполните все поля, чтобы оформить заказ.";
+      return REQUIRED_FIELDS_MESSAGE;
     }
 
     return null;
@@ -543,10 +541,7 @@ export function MinecraftOrderForm({ productName, productSlug }: { productName: 
   const { notice, isVisible, showNotice } = useOrderNotice();
 
   function validateOrder() {
-    if (!values.nick.trim() && !values.server.trim()) return "Введите ник и сервер.";
-    if (!values.nick.trim()) return "Введите ник.";
-    if (!values.server.trim()) return "Введите сервер.";
-    return null;
+    return values.nick.trim() && values.server.trim() ? null : REQUIRED_FIELDS_MESSAGE;
   }
 
   const message = normalizeOrderMessage(
@@ -600,7 +595,7 @@ export function ManagerLinkForm({ productName, productSlug }: { productName: str
   );
 
   function validateOrder() {
-    return link.trim() ? null : "Вставьте ссылку, чтобы оформить заказ.";
+    return link.trim() ? null : REQUIRED_FIELDS_MESSAGE;
   }
 
   return (
