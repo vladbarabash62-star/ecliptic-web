@@ -111,9 +111,11 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
+      { url: "/google-favicon.png", type: "image/png", sizes: "512x512" },
       { url: "/favicon.ico" },
       { url: "/icon.png", type: "image/png", sizes: "512x512" },
     ],
+    shortcut: [{ url: "/google-favicon.png", type: "image/png", sizes: "512x512" }],
     apple: [{ url: "/apple-icon.png", sizes: "512x512" }],
   },
   openGraph: {
