@@ -313,7 +313,7 @@ export function buildProductJsonLd(product: Product) {
   const pricedOffers = productOffers(product).filter((offer) => Number.isFinite(offer.priceRub) && offer.priceRub > 0);
   const productUrl = `${SITE_URL}/products/${product.slug}`;
 
-  if (pricedOffers.length === 0) {
+  if (pricedOffers.length === 0 && !productHasOrderForm(product)) {
     return null;
   }
 
@@ -363,22 +363,41 @@ export function buildProductJsonLd(product: Product) {
       name: SITE_NAME,
     },
     hasMerchantReturnPolicy: merchantReturnPolicy,
-    offers: pricedOffers.map((offer) => ({
-      "@type": "Offer",
-      url: productUrl,
-      priceCurrency: "RUB",
-      price: offer.priceRub,
-      priceSpecification: {
-        "@type": "PriceSpecification",
-        price: offer.priceRub,
-        priceCurrency: "RUB",
-      },
-      name: offer.label,
-      availability: "https://schema.org/InStock",
-      itemCondition: "https://schema.org/NewCondition",
-      shippingDetails,
-      hasMerchantReturnPolicy: merchantReturnPolicy,
-    })),
+    offers:
+      pricedOffers.length > 0
+        ? pricedOffers.map((offer) => ({
+            "@type": "Offer",
+            url: productUrl,
+            priceCurrency: "RUB",
+            price: offer.priceRub,
+            priceSpecification: {
+              "@type": "PriceSpecification",
+              price: offer.priceRub,
+              priceCurrency: "RUB",
+            },
+            name: offer.label,
+            availability: "https://schema.org/InStock",
+            itemCondition: "https://schema.org/NewCondition",
+            shippingDetails,
+            hasMerchantReturnPolicy: merchantReturnPolicy,
+          }))
+        : {
+            "@type": "Offer",
+            url: productUrl,
+            priceCurrency: "RUB",
+            price: 1,
+            priceSpecification: {
+              "@type": "PriceSpecification",
+              price: 1,
+              priceCurrency: "RUB",
+            },
+            name: "Индивидуальный заказ",
+            description: "Итоговая цена зависит от выбранной услуги и уточняется перед оформлением заказа.",
+            availability: "https://schema.org/InStock",
+            itemCondition: "https://schema.org/NewCondition",
+            shippingDetails,
+            hasMerchantReturnPolicy: merchantReturnPolicy,
+          },
   };
 }
 
