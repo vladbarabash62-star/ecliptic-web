@@ -160,7 +160,7 @@ function normalizeOrderMessage(message: string) {
     .split("\n")
     .map((line) => line.replace(/[ \t]+/g, " ").trim().replace(/[.。]+$/, ""))
     .filter(Boolean)
-    .filter((line) => !/^👋\s*Здравствуйте\b/i.test(line))
+    .filter((line) => !/^(?:\p{Extended_Pictographic}\s*)*Здравствуйте,\s*хочу\b/iu.test(line))
     .join("\n")
     .trim();
 }
