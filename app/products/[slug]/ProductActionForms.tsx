@@ -160,9 +160,13 @@ function normalizeOrderMessage(message: string) {
     .split("\n")
     .map((line) => line.replace(/[ \t]+/g, " ").trim().replace(/[.。]+$/, ""))
     .filter(Boolean)
-    .filter((line) => !/здравствуйте/iu.test(line))
+    .filter((line) => !isOrderGreetingLine(line))
     .join("\n")
     .trim();
+}
+
+function isOrderGreetingLine(line: string) {
+  return /(?:\u00F0\u009F\u0091\u008B|👋|здрав|хочу|почу|пополнить\s+баланс|баланс\s+telegram|telegram\s+stars.*баланс|[\uFFFD]{1,}.*telegram\s+stars|Р·РґСЂ|РҐРѕС‡|РџРѕС‡|РїРѕРїРѕР»РЅРёС‚СЊ\s+Р±Р°Р»Р°РЅСЃ|Р±Р°Р»Р°РЅСЃ\s+telegram)/iu.test(line);
 }
 
 function appendDetails(message: string, details: string[]) {
