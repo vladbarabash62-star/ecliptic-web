@@ -3,6 +3,7 @@
 
 import type { CSSProperties, MouseEvent, ReactNode } from "react";
 import { useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import type { ProductItem } from "../../../lib/products";
 import { realOfferIcon } from "../../../lib/offerImages";
 import { playBuyHaptic } from "../../components/haptics";
@@ -118,13 +119,16 @@ function useOrderNotice() {
 }
 
 function OrderNotice({ message, isVisible }: { message: string; isVisible: boolean }) {
-  return (
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <div
       data-show={isVisible}
-      className="fixed bottom-4 left-1/2 z-[90] w-[min(92vw,420px)] translate-y-24 -translate-x-1/2 rounded-2xl border border-red-300/35 bg-red-950/95 px-5 py-4 text-center text-sm font-bold text-red-50 opacity-0 shadow-[0_18px_44px_rgba(239,68,68,0.26)] backdrop-blur transition-all duration-500 data-[show=true]:translate-y-0 data-[show=true]:opacity-100 sm:bottom-auto sm:top-4 sm:-translate-y-24 sm:data-[show=true]:translate-y-0"
+      className="fixed bottom-4 left-1/2 z-[9999] w-[min(92vw,420px)] translate-y-24 -translate-x-1/2 rounded-2xl border border-red-300/35 bg-red-950/95 px-5 py-4 text-center text-sm font-bold text-red-50 opacity-0 shadow-[0_18px_44px_rgba(239,68,68,0.26)] backdrop-blur transition-all duration-500 data-[show=true]:translate-y-0 data-[show=true]:opacity-100 sm:bottom-auto sm:top-4 sm:-translate-y-24 sm:data-[show=true]:translate-y-0"
     >
       {message}
-    </div>
+    </div>,
+    document.body
   );
 }
 
