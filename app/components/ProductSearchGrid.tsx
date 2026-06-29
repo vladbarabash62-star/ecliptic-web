@@ -7,12 +7,12 @@ import { useMemo, useState } from "react";
 import type { Product } from "../../lib/products";
 import { playProductHaptic } from "./haptics";
 
-type ProductGroup = "services" | "games" | "social";
+type ProductGroup = "all" | "services" | "games" | "social";
 
 const PRODUCT_GROUPS: Array<{ id: ProductGroup; label: string }> = [
-  { id: "services", label: "Сервисы" },
-  { id: "games", label: "Игры" },
   { id: "social", label: "Соцсети" },
+  { id: "games", label: "Игры" },
+  { id: "services", label: "Сервисы" },
 ];
 
 const GAME_SLUGS = new Set([
@@ -50,15 +50,29 @@ function getProductGroup(product: Product): ProductGroup {
 }
 
 export default function ProductSearchGrid({ products }: { products: Product[] }) {
-  const [activeGroup, setActiveGroup] = useState<ProductGroup>("services");
+  const [activeGroup, setActiveGroup] = useState<ProductGroup>("all");
 
   const filteredProducts = useMemo(() => {
+    if (activeGroup === "all") return products;
+
     return products.filter((product) => getProductGroup(product) === activeGroup);
   }, [activeGroup, products]);
 
   return (
     <div className="grid gap-5">
-      <div className="flex w-full justify-center">
+      <div className="grid w-full justify-items-center gap-3">
+        <button
+          type="button"
+          onClick={() => setActiveGroup("all")}
+          className={`rounded-2xl border px-8 py-3 text-base font-black shadow-[0_18px_60px_rgba(0,0,0,0.18)] transition-all duration-300 active:scale-95 ${
+            activeGroup === "all"
+              ? "border-white/18 bg-white text-black"
+              : "border-white/10 bg-[#07101d]/88 text-white/86 hover:bg-white/10 hover:text-white"
+          }`}
+        >
+          Каталог
+        </button>
+
         <div className="inline-flex max-w-full gap-2 rounded-2xl border border-white/10 bg-[#07101d]/88 p-1.5 shadow-[0_18px_60px_rgba(0,0,0,0.18)]">
           {PRODUCT_GROUPS.map((group) => {
             const isActive = activeGroup === group.id;
