@@ -2,6 +2,7 @@ import ProductSearchGrid from "./components/ProductSearchGrid";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { getProductBySlug, getProducts } from "../lib/productStore";
+import { withOptimizedProductsImages } from "../lib/optimizedImages";
 import { productShouldBeIndexed } from "../lib/seo";
 import { getSiteSettings } from "../lib/siteSettings";
 import { defaultSiteSettings } from "../lib/siteSettingsDefaults";
@@ -38,10 +39,15 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   }
 
   const [allProducts, settings] = await Promise.all([
-    getProducts(),
-    getSiteSettings().catch(() => defaultSiteSettings),
+    getProducts({ cached: true }),
+    getSiteSettings({ cached: true }).catch(() => defaultSiteSettings),
   ]);
-  const products = allProducts.filter(productShouldBeIndexed);
+  const products = withOptimizedProductsImages(allProducts.filter(productShouldBeIndexed)).map((product) => ({
+    name: product.name,
+    slug: product.slug,
+    icon: product.icon,
+    iconScale: product.iconScale,
+  }));
 
   return (
     <main className="relative min-h-screen w-full overflow-x-hidden bg-transparent px-4 py-6 text-white">

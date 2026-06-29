@@ -301,10 +301,10 @@ function OfferIcon({ icon, scale = 1 }: { icon?: string; scale?: number }) {
 
   return (
     <div
-      className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-[#07101d] text-xl shadow-inner"
+    className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-[#07101d] text-xl shadow-inner"
       style={style}
     >
-      {icon ? <img src={icon} alt="" className="offer-icon h-[62%] w-[62%] object-contain" /> : "🛒"}
+      {icon ? <img src={icon} alt="" loading="lazy" decoding="async" className="offer-icon h-[62%] w-[62%] object-contain" /> : "🛒"}
     </div>
   );
 }

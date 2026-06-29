@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { CSSProperties } from "react";
 import { getProductBySlug } from "../../../lib/productStore";
+import { withOptimizedProductImages } from "../../../lib/optimizedImages";
 import { products } from "../../../lib/products";
 import {
   buildProductJsonLd,
@@ -36,7 +37,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const product = await getProductBySlug(slug);
+  const product = await getProductBySlug(slug, { cached: true }).then((item) => (item ? withOptimizedProductImages(item) : item));
 
   if (!product) {
     return {
@@ -53,7 +54,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function ProductPage({ params }: PageProps) {
   const { slug } = await params;
-  const product = await getProductBySlug(slug);
+  const product = await getProductBySlug(slug, { cached: true }).then((item) => (item ? withOptimizedProductImages(item) : item));
 
   if (!product) {
     notFound();
@@ -97,6 +98,8 @@ export default async function ProductPage({ params }: PageProps) {
               src={product.icon}
               alt={product.name}
               className="product-icon h-[66%] w-[66%] object-contain"
+              decoding="async"
+              fetchPriority="high"
               style={iconStyle}
             />
           </div>

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { withOptimizedProductsImages } from "../../../lib/optimizedImages";
 import { getProducts } from "../../../lib/productStore";
 import type { Product, ProductOffer } from "../../../lib/products";
 
@@ -34,7 +35,7 @@ function publicProduct(product: Product) {
 }
 
 export async function GET() {
-  const products = await getProducts();
+  const products = withOptimizedProductsImages(await getProducts({ cached: true }));
   return NextResponse.json(
     { ok: true, products: products.map(publicProduct) },
     {

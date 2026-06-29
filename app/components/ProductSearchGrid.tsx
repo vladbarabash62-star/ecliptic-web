@@ -4,10 +4,15 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { useMemo, useRef, useState } from "react";
-import type { Product } from "../../lib/products";
 import { playProductHaptic } from "./haptics";
 
 type ProductGroup = "all" | "services" | "games" | "social";
+type ProductCard = {
+  name: string;
+  slug: string;
+  icon: string;
+  iconScale?: number;
+};
 
 const FILTER_FADE_MS = 180;
 
@@ -45,13 +50,13 @@ const SOCIAL_SLUGS = new Set([
   "discord-nitro",
 ]);
 
-function getProductGroup(product: Product): ProductGroup {
+function getProductGroup(product: ProductCard): ProductGroup {
   if (GAME_SLUGS.has(product.slug)) return "games";
   if (SOCIAL_SLUGS.has(product.slug)) return "social";
   return "services";
 }
 
-export default function ProductSearchGrid({ products }: { products: Product[] }) {
+export default function ProductSearchGrid({ products }: { products: ProductCard[] }) {
   const [activeGroup, setActiveGroup] = useState<ProductGroup>("all");
   const [visibleGroup, setVisibleGroup] = useState<ProductGroup>("all");
   const [isSwitching, setIsSwitching] = useState(false);
@@ -121,7 +126,7 @@ export default function ProductSearchGrid({ products }: { products: Product[] })
             isSwitching ? "translate-y-1 scale-[0.992] opacity-0" : "translate-y-0 scale-100 opacity-100"
           }`}
         >
-          {filteredProducts.map((product) => {
+          {filteredProducts.map((product, index) => {
             return (
               <Link
                 key={product.slug}
@@ -140,9 +145,8 @@ export default function ProductSearchGrid({ products }: { products: Product[] })
                       src={product.icon}
                       alt={product.name}
                       className="product-icon product-grid-icon h-[64%] w-[64%] object-contain"
-                      fetchPriority="high"
-                      loading="eager"
-                      decoding="sync"
+                      loading={index < 6 ? "eager" : "lazy"}
+                      decoding="async"
                       draggable={false}
                     />
                   </div>
