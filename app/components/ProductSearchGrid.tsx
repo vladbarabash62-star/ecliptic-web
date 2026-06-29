@@ -7,42 +7,78 @@ import { useMemo, useState } from "react";
 import type { Product } from "../../lib/products";
 import { playProductHaptic } from "./haptics";
 
-function normalizeSearch(value: string) {
-  return value
-    .toLocaleLowerCase("ru")
-    .replace(/ё/g, "е")
-    .replace(/[^a-zа-я0-9]+/gi, " ")
-    .trim();
+type ProductGroup = "services" | "games" | "social";
+
+const PRODUCT_GROUPS: Array<{ id: ProductGroup; label: string }> = [
+  { id: "services", label: "Сервисы" },
+  { id: "games", label: "Игры" },
+  { id: "social", label: "Соцсети" },
+];
+
+const GAME_SLUGS = new Set([
+  "world-of-tanks",
+  "brawl-stars",
+  "roblox",
+  "standoff-2",
+  "pubg-mobile",
+  "mobile-legends",
+  "clash-of-clans",
+  "clash-royale",
+  "free-fire",
+  "gta-5-rp-majestic-rp",
+  "radmir-rp",
+  "amazing-rp",
+  "black-russia",
+  "minecraft",
+  "oxide",
+]);
+
+const SOCIAL_SLUGS = new Set([
+  "telegram-premium",
+  "telegram-accounts",
+  "telegram-stars",
+  "tiktok",
+  "youtube-premium",
+  "spotify-premium",
+  "discord-nitro",
+]);
+
+function getProductGroup(product: Product): ProductGroup {
+  if (GAME_SLUGS.has(product.slug)) return "games";
+  if (SOCIAL_SLUGS.has(product.slug)) return "social";
+  return "services";
 }
 
 export default function ProductSearchGrid({ products }: { products: Product[] }) {
-  const [query, setQuery] = useState("");
-  const normalizedQuery = normalizeSearch(query);
+  const [activeGroup, setActiveGroup] = useState<ProductGroup>("services");
 
   const filteredProducts = useMemo(() => {
-    if (!normalizedQuery) return products;
-
-    return products.filter((product) => {
-      const haystack = normalizeSearch(`${product.name} ${product.slug}`);
-      return haystack.includes(normalizedQuery);
-    });
-  }, [normalizedQuery, products]);
+    return products.filter((product) => getProductGroup(product) === activeGroup);
+  }, [activeGroup, products]);
 
   return (
     <div className="grid gap-5">
-      <div className="w-full">
-        <label className="sr-only" htmlFor="product-search">
-          Поиск
-        </label>
-        <input
-          id="product-search"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Поиск"
-          autoComplete="off"
-          inputMode="search"
-          className="w-full rounded-2xl border border-white/12 bg-[#07101d]/88 px-5 py-4 text-base font-bold text-white outline-none shadow-[0_18px_60px_rgba(0,0,0,0.18)] transition focus:border-sky-300/45 focus:bg-[#0a1322]"
-        />
+      <div className="flex w-full justify-center">
+        <div className="inline-flex max-w-full gap-2 rounded-2xl border border-white/10 bg-[#07101d]/88 p-1.5 shadow-[0_18px_60px_rgba(0,0,0,0.18)]">
+          {PRODUCT_GROUPS.map((group) => {
+            const isActive = activeGroup === group.id;
+
+            return (
+              <button
+                key={group.id}
+                type="button"
+                onClick={() => setActiveGroup(group.id)}
+                className={`rounded-xl px-4 py-2 text-sm font-black transition-all duration-300 active:scale-95 sm:px-5 ${
+                  isActive
+                    ? "bg-white text-black shadow-[0_10px_28px_rgba(255,255,255,0.16)]"
+                    : "bg-white/6 text-white/72 hover:bg-white/10 hover:text-white"
+                }`}
+              >
+                {group.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {filteredProducts.length > 0 ? (
@@ -83,7 +119,7 @@ export default function ProductSearchGrid({ products }: { products: Product[] })
         </section>
       ) : (
         <div className="mx-auto w-full max-w-[680px] rounded-2xl border border-white/10 bg-[#0f1420]/88 p-5 text-center text-sm font-bold text-white/62">
-          Ничего не найдено
+          В этом разделе пока нет товаров
         </div>
       )}
     </div>
