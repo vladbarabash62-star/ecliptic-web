@@ -54,7 +54,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               alt=""
               width={80}
               height={80}
-              className="h-[1.28em] w-[1.28em] object-contain"
+              className="h-[1.45em] w-[1.45em] object-contain"
             />
           </h1>
 
@@ -67,7 +67,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
         </div>
 
-        <div className="desktop-trust-panel mx-auto mb-7 hidden w-full max-w-[680px] items-center justify-center gap-5 rounded-2xl border border-white/10 px-6 py-4 text-base font-bold uppercase shadow-[0_18px_70px_rgba(14,165,233,0.14)] md:flex">
+        <div className="desktop-trust-panel mx-auto mb-7 hidden w-full max-w-[680px] items-center justify-center gap-5 rounded-2xl border border-white/10 px-6 py-4 text-[17px] font-bold uppercase shadow-[0_18px_70px_rgba(14,165,233,0.14)] md:flex">
           <a
             href="https://t.me/Ecliptic_Store_Reviews"
             target="_blank"
