@@ -102,17 +102,46 @@ function handleTelegramOrderClick(event: MouseEvent<HTMLAnchorElement>, message:
   openSellerChat(href, deepHref);
 }
 
+function useOrderNotice() {
+  const [notice, setNotice] = useState("");
+  const [isVisible, setIsVisible] = useState(false);
+
+  function showNotice(message: string) {
+    setNotice(message);
+    setIsVisible(true);
+    window.setTimeout(() => setIsVisible(false), 5000);
+    window.setTimeout(() => setNotice(""), 5550);
+  }
+
+  return { notice, isVisible, showNotice };
+}
+
+function OrderNotice({ message, isVisible }: { message: string; isVisible: boolean }) {
+  return (
+    <div
+      data-show={isVisible}
+      className="fixed bottom-4 left-1/2 z-[90] w-[min(92vw,420px)] translate-y-24 -translate-x-1/2 rounded-2xl border border-red-300/35 bg-red-950/95 px-5 py-4 text-center text-sm font-bold text-red-50 opacity-0 shadow-[0_18px_44px_rgba(239,68,68,0.26)] backdrop-blur transition-all duration-500 data-[show=true]:translate-y-0 data-[show=true]:opacity-100 sm:bottom-auto sm:top-4 sm:-translate-y-24 sm:data-[show=true]:translate-y-0"
+    >
+      {message}
+    </div>
+  );
+}
+
 function TelegramOrderLink({
   message,
   productSlug,
   offer,
   className,
+  validate,
+  onInvalid,
   children,
 }: {
   message: string;
   productSlug: string;
   offer: string;
   className: string;
+  validate?: () => string | null;
+  onInvalid?: (message: string) => void;
   children: ReactNode;
 }) {
   const href = sellerChatHref(message);
@@ -126,7 +155,16 @@ function TelegramOrderLink({
       data-haptic-direct="true"
       data-product={productSlug}
       data-offer={offer}
-      onClick={(event) => handleTelegramOrderClick(event, message)}
+      onClick={(event) => {
+        const validationMessage = validate?.();
+        if (validationMessage) {
+          event.preventDefault();
+          onInvalid?.(validationMessage);
+          return;
+        }
+
+        handleTelegramOrderClick(event, message);
+      }}
       className={className}
     >
       {children}
@@ -256,10 +294,19 @@ function OfferIcon({ icon, scale = 1 }: { icon?: string; scale?: number }) {
 export function SteamTopupForm({ productName, productSlug }: { productName: string; productSlug: string }) {
   const [amount, setAmount] = useState("");
   const [login, setLogin] = useState("");
+  const { notice, isVisible, showNotice } = useOrderNotice();
   const numericAmount = Math.max(0, Number(amount) || 0);
   const rate = numericAmount >= 100 ? 20 : 21;
   const priceRub = Math.round(numericAmount * rate);
   const hasAmount = amount.trim().length > 0 && numericAmount > 0;
+  const hasLogin = login.trim().length > 0;
+
+  function validateOrder() {
+    if (!hasAmount && !hasLogin) return "Укажите сумму пополнения и Steam логин.";
+    if (!hasAmount) return "Укажите сумму пополнения от 1$.";
+    if (!hasLogin) return "Введите Steam логин.";
+    return null;
+  }
 
   const message = useMemo(
     () => {
@@ -272,6 +319,8 @@ export function SteamTopupForm({ productName, productSlug }: { productName: stri
   );
 
   return (
+    <>
+      {notice && <OrderNotice message={notice} isVisible={isVisible} />}
     <div className="rounded-2xl border border-white/15 bg-[#0f1420]/90 p-4">
       <div className="grid gap-4">
         <label className="grid gap-2">
@@ -280,7 +329,8 @@ export function SteamTopupForm({ productName, productSlug }: { productName: stri
             value={amount}
             onChange={(event) => setAmount(event.target.value.replace(/[^\d.]/g, ""))}
             inputMode="decimal"
-            className="rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white outline-none transition focus:border-sky-300/45"
+            placeholder="Минимум 1$"
+            className="rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-sky-300/45"
           />
         </label>
         <label className="grid gap-2">
@@ -288,7 +338,8 @@ export function SteamTopupForm({ productName, productSlug }: { productName: stri
           <input
             value={login}
             onChange={(event) => setLogin(event.target.value)}
-            className="rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white outline-none transition focus:border-sky-300/45"
+            placeholder="Введите ваш логин"
+            className="rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-sky-300/45"
           />
         </label>
       </div>
@@ -296,19 +347,27 @@ export function SteamTopupForm({ productName, productSlug }: { productName: stri
         message={message}
         productSlug={productSlug}
         offer="steam-topup"
+        validate={validateOrder}
+        onInvalid={showNotice}
         className="mt-4 flex w-full items-center justify-center rounded-xl bg-indigo-500 px-3 py-3 text-sm font-bold text-white shadow-[0_10px_24px_rgba(99,102,241,0.24)] transition-all duration-300 hover:bg-indigo-400 active:scale-95"
       >
         {hasAmount ? `Пополнить за ${priceRub} ₽ PMR` : "Пополнить"}
       </TelegramOrderLink>
     </div>
+    </>
   );
 }
 
 export function EpicTopupForm({ productName, productSlug }: { productName: string; productSlug: string }) {
   const [amount, setAmount] = useState("");
+  const { notice, isVisible, showNotice } = useOrderNotice();
   const numericAmount = Math.max(0, Number(amount) || 0);
   const priceRub = Math.round(numericAmount * 21);
   const hasAmount = amount.trim().length > 0 && numericAmount > 0;
+
+  function validateOrder() {
+    return hasAmount ? null : "Укажите сумму пополнения от 1$.";
+  }
 
   const message = useMemo(
     () => {
@@ -321,6 +380,8 @@ export function EpicTopupForm({ productName, productSlug }: { productName: strin
   );
 
   return (
+    <>
+      {notice && <OrderNotice message={notice} isVisible={isVisible} />}
     <div className="rounded-2xl border border-white/15 bg-[#0f1420]/90 p-4">
       <label className="grid gap-2">
         <span className="text-sm font-bold text-white/78">Сумма пополнения ($)</span>
@@ -328,18 +389,22 @@ export function EpicTopupForm({ productName, productSlug }: { productName: strin
           value={amount}
           onChange={(event) => setAmount(event.target.value.replace(/[^\d.]/g, ""))}
           inputMode="decimal"
-          className="rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white outline-none transition focus:border-sky-300/45"
+          placeholder="Минимум 1$"
+          className="rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-sky-300/45"
         />
       </label>
       <TelegramOrderLink
         message={message}
         productSlug={productSlug}
         offer="epic-topup"
+        validate={validateOrder}
+        onInvalid={showNotice}
         className="mt-4 flex w-full items-center justify-center rounded-xl bg-indigo-500 px-3 py-3 text-sm font-bold text-white shadow-[0_10px_24px_rgba(99,102,241,0.24)] transition-all duration-300 hover:bg-indigo-400 active:scale-95"
       >
         {hasAmount ? `Пополнить за ${priceRub} ₽ PMR` : "Пополнить"}
       </TelegramOrderLink>
     </div>
+    </>
   );
 }
 
@@ -359,13 +424,24 @@ export function ProductOffersWithDetails({
   fields: DetailField[];
 }) {
   const [values, setValues] = useState<Record<string, string>>({});
+  const { notice, isVisible, showNotice } = useOrderNotice();
 
   const details = fields.reduce<Record<string, string>>((acc, field) => {
     acc[field.label] = values[field.id] || "";
     return acc;
   }, {});
 
+  function validateDetails() {
+    if (fields.some((field) => !(values[field.id] || "").trim())) {
+      return "Заполните все поля, чтобы оформить заказ.";
+    }
+
+    return null;
+  }
+
   return (
+    <>
+      {notice && <OrderNotice message={notice} isVisible={isVisible} />}
     <div className="grid w-full gap-3">
       {fields.length > 0 && (
         <div className={`grid gap-3 rounded-2xl border border-cyan-300/18 bg-cyan-950/20 p-4 ${fields.length > 1 ? "sm:grid-cols-2" : ""}`}>
@@ -375,8 +451,8 @@ export function ProductOffersWithDetails({
               <input
                 value={values[field.id] || ""}
                 onChange={(event) => setValues((current) => ({ ...current, [field.id]: event.target.value }))}
-                placeholder={field.placeholder}
-                className="w-full rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white outline-none transition focus:border-sky-300/45"
+                placeholder={field.placeholder || `Введите ${field.label.toLowerCase()}`}
+                className="w-full rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-sky-300/45"
               />
             </label>
           ))}
@@ -424,6 +500,8 @@ export function ProductOffersWithDetails({
               message={message}
               productSlug={productSlug}
               offer={offer.label}
+              validate={fields.length > 0 ? validateDetails : undefined}
+              onInvalid={showNotice}
               className="shrink-0 rounded-xl bg-emerald-500 px-3 py-2 text-sm font-bold text-white shadow-[0_10px_24px_rgba(16,185,129,0.22)] transition-all duration-300 hover:bg-emerald-400 active:scale-95"
             >
               Купить
@@ -432,6 +510,7 @@ export function ProductOffersWithDetails({
         );
       })}
     </div>
+    </>
   );
 }
 
@@ -440,12 +519,22 @@ export function MinecraftOrderForm({ productName, productSlug }: { productName: 
     nick: "",
     server: "",
   });
+  const { notice, isVisible, showNotice } = useOrderNotice();
+
+  function validateOrder() {
+    if (!values.nick.trim() && !values.server.trim()) return "Введите ник и сервер.";
+    if (!values.nick.trim()) return "Введите ник.";
+    if (!values.server.trim()) return "Введите сервер.";
+    return null;
+  }
 
   const message = normalizeOrderMessage(
     `🛍 Новый заказ\n🎮 Игра: ${productName}\n🆔 Ник: ${values.nick.trim() || "не указан"}\n🌐 Сервер: ${values.server.trim() || "не указан"}`
   );
 
   return (
+    <>
+      {notice && <OrderNotice message={notice} isVisible={isVisible} />}
     <div className="grid w-full gap-3 rounded-2xl border border-cyan-300/18 bg-cyan-950/20 p-4">
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="grid gap-2">
@@ -453,7 +542,8 @@ export function MinecraftOrderForm({ productName, productSlug }: { productName: 
           <input
             value={values.nick}
             onChange={(event) => setValues((current) => ({ ...current, nick: event.target.value }))}
-            className="rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white outline-none transition focus:border-sky-300/45"
+            placeholder="Введите ник"
+            className="rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-sky-300/45"
           />
         </label>
         <label className="grid gap-2">
@@ -461,7 +551,8 @@ export function MinecraftOrderForm({ productName, productSlug }: { productName: 
           <input
             value={values.server}
             onChange={(event) => setValues((current) => ({ ...current, server: event.target.value }))}
-            className="rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white outline-none transition focus:border-sky-300/45"
+            placeholder="Введите сервер"
+            className="rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-sky-300/45"
           />
         </label>
       </div>
@@ -469,21 +560,31 @@ export function MinecraftOrderForm({ productName, productSlug }: { productName: 
         message={message}
         productSlug={productSlug}
         offer="minecraft-request"
+        validate={validateOrder}
+        onInvalid={showNotice}
         className="rounded-xl bg-emerald-500 px-3 py-3 text-center text-sm font-bold text-white shadow-[0_10px_24px_rgba(16,185,129,0.22)] transition-all duration-300 hover:bg-emerald-400 active:scale-95"
       >
         Написать менеджеру
       </TelegramOrderLink>
     </div>
+    </>
   );
 }
 
 export function ManagerLinkForm({ productName, productSlug }: { productName: string; productSlug: string }) {
   const [link, setLink] = useState("");
+  const { notice, isVisible, showNotice } = useOrderNotice();
   const message = normalizeOrderMessage(
     `🛍 Новый заказ\n🎁 Сервис: ${productName}\n🔗 Ссылка: ${link.trim() || "не указана"}`
   );
 
+  function validateOrder() {
+    return link.trim() ? null : "Вставьте ссылку, чтобы оформить заказ.";
+  }
+
   return (
+    <>
+      {notice && <OrderNotice message={notice} isVisible={isVisible} />}
     <div className="grid w-full gap-3 rounded-2xl border border-white/15 bg-[#0f1420]/90 p-4 sm:grid-cols-[1fr_auto] sm:items-end">
       <label className="grid min-w-0 gap-2">
         <span className="text-sm font-bold text-white/78">Ссылка:</span>
@@ -491,17 +592,20 @@ export function ManagerLinkForm({ productName, productSlug }: { productName: str
           value={link}
           onChange={(event) => setLink(event.target.value)}
           placeholder="Вставьте ссылку"
-          className="rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white outline-none transition focus:border-sky-300/45"
+          className="rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-sky-300/45"
         />
       </label>
       <TelegramOrderLink
         message={message}
         productSlug={productSlug}
         offer="manager-link"
+        validate={validateOrder}
+        onInvalid={showNotice}
         className="rounded-xl bg-emerald-500 px-3 py-3 text-center text-sm font-bold text-white shadow-[0_10px_24px_rgba(16,185,129,0.22)] transition-all duration-300 hover:bg-emerald-400 active:scale-95"
       >
         Написать менеджеру
       </TelegramOrderLink>
     </div>
+    </>
   );
 }
