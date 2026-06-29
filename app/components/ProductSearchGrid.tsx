@@ -3,11 +3,13 @@
 
 import Link from "next/link";
 import type { CSSProperties } from "react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { Product } from "../../lib/products";
 import { playProductHaptic } from "./haptics";
 
 type ProductGroup = "all" | "services" | "games" | "social";
+
+const FILTER_FADE_MS = 180;
 
 const PRODUCT_GROUPS: Array<{ id: ProductGroup; label: string }> = [
   { id: "social", label: "Соцсети" },
@@ -51,19 +53,37 @@ function getProductGroup(product: Product): ProductGroup {
 
 export default function ProductSearchGrid({ products }: { products: Product[] }) {
   const [activeGroup, setActiveGroup] = useState<ProductGroup>("all");
+  const [visibleGroup, setVisibleGroup] = useState<ProductGroup>("all");
+  const [isSwitching, setIsSwitching] = useState(false);
+  const fadeTimer = useRef<number | null>(null);
+  const revealTimer = useRef<number | null>(null);
 
   const filteredProducts = useMemo(() => {
-    if (activeGroup === "all") return products;
+    if (visibleGroup === "all") return products;
 
-    return products.filter((product) => getProductGroup(product) === activeGroup);
-  }, [activeGroup, products]);
+    return products.filter((product) => getProductGroup(product) === visibleGroup);
+  }, [products, visibleGroup]);
+
+  function switchGroup(group: ProductGroup) {
+    if (group === activeGroup) return;
+
+    if (fadeTimer.current) window.clearTimeout(fadeTimer.current);
+    if (revealTimer.current) window.clearTimeout(revealTimer.current);
+
+    setActiveGroup(group);
+    setIsSwitching(true);
+    fadeTimer.current = window.setTimeout(() => {
+      setVisibleGroup(group);
+      revealTimer.current = window.setTimeout(() => setIsSwitching(false), 35);
+    }, FILTER_FADE_MS);
+  }
 
   return (
     <div className="grid gap-5">
       <div className="grid w-full justify-items-center gap-3">
         <button
           type="button"
-          onClick={() => setActiveGroup("all")}
+          onClick={() => switchGroup("all")}
           className={`rounded-2xl border px-8 py-3 text-base font-black shadow-[0_18px_60px_rgba(0,0,0,0.18)] transition-all duration-300 active:scale-95 ${
             activeGroup === "all"
               ? "border-white/18 bg-white text-black"
@@ -81,7 +101,7 @@ export default function ProductSearchGrid({ products }: { products: Product[] })
               <button
                 key={group.id}
                 type="button"
-                onClick={() => setActiveGroup(group.id)}
+                onClick={() => switchGroup(group.id)}
                 className={`rounded-xl px-4 py-2 text-sm font-black transition-all duration-300 active:scale-95 sm:px-5 ${
                   isActive
                     ? "bg-white text-black shadow-[0_10px_28px_rgba(255,255,255,0.16)]"
@@ -96,7 +116,11 @@ export default function ProductSearchGrid({ products }: { products: Product[] })
       </div>
 
       {filteredProducts.length > 0 ? (
-        <section className="products-grid grid w-full grid-cols-3 gap-3 min-[500px]:grid-cols-4 min-[500px]:gap-4">
+        <section
+          className={`products-grid grid w-full grid-cols-3 gap-3 transition-all duration-200 ease-out min-[500px]:grid-cols-4 min-[500px]:gap-4 ${
+            isSwitching ? "translate-y-1 scale-[0.992] opacity-0" : "translate-y-0 scale-100 opacity-100"
+          }`}
+        >
           {filteredProducts.map((product) => {
             return (
               <Link
