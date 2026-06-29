@@ -283,10 +283,11 @@ const ADMIN_HTML = `<!doctype html>
     }
     async function postJson(url, body) {
       var controller = new AbortController();
-      var timeout = setTimeout(function() { controller.abort(); }, 14000);
+      var timeout = setTimeout(function() { controller.abort(); }, 30000);
       try {
         var response = await fetch(url, {
           method: 'POST',
+          credentials: 'same-origin',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body || {}),
           signal: controller.signal
@@ -568,12 +569,10 @@ const ADMIN_HTML = `<!doctype html>
       try {
         var result = await Promise.allSettled([
           postJson('/api/admin/products', {}),
-          postJson('/api/admin/settings', {}),
-          postJson('/api/admin/analytics', {})
+          postJson('/api/admin/settings', {})
         ]);
         if (result[0].status === 'fulfilled') products = result[0].value.products || [];
         if (result[1].status === 'fulfilled') settings = result[1].value.settings || settings;
-        if (result[2].status === 'fulfilled') analyticsEvents = result[2].value.events || [];
         var failed = result.filter(function(item) { return item.status === 'rejected'; }).length;
         selectedSlug = products[0] ? products[0].slug : '';
         $('reviewsCount').value = settings.reviewsCountLabel || '400+';
@@ -581,13 +580,26 @@ const ADMIN_HTML = `<!doctype html>
         renderProductList();
         renderProductEditor();
         if (failed) {
-          showNotice('Часть данных не загрузилась. Обновите страницу или войдите в админку заново.', true);
+          showNotice('Товары или настройки не загрузились. Нажмите «Обновить» или войдите заново.', true);
         } else {
-          showNotice('Готово.', false);
-          hideNoticeSoon();
+          showNotice('Товары загружены. Загружаю аналитику...', false);
+          loadAnalytics();
         }
       } catch (error) {
         showNotice(error.message || 'Не удалось загрузить админку.', true);
+      }
+    }
+    async function loadAnalytics() {
+      try {
+        var data = await postJson('/api/admin/analytics', {});
+        analyticsEvents = data.events || [];
+        renderAnalytics();
+        showNotice('Готово.', false);
+        hideNoticeSoon();
+      } catch (error) {
+        analyticsEvents = [];
+        renderAnalytics();
+        showNotice('Товары загружены. Аналитика временно недоступна.', true);
       }
     }
     async function saveProducts() {

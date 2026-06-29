@@ -13,7 +13,7 @@ export async function POST(request: Request) {
   let result = null;
 
   try {
-    result = await redisPipeline([["LRANGE", ANALYTICS_KEY, "0", "4999"]]);
+    result = await redisPipeline([["LRANGE", ANALYTICS_KEY, "0", "499"]], { timeoutMs: 2500 });
   } catch {
     return NextResponse.json({
       ok: true,
