@@ -47,14 +47,14 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     <main className="relative min-h-screen w-full overflow-x-hidden bg-transparent px-4 py-6 text-white">
       <div className="mx-auto w-full max-w-[1400px]">
         <div className="page-intro mb-6 text-center sm:mb-8">
-          <h1 className="flex items-center justify-center gap-2 text-3xl font-bold sm:gap-3 sm:text-4xl md:text-6xl">
+          <h1 className="flex items-center justify-center gap-2 text-4xl font-bold sm:gap-3 sm:text-5xl md:text-7xl">
             <span>Ecliptic Store</span>
             <Image
               src="/loading-icon.png"
               alt=""
               width={80}
               height={80}
-              className="h-[1em] w-[1em] object-contain"
+              className="h-[1.12em] w-[1.12em] object-contain"
             />
           </h1>
 
@@ -67,18 +67,18 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
         </div>
 
-        <div className="desktop-trust-panel mx-auto mb-7 hidden w-full max-w-[680px] items-center justify-center gap-5 rounded-2xl border border-white/10 px-6 py-4 text-sm font-bold uppercase shadow-[0_18px_70px_rgba(14,165,233,0.14)] md:flex">
+        <div className="desktop-trust-panel mx-auto mb-7 hidden w-full max-w-[720px] items-center justify-center gap-6 rounded-2xl border border-white/10 px-7 py-5 text-base font-bold uppercase shadow-[0_18px_70px_rgba(14,165,233,0.14)] md:flex">
           <a
             href="https://t.me/Ecliptic_Store_Reviews"
             target="_blank"
             rel="noopener noreferrer"
             data-analytics="reviews_click"
-            className="rounded-full bg-white/12 px-5 py-2 text-white shadow-inner transition hover:bg-white/18"
+            className="rounded-full bg-white/12 px-6 py-2.5 text-white shadow-inner transition hover:bg-white/18"
           >
             Отзывы
           </a>
           <span className="tracking-wide text-white/95">
-            {settings.reviewsCountLabel} успешных покупок <span className="text-emerald-300">✓</span>
+            {settings.reviewsCountLabel} успешных покупок <span className="text-lg text-emerald-300">✓</span>
           </span>
         </div>
 
