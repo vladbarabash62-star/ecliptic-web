@@ -13,6 +13,7 @@ type DetailField = {
   id: string;
   label: string;
   placeholder?: string;
+  numeric?: boolean;
 };
 
 function sellerChatHref(message?: string) {
@@ -276,6 +277,18 @@ function fallbackOfferIcon(productSlug: string, label: string) {
   return realOfferIcon(productSlug, label);
 }
 
+function compactDividerTitle(title: string) {
+  const normalizedTitle = title.trim();
+  const compactTitles: Record<string, string> = {
+    "Roblox Premium": "Premium",
+    "Individual Premium": "Premium",
+    "Duo Premium": "Duo",
+    "PSN Турция": "PSN",
+  };
+
+  return compactTitles[normalizedTitle] || normalizedTitle;
+}
+
 function OfferIcon({ icon, scale = 1 }: { icon?: string; scale?: number }) {
   const style = {
     "--offer-icon-scale": scale,
@@ -321,7 +334,7 @@ export function SteamTopupForm({ productName, productSlug }: { productName: stri
   return (
     <>
       {notice && <OrderNotice message={notice} isVisible={isVisible} />}
-    <div className="rounded-2xl border border-white/15 bg-[#0f1420]/90 p-4">
+      <div className="rounded-2xl border border-white/15 bg-[#0f1420]/90 p-4">
       <div className="grid gap-4">
         <label className="grid gap-2">
           <span className="text-sm font-bold text-white/78">Сумма пополнения ($)</span>
@@ -351,9 +364,9 @@ export function SteamTopupForm({ productName, productSlug }: { productName: stri
         onInvalid={showNotice}
         className="mt-4 flex w-full items-center justify-center rounded-xl bg-indigo-500 px-3 py-3 text-sm font-bold text-white shadow-[0_10px_24px_rgba(99,102,241,0.24)] transition-all duration-300 hover:bg-indigo-400 active:scale-95"
       >
-        {hasAmount ? `Пополнить за ${priceRub} ₽ PMR` : "Пополнить"}
+        {hasAmount ? `Пополнить за ${priceRub} ₽` : "Пополнить"}
       </TelegramOrderLink>
-    </div>
+      </div>
     </>
   );
 }
@@ -382,7 +395,7 @@ export function EpicTopupForm({ productName, productSlug }: { productName: strin
   return (
     <>
       {notice && <OrderNotice message={notice} isVisible={isVisible} />}
-    <div className="rounded-2xl border border-white/15 bg-[#0f1420]/90 p-4">
+      <div className="rounded-2xl border border-white/15 bg-[#0f1420]/90 p-4">
       <label className="grid gap-2">
         <span className="text-sm font-bold text-white/78">Сумма пополнения ($)</span>
         <input
@@ -401,9 +414,9 @@ export function EpicTopupForm({ productName, productSlug }: { productName: strin
         onInvalid={showNotice}
         className="mt-4 flex w-full items-center justify-center rounded-xl bg-indigo-500 px-3 py-3 text-sm font-bold text-white shadow-[0_10px_24px_rgba(99,102,241,0.24)] transition-all duration-300 hover:bg-indigo-400 active:scale-95"
       >
-        {hasAmount ? `Пополнить за ${priceRub} ₽ PMR` : "Пополнить"}
+        {hasAmount ? `Пополнить за ${priceRub} ₽` : "Пополнить"}
       </TelegramOrderLink>
-    </div>
+      </div>
     </>
   );
 }
@@ -442,7 +455,7 @@ export function ProductOffersWithDetails({
   return (
     <>
       {notice && <OrderNotice message={notice} isVisible={isVisible} />}
-    <div className="grid w-full gap-3">
+      <div className="grid w-full gap-3">
       {fields.length > 0 && (
         <div className={`grid gap-3 rounded-2xl border border-cyan-300/18 bg-cyan-950/20 p-4 ${fields.length > 1 ? "sm:grid-cols-2" : ""}`}>
           {fields.map((field) => (
@@ -450,7 +463,12 @@ export function ProductOffersWithDetails({
               <span className="text-sm font-bold text-white/78">{field.label}</span>
               <input
                 value={values[field.id] || ""}
-                onChange={(event) => setValues((current) => ({ ...current, [field.id]: event.target.value }))}
+                onChange={(event) => {
+                  const value = field.numeric ? event.target.value.replace(/\D/g, "") : event.target.value;
+                  setValues((current) => ({ ...current, [field.id]: value }));
+                }}
+                inputMode={field.numeric ? "numeric" : undefined}
+                pattern={field.numeric ? "[0-9]*" : undefined}
                 placeholder={field.placeholder || `Введите ${field.label.toLowerCase()}`}
                 className="w-full rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-sky-300/45"
               />
@@ -469,8 +487,7 @@ export function ProductOffersWithDetails({
             >
               <div className="category-divider__line" />
               <div className="category-divider__content">
-                <h3>{offer.title}</h3>
-                {offer.description && <p>{offer.description}</p>}
+                <h3>{compactDividerTitle(offer.title)}</h3>
               </div>
             </div>
           );
@@ -509,7 +526,7 @@ export function ProductOffersWithDetails({
           </div>
         );
       })}
-    </div>
+      </div>
     </>
   );
 }
@@ -535,7 +552,7 @@ export function MinecraftOrderForm({ productName, productSlug }: { productName: 
   return (
     <>
       {notice && <OrderNotice message={notice} isVisible={isVisible} />}
-    <div className="grid w-full gap-3 rounded-2xl border border-cyan-300/18 bg-cyan-950/20 p-4">
+      <div className="grid w-full gap-3 rounded-2xl border border-cyan-300/18 bg-cyan-950/20 p-4">
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="grid gap-2">
           <span className="text-sm font-bold text-white/78">Ник</span>
@@ -566,7 +583,7 @@ export function MinecraftOrderForm({ productName, productSlug }: { productName: 
       >
         Написать менеджеру
       </TelegramOrderLink>
-    </div>
+      </div>
     </>
   );
 }
@@ -585,7 +602,7 @@ export function ManagerLinkForm({ productName, productSlug }: { productName: str
   return (
     <>
       {notice && <OrderNotice message={notice} isVisible={isVisible} />}
-    <div className="grid w-full gap-3 rounded-2xl border border-white/15 bg-[#0f1420]/90 p-4 sm:grid-cols-[1fr_auto] sm:items-end">
+      <div className="grid w-full gap-3 rounded-2xl border border-white/15 bg-[#0f1420]/90 p-4 sm:grid-cols-[1fr_auto] sm:items-end">
       <label className="grid min-w-0 gap-2">
         <span className="text-sm font-bold text-white/78">Ссылка:</span>
         <input
@@ -605,7 +622,7 @@ export function ManagerLinkForm({ productName, productSlug }: { productName: str
       >
         Написать менеджеру
       </TelegramOrderLink>
-    </div>
+      </div>
     </>
   );
 }

@@ -68,11 +68,11 @@ export default async function ProductPage({ params }: PageProps) {
   const detailFields =
     product.slug === "mobile-legends"
       ? [
-          { id: "accountId", label: "ID аккаунта" },
-          { id: "serverId", label: "ID сервера" },
+          { id: "accountId", label: "ID аккаунта", placeholder: "Введите ID аккаунта", numeric: true },
+          { id: "serverId", label: "ID сервера", placeholder: "Введите ID сервера", numeric: true },
         ]
-      : product.slug === "pubg-mobile" || product.slug === "free-fire"
-        ? [{ id: "playerId", label: "ID игрока" }]
+      : product.slug === "pubg-mobile" || product.slug === "free-fire" || product.slug === "standoff-2"
+        ? [{ id: "playerId", label: "Игровой ID", placeholder: "Введите ваш ID", numeric: true }]
         : [];
   const iconStyle = {
     "--icon-scale": product.iconScale ?? 1,
