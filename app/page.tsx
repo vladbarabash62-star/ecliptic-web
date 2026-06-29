@@ -1,4 +1,5 @@
 import ProductSearchGrid from "./components/ProductSearchGrid";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { getProductBySlug, getProducts } from "../lib/productStore";
 import { productShouldBeIndexed } from "../lib/seo";
@@ -46,12 +47,16 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     <main className="relative min-h-screen w-full overflow-x-hidden bg-transparent px-4 py-6 text-white">
       <div className="mx-auto w-full max-w-[1400px]">
         <div className="page-intro mb-6 text-center sm:mb-8">
-          <h1 className="text-3xl font-bold sm:text-4xl md:text-6xl">
-            Ecliptic Store
+          <h1 className="flex items-center justify-center gap-2 text-3xl font-bold sm:gap-3 sm:text-4xl md:text-6xl">
+            <span>Ecliptic Store</span>
+            <Image
+              src="/loading-icon.png"
+              alt=""
+              width={80}
+              height={80}
+              className="h-[1em] w-[1em] object-contain"
+            />
           </h1>
-          <p className="mt-2 text-sm text-white/60 sm:text-base">
-            Интернет-магазин цифровых товаров
-          </p>
 
           {/*
             Ecliptic Store помогает оформить донат, игровые пополнения и
@@ -62,7 +67,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
         </div>
 
-        <div className="desktop-trust-panel mb-7 hidden w-full items-center justify-center gap-5 rounded-2xl border border-white/10 px-6 py-4 text-sm font-bold uppercase shadow-[0_18px_70px_rgba(14,165,233,0.14)] md:flex">
+        <div className="desktop-trust-panel mx-auto mb-7 hidden w-full max-w-[680px] items-center justify-center gap-5 rounded-2xl border border-white/10 px-6 py-4 text-sm font-bold uppercase shadow-[0_18px_70px_rgba(14,165,233,0.14)] md:flex">
           <a
             href="https://t.me/Ecliptic_Store_Reviews"
             target="_blank"
