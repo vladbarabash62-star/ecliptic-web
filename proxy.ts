@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const ADMIN_COOKIE = "ecliptic_admin_gate";
+const ADMIN_SESSION_COOKIE = "ecliptic_admin_session";
+const FALLBACK_ADMIN_PASSWORD_HASH = "753859bdae2d6fc3965bf2647fed1fb2115bd4fb8c5850a32aedc990f69e26f5";
 
 async function sha256(value: string) {
   const bytes = new TextEncoder().encode(value);
@@ -24,6 +26,11 @@ function notFound(request: NextRequest) {
 
 async function createAdminGateValue(request: NextRequest, secret: string) {
   return sha256(`${secret}|${adminFingerprint(request)}`);
+}
+
+async function createAdminSessionValue(request: NextRequest) {
+  const sessionSecret = process.env.ADMIN_PASSWORD_HASH || FALLBACK_ADMIN_PASSWORD_HASH;
+  return sha256(`admin-session|${sessionSecret}|${adminFingerprint(request)}`);
 }
 
 function setAdminCookie(response: NextResponse, value: string) {
@@ -66,6 +73,8 @@ export async function proxy(request: NextRequest) {
   const secretRoot = `/${secretPath}`;
   const expectedGate = await createAdminGateValue(request, secretPath);
   const hasAdminGate = request.cookies.get(ADMIN_COOKIE)?.value === expectedGate;
+  const expectedSession = await createAdminSessionValue(request);
+  const hasAdminSession = request.cookies.get(ADMIN_SESSION_COOKIE)?.value === expectedSession;
 
   if (pathname === "/admin-access") {
     const response = NextResponse.redirect(new URL("/admin", request.url));
@@ -100,7 +109,7 @@ export async function proxy(request: NextRequest) {
   }
 
   if (pathname === "/api/admin" || pathname.startsWith("/api/admin/")) {
-    if (!hasAdminGate) return notFound(request);
+    if (!hasAdminGate && !hasAdminSession) return notFound(request);
 
     const response = NextResponse.next();
     response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive, nosnippet");

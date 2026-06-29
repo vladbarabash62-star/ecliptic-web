@@ -574,13 +574,18 @@ const ADMIN_HTML = `<!doctype html>
         if (result[0].status === 'fulfilled') products = result[0].value.products || [];
         if (result[1].status === 'fulfilled') settings = result[1].value.settings || settings;
         if (result[2].status === 'fulfilled') analyticsEvents = result[2].value.events || [];
+        var failed = result.filter(function(item) { return item.status === 'rejected'; }).length;
         selectedSlug = products[0] ? products[0].slug : '';
         $('reviewsCount').value = settings.reviewsCountLabel || '400+';
         renderAnalytics();
         renderProductList();
         renderProductEditor();
-        showNotice('Готово.', false);
-        hideNoticeSoon();
+        if (failed) {
+          showNotice('Часть данных не загрузилась. Обновите страницу или войдите в админку заново.', true);
+        } else {
+          showNotice('Готово.', false);
+          hideNoticeSoon();
+        }
       } catch (error) {
         showNotice(error.message || 'Не удалось загрузить админку.', true);
       }

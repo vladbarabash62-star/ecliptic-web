@@ -178,16 +178,16 @@ export async function validateAdminRequest(request: Request, pin?: string) {
   const secret = getAdminPathSecret();
   const cookieStore = await cookies();
   const headerList = await headers();
-  const adminGate = cookieStore.get("ecliptic_admin_gate")?.value || "";
-  const expectedGate = secret ? getAdminGateValue(secret, headerList.get("user-agent") || "") : "";
-  if (secret && !safeEqual(adminGate, expectedGate)) {
-    return jsonError("Admin gate required", 404);
-  }
-
   const adminSession = cookieStore.get(ADMIN_SESSION_COOKIE)?.value || "";
   const expectedSession = getAdminSessionValue(getAdminSessionSecret(), headerList.get("user-agent") || "");
   if (safeEqual(adminSession, expectedSession)) {
     return null;
+  }
+
+  const adminGate = cookieStore.get("ecliptic_admin_gate")?.value || "";
+  const expectedGate = secret ? getAdminGateValue(secret, headerList.get("user-agent") || "") : "";
+  if (secret && !safeEqual(adminGate, expectedGate)) {
+    return jsonError("Admin gate required", 404);
   }
 
   if (!verifyAdminPassword(pin || "")) {
