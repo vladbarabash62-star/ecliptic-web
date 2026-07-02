@@ -273,6 +273,12 @@ export function buildStoreJsonLd() {
       url: SITE_URL,
       logo: SITE_LOGO,
       image: SITE_IMAGE,
+      hasMerchantReturnPolicy: {
+        "@type": "MerchantReturnPolicy",
+        applicableCountry: "MD",
+        merchantReturnDays: 0,
+        returnPolicyCategory: "https://schema.org/MerchantReturnNotPermitted",
+      },
       sameAs: [
         "https://t.me/Ecliptic_Store",
         "https://t.me/Ecliptic_Store_PMR",
@@ -288,6 +294,12 @@ export function buildStoreJsonLd() {
       logo: SITE_LOGO,
       image: SITE_IMAGE,
       description: SITE_DESCRIPTION,
+      hasMerchantReturnPolicy: {
+        "@type": "MerchantReturnPolicy",
+        applicableCountry: "MD",
+        merchantReturnDays: 0,
+        returnPolicyCategory: "https://schema.org/MerchantReturnNotPermitted",
+      },
       areaServed: ["Приднестровье", "ПМР", "Тирасполь", "Бендеры"],
       sameAs: [
         "https://t.me/Ecliptic_Store",
@@ -396,6 +408,7 @@ export function buildProductJsonLd(product: Product) {
         ? pricedOffers.map((offer) => ({
             "@type": "Offer",
             url: productUrl,
+            image: SITE_IMAGE,
             priceCurrency: "RUB",
             price: String(offer.priceRub),
             priceValidUntil: "2027-12-31",
@@ -418,6 +431,7 @@ export function buildProductJsonLd(product: Product) {
         : {
             "@type": "Offer",
             url: productUrl,
+            image: SITE_IMAGE,
             priceCurrency: "RUB",
             price: "1",
             priceValidUntil: "2027-12-31",
