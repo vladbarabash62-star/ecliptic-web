@@ -118,6 +118,17 @@ html {
   }
 }
 
+@keyframes homeRevealDown {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @keyframes loaderSpin {
   to {
     transform: rotate(360deg);
@@ -178,7 +189,7 @@ html {
 }
 
 .page-intro {
-  animation: softReveal 320ms ease-out both;
+  animation: homeRevealDown 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .product-card {
@@ -190,7 +201,7 @@ html {
 }
 
 .products-grid {
-  animation: softReveal 320ms ease-out 40ms both;
+  animation: softReveal 260ms ease-out 120ms both;
 }
 
 .desktop-trust-panel {
@@ -201,6 +212,32 @@ html {
     radial-gradient(circle at 82% 70%, rgba(99, 102, 241, 0.2), transparent 28%),
     linear-gradient(110deg, rgba(8, 16, 32, 0.92), rgba(12, 22, 42, 0.94));
   animation: softReveal 320ms ease-out 40ms both;
+}
+
+.home-reveal {
+  opacity: 1;
+  transform: none;
+  animation: homeRevealDown 560ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  will-change: opacity, transform;
+}
+
+.home-reveal--intro {
+  animation-delay: 40ms;
+}
+
+.home-reveal--trust {
+  animation-delay: 115ms;
+}
+
+.home-reveal--filters {
+  animation-delay: 170ms;
+}
+
+.home-product-card {
+  opacity: 1;
+  transform: none;
+  animation: homeRevealDown 560ms cubic-bezier(0.22, 1, 0.36, 1) var(--home-card-delay, 220ms) backwards;
+  will-change: opacity, transform;
 }
 
 .contact-float {
@@ -337,6 +374,8 @@ main {
 
 @media (prefers-reduced-motion: reduce) {
   .page-intro,
+  .home-reveal,
+  .home-product-card,
   .product-card,
   .desktop-trust-panel,
   .product-page-enter,

@@ -15,6 +15,8 @@ type ProductCard = {
 };
 
 const FILTER_FADE_MS = 180;
+const MOBILE_GRID_COLUMNS = 3;
+const WIDE_GRID_COLUMNS = 4;
 
 const PRODUCT_GROUPS: Array<{ id: ProductGroup; label: string }> = [
   { id: "social", label: "Соцсети" },
@@ -69,6 +71,14 @@ export default function ProductSearchGrid({ products }: { products: ProductCard[
     return products.filter((product) => getProductGroup(product) === visibleGroup);
   }, [products, visibleGroup]);
 
+  function revealDelay(index: number) {
+    const mobileRow = Math.floor(index / MOBILE_GRID_COLUMNS);
+    const wideRow = Math.floor(index / WIDE_GRID_COLUMNS);
+    const rowDelay = Math.min(Math.max(mobileRow, wideRow), 8) * 64;
+
+    return `${220 + rowDelay + (index % MOBILE_GRID_COLUMNS) * 18}ms`;
+  }
+
   function switchGroup(group: ProductGroup) {
     if (group === activeGroup) return;
 
@@ -85,7 +95,7 @@ export default function ProductSearchGrid({ products }: { products: ProductCard[
 
   return (
     <div className="grid gap-5">
-      <div className="grid w-full justify-items-center gap-3">
+      <div className="home-reveal home-reveal--filters grid w-full justify-items-center gap-3">
         <button
           type="button"
           onClick={() => switchGroup("all")}
@@ -136,8 +146,13 @@ export default function ProductSearchGrid({ products }: { products: ProductCard[
                 data-haptic-direct="true"
                 data-product={product.slug}
                 onPointerDown={playProductHaptic}
-                style={{ "--icon-scale": product.iconScale ?? 1 } as CSSProperties}
-                className="product-card group flex min-h-[154px] min-w-0 rounded-2xl border border-white/10 bg-[#0a0d14] p-3 transition-all duration-300 hover:scale-105 hover:border-white/20"
+                style={
+                  {
+                    "--icon-scale": product.iconScale ?? 1,
+                    "--home-card-delay": revealDelay(index),
+                  } as CSSProperties
+                }
+                className="home-product-card product-card group flex min-h-[154px] min-w-0 rounded-2xl border border-white/10 bg-[#0a0d14] p-3 transition-all duration-300 hover:scale-105 hover:border-white/20"
               >
                 <div className="flex h-full w-full min-w-0 flex-col items-center">
                   <div className="product-icon-stage mb-3 flex aspect-square w-full items-center justify-center rounded-xl bg-[#0f1420]">

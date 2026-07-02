@@ -52,7 +52,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   return (
     <main className="relative min-h-screen w-full overflow-x-hidden bg-transparent px-4 py-6 text-white">
       <div className="mx-auto w-full max-w-[1400px]">
-        <div className="page-intro mb-6 text-center sm:mb-8">
+        <div className="home-reveal home-reveal--intro page-intro mb-6 text-center sm:mb-8">
           <h1 className="flex items-center justify-center gap-2 text-4xl font-bold sm:gap-3 sm:text-5xl md:text-7xl">
             <span>Ecliptic Store</span>
             <Image
@@ -73,7 +73,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
         </div>
 
-        <div className="desktop-trust-panel mx-auto mb-7 hidden w-full max-w-[680px] items-center justify-center gap-5 rounded-2xl border border-white/10 px-6 py-4 text-[17px] font-bold uppercase shadow-[0_18px_70px_rgba(14,165,233,0.14)] md:flex">
+        <div className="home-reveal home-reveal--trust desktop-trust-panel mx-auto mb-7 hidden w-full max-w-[680px] items-center justify-center gap-5 rounded-2xl border border-white/10 px-6 py-4 text-[17px] font-bold uppercase shadow-[0_18px_70px_rgba(14,165,233,0.14)] md:flex">
           <a
             href="https://t.me/Ecliptic_Store_Reviews"
             target="_blank"
