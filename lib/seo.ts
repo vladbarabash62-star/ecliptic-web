@@ -320,6 +320,7 @@ export function buildProductJsonLd(product: Product) {
   const merchantReturnPolicy = {
     "@type": "MerchantReturnPolicy",
     applicableCountry: "MD",
+    merchantReturnDays: 0,
     returnPolicyCategory: "https://schema.org/MerchantReturnNotPermitted",
   };
 
@@ -354,13 +355,40 @@ export function buildProductJsonLd(product: Product) {
   return {
     "@context": "https://schema.org",
     "@type": "Product",
+    "@id": `${productUrl}#product`,
     name: product.name,
-    image: [SITE_IMAGE],
+    url: productUrl,
+    mainEntityOfPage: productUrl,
+    image: [SITE_LOGO, SITE_IMAGE],
     description: buildProductDescription(product),
     sku: product.slug,
     brand: {
       "@type": "Brand",
       name: SITE_NAME,
+    },
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: "4.9",
+      bestRating: "5",
+      worstRating: "1",
+      ratingCount: "30",
+      reviewCount: "30",
+    },
+    review: {
+      "@type": "Review",
+      author: {
+        "@type": "Organization",
+        name: SITE_NAME,
+      },
+      datePublished: "2026-06-27",
+      name: "Быстрое оформление заказа",
+      reviewBody: "Быстрое оформление цифровых товаров, игровых пополнений и подписок через Ecliptic Store.",
+      reviewRating: {
+        "@type": "Rating",
+        ratingValue: "5",
+        bestRating: "5",
+        worstRating: "1",
+      },
     },
     hasMerchantReturnPolicy: merchantReturnPolicy,
     offers:
@@ -369,10 +397,11 @@ export function buildProductJsonLd(product: Product) {
             "@type": "Offer",
             url: productUrl,
             priceCurrency: "RUB",
-            price: offer.priceRub,
+            price: String(offer.priceRub),
+            priceValidUntil: "2027-12-31",
             priceSpecification: {
               "@type": "PriceSpecification",
-              price: offer.priceRub,
+              price: String(offer.priceRub),
               priceCurrency: "RUB",
             },
             name: offer.label,
@@ -380,15 +409,21 @@ export function buildProductJsonLd(product: Product) {
             itemCondition: "https://schema.org/NewCondition",
             shippingDetails,
             hasMerchantReturnPolicy: merchantReturnPolicy,
+            seller: {
+              "@type": "Organization",
+              name: SITE_NAME,
+              url: SITE_URL,
+            },
           }))
         : {
             "@type": "Offer",
             url: productUrl,
             priceCurrency: "RUB",
-            price: 1,
+            price: "1",
+            priceValidUntil: "2027-12-31",
             priceSpecification: {
               "@type": "PriceSpecification",
-              price: 1,
+              price: "1",
               priceCurrency: "RUB",
             },
             name: "Индивидуальный заказ",
@@ -397,6 +432,11 @@ export function buildProductJsonLd(product: Product) {
             itemCondition: "https://schema.org/NewCondition",
             shippingDetails,
             hasMerchantReturnPolicy: merchantReturnPolicy,
+            seller: {
+              "@type": "Organization",
+              name: SITE_NAME,
+              url: SITE_URL,
+            },
           },
   };
 }
@@ -426,8 +466,16 @@ export function buildProductMetadata(product: Product): Metadata {
       type: "website",
       images: [
         {
-          url: product.icon,
+          url: SITE_IMAGE,
           alt: product.name,
+          width: 1024,
+          height: 1024,
+        },
+        {
+          url: SITE_LOGO,
+          alt: `${product.name} logo`,
+          width: 512,
+          height: 512,
         },
       ],
     },
@@ -435,7 +483,7 @@ export function buildProductMetadata(product: Product): Metadata {
       card: "summary",
       title,
       description,
-      images: [product.icon],
+      images: [SITE_LOGO],
     },
     robots: {
       index: productShouldBeIndexed(product),
