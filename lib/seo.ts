@@ -196,7 +196,15 @@ export function productHasPricedOffers(product: Product) {
 }
 
 export function productHasOrderForm(product: Product) {
-  return ["steam", "epic-games-topup", "minecraft", "boosty", "twitch"].includes(product.slug);
+  return [
+    "steam",
+    "epic-games-topup",
+    "minecraft",
+    "boosty",
+    "twitch",
+    "card-withdrawal-rf",
+    "card-withdrawal-md",
+  ].includes(product.slug);
 }
 
 export function productShouldBeIndexed(product: Product) {

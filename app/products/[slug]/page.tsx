@@ -64,7 +64,11 @@ export default async function ProductPage({ params }: PageProps) {
   const hasPurchasableOffers = offers.some((offer) => offer.type !== "divider");
   const needsSteamTopup = product.slug === "steam";
   const needsEpicTopup = product.slug === "epic-games-topup";
-  const needsLinkManager = product.slug === "boosty" || product.slug === "twitch";
+  const needsLinkManager =
+    product.slug === "boosty" ||
+    product.slug === "twitch" ||
+    product.slug === "card-withdrawal-rf" ||
+    product.slug === "card-withdrawal-md";
   const needsMinecraftForm = product.slug === "minecraft";
   const detailFields =
     product.slug === "mobile-legends"

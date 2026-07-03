@@ -371,6 +371,30 @@ export const products: Product[] = [
     offers: [],
   },
   {
+    name: "Оплата по СБП",
+    icon: "/loading-icon.png",
+    slug: "sbp-payment",
+    iconScale: 1.08,
+    offers: [
+      { label: "ПМР", priceRub: 30 },
+      { label: "РФ", priceRub: 100 },
+    ],
+  },
+  {
+    name: "Вывод с карты РФ",
+    icon: "/loading-icon.png",
+    slug: "card-withdrawal-rf",
+    iconScale: 1.08,
+    offers: [],
+  },
+  {
+    name: "Вывод с карты MD",
+    icon: "/loading-icon.png",
+    slug: "card-withdrawal-md",
+    iconScale: 1.08,
+    offers: [],
+  },
+  {
     name: "Переводы",
     icon: "/loading-icon.png",
     slug: "transfers",
