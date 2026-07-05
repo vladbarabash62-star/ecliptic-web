@@ -6,13 +6,23 @@ export const runtime = "nodejs";
 const ANALYTICS_KEY = "ecliptic:analytics:events";
 
 export async function POST(request: Request) {
-  const body = (await request.json().catch(() => ({}))) as { pin?: string };
+  const body = (await request.json().catch(() => ({}))) as { pin?: string; reset?: boolean };
   const authError = await validateAdminRequest(request, body.pin);
   if (authError) return authError;
 
   let result = null;
 
   try {
+    if (body.reset) {
+      await redisPipeline([["DEL", ANALYTICS_KEY]], { timeoutMs: 2500 });
+      return NextResponse.json({
+        ok: true,
+        configured: Boolean(getRedisConfig()),
+        reset: true,
+        events: [],
+      });
+    }
+
     result = await redisPipeline([["LRANGE", ANALYTICS_KEY, "0", "499"]], { timeoutMs: 2500 });
   } catch {
     return NextResponse.json({

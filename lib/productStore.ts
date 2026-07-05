@@ -302,7 +302,8 @@ export async function saveProducts(nextProducts: Product[]) {
     const slug = canonicalProductSlug(product.slug);
     if (!slug || usedSlugs.has(slug)) continue;
     usedSlugs.add(slug);
-    const baseProduct = baseBySlug.get(canonicalProductSlug(product.baseSlug)) || baseBySlug.get(slug) || inferBaseProduct(product, usedBaseSlugs);
+    const explicitBaseSlug = canonicalProductSlug(product.baseSlug);
+    const baseProduct = explicitBaseSlug ? baseBySlug.get(explicitBaseSlug) : baseBySlug.get(slug);
     if (baseProduct && usedBaseSlugs.has(baseProduct.slug)) continue;
 
     overrides[slug] = {

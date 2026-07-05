@@ -2,30 +2,74 @@ import { ADMIN_SESSION_COOKIE, getAdminSessionSecret, getAdminSessionValue, safe
 
 export const dynamic = "force-dynamic";
 
-const BASE_STYLE = `
-  :root { color-scheme: dark; --bg:#000; --panel:#0b0f18; --panel2:#111827; --line:rgba(255,255,255,.12); --text:#fff; --muted:rgba(255,255,255,.64); --blue:#0ea5e9; --green:#10b981; --red:#ef4444; --amber:#f59e0b; }
+const STYLE = `
+  :root { color-scheme: dark; --bg:#000; --panel:#0b0f18; --panel2:#111827; --line:rgba(255,255,255,.13); --text:#fff; --muted:rgba(255,255,255,.64); --blue:#0ea5e9; --green:#10b981; --red:#ef4444; }
   * { box-sizing:border-box; }
   html,body { margin:0; min-height:100%; }
-  body { min-height:100vh; background:var(--bg); color:var(--text); font-family:Inter,Segoe UI,Arial,sans-serif; }
+  body { min-height:100vh; background:#000; color:#fff; font-family:Inter,Segoe UI,Arial,sans-serif; }
   body:before { content:""; position:fixed; inset:0; pointer-events:none; background-image:radial-gradient(#fff 1px, transparent 1.5px); background-size:92px 92px; opacity:.24; }
   button,input,textarea { font:inherit; }
-  button { cursor:pointer; border:0; }
+  button { cursor:pointer; }
   input,textarea { width:100%; border:1px solid var(--line); border-radius:12px; background:#07101d; color:#fff; padding:11px 12px; outline:none; }
-  textarea { resize:vertical; min-height:82px; }
-  input:focus,textarea:focus { border-color:rgba(56,189,248,.65); }
+  textarea { min-height:86px; resize:vertical; }
+  input:focus,textarea:focus { border-color:rgba(56,189,248,.7); }
   label { display:block; margin:0 0 7px; color:rgba(255,255,255,.7); font-size:12px; font-weight:850; }
   h1,h2,h3,p { margin:0; }
+  .page { position:relative; z-index:1; width:min(1480px,calc(100% - 28px)); margin:0 auto; padding:22px 0 44px; }
   .brand { color:#bae6fd; font-size:13px; font-weight:950; letter-spacing:.04em; text-transform:uppercase; }
   .muted { color:var(--muted); }
   .card { border:1px solid var(--line); background:rgba(11,15,24,.92); border-radius:18px; box-shadow:0 22px 70px rgba(0,0,0,.26); }
-  .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:42px; border-radius:12px; padding:11px 14px; background:var(--blue); color:#fff; font-weight:900; text-decoration:none; }
-  .btn.secondary { background:rgba(255,255,255,.06); border:1px solid var(--line); }
+  .top { display:flex; justify-content:space-between; align-items:flex-end; gap:16px; margin-bottom:16px; }
+  .top h1 { margin-top:8px; font-size:clamp(30px,4vw,48px); line-height:1.05; }
+  .toolbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:42px; border:1px solid transparent; border-radius:12px; padding:11px 14px; background:var(--blue); color:#fff; font-weight:900; text-decoration:none; }
+  .btn.secondary { background:rgba(255,255,255,.06); border-color:var(--line); }
   .btn.green { background:var(--green); }
-  .btn.red { background:rgba(239,68,68,.14); border:1px solid rgba(239,68,68,.34); color:#fecaca; }
+  .btn.red { background:rgba(239,68,68,.14); border-color:rgba(239,68,68,.38); color:#fecaca; }
   .btn:disabled { opacity:.55; cursor:not-allowed; }
   .notice { display:none; margin-bottom:16px; padding:12px 14px; border-radius:14px; border:1px solid var(--line); background:rgba(255,255,255,.05); color:#dbeafe; }
   .notice.show { display:block; }
   .notice.error { border-color:rgba(239,68,68,.38); background:rgba(239,68,68,.11); color:#fecaca; }
+  .tabs { display:flex; flex-wrap:wrap; gap:8px; padding:8px; margin-bottom:16px; }
+  .tab { border:1px solid transparent; border-radius:12px; padding:11px 14px; background:transparent; color:#fff; font-weight:900; }
+  .tab.active { background:rgba(14,165,233,.16); border-color:rgba(56,189,248,.44); color:#e0f2fe; }
+  .section { display:none; }
+  .section.active { display:block; }
+  .stats { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:16px; }
+  .stat { padding:16px; }
+  .stat .value { margin-top:8px; font-size:32px; font-weight:1000; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .panel { padding:16px; }
+  .list { display:grid; gap:8px; margin-top:14px; }
+  .row { display:grid; grid-template-columns:1fr auto; gap:10px; align-items:center; padding:10px 12px; border:1px solid rgba(255,255,255,.08); border-radius:12px; background:rgba(255,255,255,.035); }
+  .bar { height:8px; margin-top:8px; overflow:hidden; border-radius:999px; background:rgba(255,255,255,.08); }
+  .bar span { display:block; height:100%; background:linear-gradient(90deg,#38bdf8,#22c55e); }
+  .admin-grid { display:grid; grid-template-columns:330px minmax(0,1fr); gap:14px; }
+  .sidebar { padding:12px; max-height:calc(100vh - 220px); overflow:auto; }
+  .product-btn { width:100%; display:grid; grid-template-columns:44px 1fr; gap:10px; align-items:center; margin:7px 0; padding:8px; border:1px solid rgba(255,255,255,.08); border-radius:14px; background:rgba(255,255,255,.035); color:#fff; text-align:left; }
+  .product-btn.active { border-color:rgba(56,189,248,.46); background:rgba(14,165,233,.14); }
+  .thumb { width:44px; height:44px; display:grid; place-items:center; border-radius:12px; background:#07101d; overflow:hidden; }
+  .thumb img { max-width:74%; max-height:74%; object-fit:contain; }
+  .editor,.settings-card { padding:16px; }
+  .fields { display:grid; gap:12px; margin-top:14px; }
+  .two { display:grid; grid-template-columns:minmax(0,1fr) minmax(150px,220px); gap:12px; }
+  .upload-row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; align-items:center; }
+  .image-preview { width:58px; height:58px; display:grid; place-items:center; margin-top:8px; border:1px solid rgba(255,255,255,.1); border-radius:14px; background:#07101d; overflow:hidden; color:rgba(255,255,255,.45); font-size:12px; }
+  .image-preview img { max-width:80%; max-height:80%; object-fit:contain; transform-origin:center; }
+  .offer { border:1px solid var(--line); background:rgba(7,16,29,.72); border-radius:14px; padding:12px; margin-top:10px; }
+  .offer-head { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px; }
+  .mini-actions { display:flex; flex-wrap:wrap; gap:7px; }
+  .mini { border:1px solid var(--line); border-radius:9px; padding:7px 9px; background:rgba(255,255,255,.07); color:#fff; font-size:12px; font-weight:800; }
+  .empty { padding:28px; text-align:center; color:var(--muted); }
+  .table { width:100%; border-collapse:collapse; margin-top:12px; }
+  .table th,.table td { padding:10px; border-bottom:1px solid rgba(255,255,255,.08); text-align:left; font-size:13px; }
+  .table th { color:rgba(255,255,255,.65); }
+  .login-page { position:relative; z-index:1; min-height:100vh; display:grid; place-items:center; padding:24px; }
+  .login-card { width:min(440px,100%); padding:28px; text-align:center; }
+  .login-card h1 { margin-top:14px; font-size:clamp(36px,7vw,50px); line-height:1; }
+  .login-form { display:grid; gap:14px; margin-top:24px; text-align:left; }
+  .login-form .btn { width:100%; }
+  @media (max-width:940px) { .stats,.grid2,.admin-grid,.two { grid-template-columns:1fr; } .top { align-items:flex-start; flex-direction:column; } .sidebar { max-height:none; } .upload-row { grid-template-columns:1fr; } }
 `;
 
 const LOGIN_HTML = `<!doctype html>
@@ -35,22 +79,14 @@ const LOGIN_HTML = `<!doctype html>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
   <title>Admin | Ecliptic Store</title>
-  <style>
-    ${BASE_STYLE}
-    .login-page { position:relative; z-index:1; min-height:100vh; display:grid; place-items:center; padding:24px; }
-    .login-card { width:min(440px,100%); padding:28px; text-align:center; }
-    .login-card h1 { margin-top:14px; font-size:clamp(36px,7vw,50px); line-height:1; }
-    .login-card p { margin-top:14px; line-height:1.5; }
-    .login-form { display:grid; gap:14px; margin-top:24px; text-align:left; }
-    .login-form .btn { width:100%; }
-  </style>
+  <style>${STYLE}</style>
 </head>
 <body>
   <main class="login-page">
     <form class="card login-card" id="loginForm" autocomplete="off">
       <div class="brand">Ecliptic Admin</div>
       <h1>Вход в админку</h1>
-      <p class="muted">Введите пароль владельца, чтобы открыть аналитику и настройки сайта.</p>
+      <p class="muted" style="margin-top:14px;line-height:1.5">Введите пароль владельца, чтобы открыть товары, аналитику и настройки сайта.</p>
       <div class="login-form">
         <div>
           <label for="password">Пароль</label>
@@ -66,26 +102,20 @@ const LOGIN_HTML = `<!doctype html>
     var input = document.getElementById('password');
     var button = document.getElementById('loginButton');
     var message = document.getElementById('message');
-
     function showMessage(text, error) {
       message.textContent = text;
       message.className = 'notice show' + (error ? ' error' : '');
     }
-
     form.addEventListener('submit', async function(event) {
       event.preventDefault();
       var password = input.value.trim();
-      if (!password) {
-        showMessage('Введите пароль.', true);
-        return;
-      }
-
+      if (!password) return showMessage('Введите пароль.', true);
       button.disabled = true;
       showMessage('Проверяю пароль...', false);
-
       try {
         var response = await fetch('/api/admin/auth', {
           method: 'POST',
+          credentials: 'same-origin',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ password: password })
         });
@@ -109,49 +139,7 @@ const ADMIN_HTML = `<!doctype html>
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
   <title>Admin | Ecliptic Store</title>
-  <style>
-    ${BASE_STYLE}
-    .page { position:relative; z-index:1; width:min(1480px,calc(100% - 28px)); margin:0 auto; padding:22px 0 44px; }
-    .top { display:flex; justify-content:space-between; align-items:flex-end; gap:16px; margin-bottom:16px; }
-    .top h1 { margin-top:8px; font-size:clamp(28px,4vw,46px); line-height:1.05; }
-    .toolbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
-    .tabs { display:flex; flex-wrap:wrap; gap:8px; padding:8px; margin-bottom:16px; }
-    .tab { border-radius:12px; padding:11px 14px; background:transparent; color:#fff; font-weight:900; border:1px solid transparent; }
-    .tab.active { background:rgba(14,165,233,.16); border-color:rgba(56,189,248,.44); color:#e0f2fe; }
-    .section { display:none; }
-    .section.active { display:block; }
-    .stats { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:16px; }
-    .stat { padding:16px; }
-    .stat .value { margin-top:8px; font-size:32px; font-weight:1000; }
-    .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-    .panel { padding:16px; }
-    .list { display:grid; gap:8px; margin-top:14px; }
-    .row { display:grid; grid-template-columns:1fr auto; gap:10px; align-items:center; padding:10px 12px; border:1px solid rgba(255,255,255,.08); border-radius:12px; background:rgba(255,255,255,.035); }
-    .bar { height:8px; margin-top:8px; overflow:hidden; border-radius:999px; background:rgba(255,255,255,.08); }
-    .bar span { display:block; height:100%; background:linear-gradient(90deg,#38bdf8,#22c55e); }
-    .admin-grid { display:grid; grid-template-columns:330px minmax(0,1fr); gap:14px; }
-    .sidebar { padding:12px; max-height:calc(100vh - 220px); overflow:auto; }
-    .product-btn { width:100%; display:grid; grid-template-columns:44px 1fr; gap:10px; align-items:center; margin:7px 0; padding:8px; border:1px solid rgba(255,255,255,.08); border-radius:14px; background:rgba(255,255,255,.035); color:#fff; text-align:left; }
-    .product-btn.active { border-color:rgba(56,189,248,.46); background:rgba(14,165,233,.14); }
-    .thumb { width:44px; height:44px; display:grid; place-items:center; border-radius:12px; background:#07101d; overflow:hidden; }
-    .thumb img { max-width:74%; max-height:74%; object-fit:contain; }
-    .editor { padding:16px; }
-    .fields { display:grid; gap:12px; margin-top:14px; }
-    .two { display:grid; grid-template-columns:minmax(0,1fr) minmax(150px,220px); gap:12px; }
-    .upload-row { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; align-items:center; }
-    .image-preview { width:58px; height:58px; display:grid; place-items:center; margin-top:8px; border:1px solid rgba(255,255,255,.1); border-radius:14px; background:#07101d; overflow:hidden; color:rgba(255,255,255,.45); font-size:12px; }
-    .image-preview img { max-width:80%; max-height:80%; object-fit:contain; transform-origin:center; transition:transform .18s ease; }
-    .offer { border:1px solid var(--line); background:rgba(7,16,29,.72); border-radius:14px; padding:12px; margin-top:10px; }
-    .offer-head { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px; }
-    .mini-actions { display:flex; flex-wrap:wrap; gap:7px; }
-    .mini { border-radius:9px; padding:7px 9px; background:rgba(255,255,255,.07); color:#fff; font-size:12px; font-weight:800; border:1px solid var(--line); }
-    .empty { padding:28px; text-align:center; color:var(--muted); }
-    .table { width:100%; border-collapse:collapse; margin-top:12px; }
-    .table th,.table td { padding:10px; border-bottom:1px solid rgba(255,255,255,.08); text-align:left; font-size:13px; }
-    .table th { color:rgba(255,255,255,.65); }
-    .settings-card { max-width:640px; padding:18px; }
-    @media (max-width: 940px) { .stats,.grid2,.admin-grid,.two { grid-template-columns:1fr; } .top { align-items:flex-start; flex-direction:column; } .sidebar { max-height:none; } .upload-row { grid-template-columns:1fr; } }
-  </style>
+  <style>${STYLE}</style>
 </head>
 <body>
   <main class="page">
@@ -177,6 +165,11 @@ const ADMIN_HTML = `<!doctype html>
     <div id="notice" class="notice show">Загружаю данные...</div>
 
     <section id="analytics" class="section active">
+      <div class="toolbar" style="justify-content:flex-end;margin-bottom:12px">
+        <button class="btn secondary" id="reloadAnalyticsBtn" type="button">Обновить аналитику</button>
+        <button class="btn red" id="resetAnalyticsBtn" type="button">Сбросить статистику</button>
+      </div>
+      <p class="muted" id="analyticsUpdatedAt" style="margin:-4px 0 14px;text-align:right">Статистика загружается...</p>
       <div class="stats">
         <div class="card stat"><p class="muted">Всего событий</p><div id="statTotal" class="value">0</div></div>
         <div class="card stat"><p class="muted">Просмотры</p><div id="statViews" class="value">0</div></div>
@@ -184,14 +177,8 @@ const ADMIN_HTML = `<!doctype html>
         <div class="card stat"><p class="muted">Telegram</p><div id="statTelegram" class="value">0</div></div>
       </div>
       <div class="grid2">
-        <div class="card panel">
-          <h2>Популярные товары</h2>
-          <div id="productStats" class="list"></div>
-        </div>
-        <div class="card panel">
-          <h2>Действия</h2>
-          <div id="actionStats" class="list"></div>
-        </div>
+        <div class="card panel"><h2>Популярные товары</h2><div id="productStats" class="list"></div></div>
+        <div class="card panel"><h2>Действия</h2><div id="actionStats" class="list"></div></div>
       </div>
       <div class="card panel" style="margin-top:14px">
         <h2>Последние события</h2>
@@ -247,12 +234,29 @@ const ADMIN_HTML = `<!doctype html>
     var analyticsEvents = [];
     var selectedSlug = '';
     var uploadTarget = null;
+    var dirtyProducts = false;
 
     function $(id) { return document.getElementById(id); }
     function esc(value) {
       return String(value == null ? '' : value)
         .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+    function showNotice(text, error) {
+      var el = $('notice');
+      el.textContent = text;
+      el.className = 'notice show' + (error ? ' error' : '');
+    }
+    function hideNoticeSoon() {
+      setTimeout(function() { $('notice').className = 'notice'; }, 2200);
+    }
+    function markProductsDirty() {
+      dirtyProducts = true;
+      $('saveProductsBtn').textContent = 'Сохранить товары *';
+    }
+    function markProductsClean() {
+      dirtyProducts = false;
+      $('saveProductsBtn').textContent = 'Сохранить товары';
     }
     function parseDecimal(value, fallback) {
       var text = String(value == null ? '' : value).trim().replace(',', '.');
@@ -273,36 +277,31 @@ const ADMIN_HTML = `<!doctype html>
       var percent = clampNumber(value, fallbackPercent, -100, 100);
       return Math.round((1 + percent / 100) * 1000) / 1000;
     }
-    function showNotice(text, isError) {
-      var el = $('notice');
-      el.textContent = text;
-      el.className = 'notice show' + (isError ? ' error' : '');
-    }
-    function hideNoticeSoon() {
-      setTimeout(function() { $('notice').className = 'notice'; }, 2200);
+    function slugify(value) {
+      var map = { 'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'e','ж':'zh','з':'z','и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'h','ц':'c','ч':'ch','ш':'sh','щ':'sch','ъ':'','ы':'y','ь':'','э':'e','ю':'yu','я':'ya' };
+      return String(value || '').toLowerCase().split('').map(function(ch) { return map[ch] || ch; }).join('').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 64);
     }
     async function postJson(url, body) {
       var controller = new AbortController();
-      var timeout = setTimeout(function() { controller.abort(); }, 30000);
+      var timeout = setTimeout(function() { controller.abort(); }, 45000);
       try {
         var response = await fetch(url, {
           method: 'POST',
           credentials: 'same-origin',
-          headers: { 'Content-Type': 'application/json' },
+          cache: 'no-store',
+          headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
           body: JSON.stringify(body || {}),
           signal: controller.signal
         });
         var data = await response.json().catch(function() { return {}; });
-        if (!response.ok) {
-          if (response.status === 403) {
-            showNotice('Доступ закончился или пароль неверный. Откройте админку заново.', true);
-          }
-          throw new Error(data.error || 'Сервер ответил ошибкой.');
-        }
+        if (!response.ok) throw new Error(data.error || ('Ошибка сервера: ' + response.status));
         return data;
       } finally {
         clearTimeout(timeout);
       }
+    }
+    function currentProduct() {
+      return products.find(function(product) { return product.slug === selectedSlug; });
     }
     function countBy(items, getter) {
       return items.reduce(function(acc, item) {
@@ -315,8 +314,7 @@ const ADMIN_HTML = `<!doctype html>
       var rows = Object.entries(data).sort(function(a,b) { return b[1] - a[1]; }).slice(0, 8);
       var max = Math.max(1, ...rows.map(function(row) { return row[1]; }));
       $(id).innerHTML = rows.length ? rows.map(function(row) {
-        var label = row[0], value = row[1];
-        return '<div class="row"><div><strong>' + esc(label) + '</strong><div class="bar"><span style="width:' + Math.max(8, Math.round(value / max * 100)) + '%"></span></div></div><strong>' + value + '</strong></div>';
+        return '<div class="row"><div><strong>' + esc(row[0]) + '</strong><div class="bar"><span style="width:' + Math.max(8, Math.round(row[1] / max * 100)) + '%"></span></div></div><strong>' + row[1] + '</strong></div>';
       }).join('') : '<p class="muted">Пока нет данных.</p>';
     }
     function renderAnalytics() {
@@ -331,17 +329,13 @@ const ADMIN_HTML = `<!doctype html>
         return '<tr><td>' + esc(time) + '</td><td>' + esc(event.type || '') + '</td><td>' + esc(event.product || '') + '</td><td>' + esc(event.path || '') + '</td></tr>';
       }).join('') || '<tr><td colspan="4" class="muted">Пока нет событий.</td></tr>';
     }
-    function currentProduct() {
-      return products.find(function(product) { return product.slug === selectedSlug; });
-    }
-    function slugify(value) {
-      var map = { 'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'e','ж':'zh','з':'z','и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'h','ц':'c','ч':'ch','ш':'sh','щ':'sch','ъ':'','ы':'y','ь':'','э':'e','ю':'yu','я':'ya' };
-      return String(value || '').toLowerCase().split('').map(function(ch) { return map[ch] || ch; }).join('').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 64);
+    function updateAnalyticsTimestamp() {
+      $('analyticsUpdatedAt').textContent = 'Обновлено: ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     }
     function renderProductList() {
       $('productList').innerHTML = products.map(function(product) {
         return '<button class="product-btn ' + (product.slug === selectedSlug ? 'active' : '') + '" type="button" data-action="select-product" data-slug="' + esc(product.slug) + '">' +
-          '<span class="thumb"><img src="' + esc(product.icon) + '" alt=""></span>' +
+          '<span class="thumb"><img src="' + esc(product.icon || '/loading-icon.png') + '" alt=""></span>' +
           '<span><strong>' + esc(product.name) + '</strong><br><span class="muted">' + esc(product.slug) + '</span></span>' +
         '</button>';
       }).join('');
@@ -397,10 +391,8 @@ const ADMIN_HTML = `<!doctype html>
           '<div style="margin-top:10px"><label>Текст Telegram</label><textarea data-offer-index="' + index + '" data-offer-field="messageTemplate">' + esc(offer.messageTemplate || '') + '</textarea></div></div>';
       }).join('');
     }
-    function handleProductListClick(event) {
-      var button = event.target.closest('[data-action="select-product"]');
-      if (!button) return;
-      selectedSlug = button.dataset.slug || '';
+    function selectProduct(slug) {
+      selectedSlug = slug || '';
       renderProductList();
       renderProductEditor();
     }
@@ -409,11 +401,7 @@ const ADMIN_HTML = `<!doctype html>
       if (!button) return;
       var action = button.dataset.action;
       if (action === 'pick-image') {
-        uploadTarget = {
-          kind: button.dataset.kind || 'product',
-          key: button.dataset.key || '',
-          index: Number(button.dataset.index || -1)
-        };
+        uploadTarget = { kind: button.dataset.kind || 'product', key: button.dataset.key || '', index: Number(button.dataset.index || -1) };
         $('imagePicker').value = '';
         $('imagePicker').click();
       }
@@ -430,6 +418,7 @@ const ADMIN_HTML = `<!doctype html>
       if (target.dataset.action === 'update-slug') {
         product.slug = slugify(target.value) || product.slug;
         selectedSlug = product.slug;
+        markProductsDirty();
         renderProductList();
         return;
       }
@@ -441,6 +430,7 @@ const ADMIN_HTML = `<!doctype html>
           if (productPreview) productPreview.style.transform = 'scale(' + product[key] + ')';
         }
         if (key === 'name' || key === 'icon') renderProductList();
+        markProductsDirty();
         return;
       }
       if (target.dataset.offerIndex && target.dataset.offerField) {
@@ -451,13 +441,12 @@ const ADMIN_HTML = `<!doctype html>
           product.offers[index][field] = percentToScale(target.value, product.offers[index][field] || 1);
           var offerPreview = document.querySelector('[data-offer-preview="' + index + '"] img');
           if (offerPreview) offerPreview.style.transform = 'scale(' + product.offers[index][field] + ')';
-          return;
-        }
-        if (field === 'priceRub') {
+        } else if (field === 'priceRub') {
           product.offers[index][field] = Math.max(0, Math.min(999999, parseDecimal(target.value, 0)));
-          return;
+        } else {
+          product.offers[index][field] = target.value;
         }
-        product.offers[index][field] = target.value;
+        markProductsDirty();
       }
     }
     function addOffer() {
@@ -465,6 +454,7 @@ const ADMIN_HTML = `<!doctype html>
       if (!product) return;
       product.offers = product.offers || [];
       product.offers.push({ label: 'Новый вариант', priceRub: 0, icon: '', iconScale: 1, messageTemplate: '🛍 Новый заказ\\n📦 Сервис: {product}\\n💎 Товар: {offer}\\n💰 К оплате: {price}р' });
+      markProductsDirty();
       renderProductEditor();
     }
     function addDivider() {
@@ -472,12 +462,14 @@ const ADMIN_HTML = `<!doctype html>
       if (!product) return;
       product.offers = product.offers || [];
       product.offers.push({ type: 'divider', title: 'Новый раздел', description: '' });
+      markProductsDirty();
       renderProductEditor();
     }
     function removeOffer(index) {
       var product = currentProduct();
       if (!product || !product.offers[index]) return;
       product.offers.splice(index, 1);
+      markProductsDirty();
       renderProductEditor();
     }
     function moveOffer(index, direction) {
@@ -487,20 +479,23 @@ const ADMIN_HTML = `<!doctype html>
       if (next < 0 || next >= product.offers.length) return;
       var item = product.offers.splice(index, 1)[0];
       product.offers.splice(next, 0, item);
+      markProductsDirty();
       renderProductEditor();
     }
     function deleteProduct() {
       if (!confirm('Удалить товар?')) return;
       products = products.filter(function(product) { return product.slug !== selectedSlug; });
       selectedSlug = products[0] ? products[0].slug : '';
+      markProductsDirty();
       renderProductList();
       renderProductEditor();
     }
     function addProduct() {
       var base = 'new-product', slug = base, index = 2;
       while (products.some(function(product) { return product.slug === slug; })) slug = base + '-' + index++;
-      products.push({ name: 'Новый товар', slug: slug, icon: '/loading-icon.png', iconScale: 1, offers: [] });
+      products.push({ name: 'Новый товар', slug: slug, icon: '/loading-icon.png', iconScale: 1, offers: [], messageTemplate: '' });
       selectedSlug = slug;
+      markProductsDirty();
       renderProductList();
       renderProductEditor();
     }
@@ -521,10 +516,9 @@ const ADMIN_HTML = `<!doctype html>
       });
     }
     async function imageFileToDataUrl(file) {
-      var imageType = new RegExp('^image/(png|jpe?g|webp)$', 'i');
-      if (!file || !imageType.test(file.type)) throw new Error('Выберите PNG, JPG или WEBP.');
+      if (!file || !/^image\\/(png|jpe?g|webp)$/i.test(file.type)) throw new Error('Выберите PNG, JPG или WEBP.');
       var original = await readFileDataUrl(file);
-      if (original.length <= 260000) return original;
+      if (original.length <= 220000) return original;
       var image = await loadImage(original);
       var maxSide = 512;
       while (maxSide >= 160) {
@@ -535,7 +529,7 @@ const ADMIN_HTML = `<!doctype html>
         canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
         for (var quality = 0.9; quality >= 0.5; quality -= 0.1) {
           var result = canvas.toDataURL('image/webp', quality);
-          if (result.length <= 260000) return result;
+          if (result.length <= 220000) return result;
         }
         maxSide = Math.round(maxSide * 0.75);
       }
@@ -555,6 +549,7 @@ const ADMIN_HTML = `<!doctype html>
           product[uploadTarget.key] = dataUrl;
           renderProductList();
         }
+        markProductsDirty();
         renderProductEditor();
         showNotice('Картинка загружена. Нажмите «Сохранить товары».', false);
       } catch (error) {
@@ -567,18 +562,15 @@ const ADMIN_HTML = `<!doctype html>
     async function loadAll() {
       showNotice('Загружаю данные...', false);
       try {
-        var result = await Promise.allSettled([
-          postJson('/api/admin/products', {}),
-          postJson('/api/admin/settings', {})
-        ]);
+        var result = await Promise.allSettled([postJson('/api/admin/products', {}), postJson('/api/admin/settings', {})]);
         if (result[0].status === 'fulfilled') products = result[0].value.products || [];
         if (result[1].status === 'fulfilled') settings = result[1].value.settings || settings;
         var failed = result.filter(function(item) { return item.status === 'rejected'; }).length;
         selectedSlug = products[0] ? products[0].slug : '';
         $('reviewsCount').value = settings.reviewsCountLabel || '400+';
-        renderAnalytics();
         renderProductList();
         renderProductEditor();
+        markProductsClean();
         if (failed) {
           showNotice('Товары или настройки не загрузились. Нажмите «Обновить» или войдите заново.', true);
         } else {
@@ -594,12 +586,31 @@ const ADMIN_HTML = `<!doctype html>
         var data = await postJson('/api/admin/analytics', {});
         analyticsEvents = data.events || [];
         renderAnalytics();
+        updateAnalyticsTimestamp();
         showNotice('Готово.', false);
         hideNoticeSoon();
       } catch (error) {
         analyticsEvents = [];
         renderAnalytics();
+        $('analyticsUpdatedAt').textContent = 'Статистика временно не обновилась';
         showNotice('Товары загружены. Аналитика временно недоступна.', true);
+      }
+    }
+    async function resetAnalytics() {
+      if (!confirm('Сбросить всю статистику?')) return;
+      $('resetAnalyticsBtn').disabled = true;
+      showNotice('Сбрасываю статистику...', false);
+      try {
+        var data = await postJson('/api/admin/analytics', { reset: true });
+        analyticsEvents = data.events || [];
+        renderAnalytics();
+        updateAnalyticsTimestamp();
+        showNotice('Статистика сброшена.', false);
+        hideNoticeSoon();
+      } catch (error) {
+        showNotice(error.message || 'Не удалось сбросить статистику.', true);
+      } finally {
+        $('resetAnalyticsBtn').disabled = false;
       }
     }
     async function saveProducts() {
@@ -611,6 +622,7 @@ const ADMIN_HTML = `<!doctype html>
         if (!products.some(function(product) { return product.slug === selectedSlug; })) selectedSlug = products[0] ? products[0].slug : '';
         renderProductList();
         renderProductEditor();
+        markProductsClean();
         showNotice('Товары сохранены.', false);
         hideNoticeSoon();
       } catch (error) {
@@ -636,7 +648,7 @@ const ADMIN_HTML = `<!doctype html>
       }
     }
     async function logout() {
-      await fetch('/api/admin/logout', { method: 'POST' }).catch(function() {});
+      await fetch('/api/admin/logout', { method: 'POST', credentials: 'same-origin' }).catch(function() {});
       window.location.replace('/admin');
     }
     document.querySelectorAll('.tab').forEach(function(button) {
@@ -648,14 +660,30 @@ const ADMIN_HTML = `<!doctype html>
       });
     });
     $('reloadBtn').addEventListener('click', loadAll);
+    $('reloadAnalyticsBtn').addEventListener('click', loadAnalytics);
+    $('resetAnalyticsBtn').addEventListener('click', resetAnalytics);
     $('logoutBtn').addEventListener('click', logout);
     $('addProductBtn').addEventListener('click', addProduct);
     $('saveProductsBtn').addEventListener('click', saveProducts);
     $('saveSettingsBtn').addEventListener('click', saveSettings);
-    $('productList').addEventListener('click', handleProductListClick);
+    $('productList').addEventListener('click', function(event) {
+      var button = event.target.closest('[data-action="select-product"]');
+      if (button) selectProduct(button.dataset.slug || '');
+    });
     $('productEditor').addEventListener('click', handleEditorClick);
     $('productEditor').addEventListener('input', handleEditorInput);
     $('imagePicker').addEventListener('change', handleImagePick);
+    document.addEventListener('visibilitychange', function() {
+      if (!document.hidden) loadAnalytics();
+    });
+    setInterval(function() {
+      if (!document.hidden) loadAnalytics();
+    }, 30000);
+    window.addEventListener('beforeunload', function(event) {
+      if (!dirtyProducts) return;
+      event.preventDefault();
+      event.returnValue = '';
+    });
     loadAll();
   </script>
 </body>

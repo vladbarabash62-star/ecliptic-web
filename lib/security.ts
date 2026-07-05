@@ -166,7 +166,7 @@ export async function validateAdminRequest(request: Request, pin?: string) {
   }
 
   const contentLength = Number(request.headers.get("content-length") || 0);
-  if (contentLength > 6_000_000) {
+  if (contentLength > 30_000_000) {
     return jsonError("Payload too large", 413);
   }
 

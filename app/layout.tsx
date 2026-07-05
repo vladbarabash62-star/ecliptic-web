@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import AnalyticsTracker from "./components/AnalyticsTracker";
 import ContactButton from "./components/ContactButton";
 import HomeButton from "./components/HomeButton";
@@ -19,16 +18,6 @@ import {
   stringifyJsonLd,
 } from "../lib/seo";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 const seoKeywordBase = [
   "Ecliptic Store",
@@ -160,7 +149,7 @@ export default function RootLayout({
   return (
     <html
       lang="ru"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className="h-full antialiased"
       suppressHydrationWarning
     >
       <body
