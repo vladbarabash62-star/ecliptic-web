@@ -3,7 +3,6 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import { getProductBySlug, getProducts } from "../lib/productStore";
 import { withOptimizedProductsImages } from "../lib/optimizedImages";
-import { productShouldBeIndexed } from "../lib/seo";
 import { getSiteSettings } from "../lib/siteSettings";
 import { defaultSiteSettings } from "../lib/siteSettingsDefaults";
 
@@ -42,7 +41,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     getProducts({ cached: true }),
     getSiteSettings({ cached: true }).catch(() => defaultSiteSettings),
   ]);
-  const products = withOptimizedProductsImages(allProducts.filter(productShouldBeIndexed)).map((product) => ({
+  const products = withOptimizedProductsImages(allProducts).map((product) => ({
     name: product.name,
     slug: product.slug,
     icon: product.icon,
