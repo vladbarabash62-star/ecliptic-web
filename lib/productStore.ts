@@ -264,11 +264,16 @@ export async function getProducts(options: ProductReadOptions = {}) {
       if (baseProduct) {
         if (usedBaseSlugs.has(baseProduct.slug)) return null;
         usedBaseSlugs.add(baseProduct.slug);
+        const offers =
+          baseProduct.slug === "mobile-legends"
+            ? baseProduct.offers
+            : mergeOffersWithBaseDividers(baseProduct.offers, override.offers);
+
         return {
           ...baseProduct,
           ...override,
           baseSlug: baseProduct.slug,
-          offers: mergeOffersWithBaseDividers(baseProduct.offers, override.offers),
+          offers,
           slug,
         };
       }
