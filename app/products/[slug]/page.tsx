@@ -76,7 +76,7 @@ export default async function ProductPage({ params }: PageProps) {
   const offers = product.offers || [];
   const displayOffers =
     product.slug === "sbp-payment"
-      ? offers.map((offer) =>
+      ? offers.filter((offer) => offer.type === "divider" || offer.label !== "ПМР").map((offer) =>
           offer.type === "divider" || offer.label !== "РФ"
             ? offer
             : { ...offer, label: "100р РФ", priceRub: 30 }

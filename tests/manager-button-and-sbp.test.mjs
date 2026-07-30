@@ -16,6 +16,7 @@ assert.match(pageSource, /product\.slug\.startsWith\("card-withdrawal"\)/);
 assert.match(pageSource, /name\.includes\("вывод с карты"\)/);
 assert.match(pageSource, /<ManagerButtonForm productName={product\.name} productSlug={product\.slug} \/>/);
 assert.match(pageSource, /product\.slug === "sbp-payment"/);
+assert.match(pageSource, /offer\.label !== "ПМР"/);
 assert.match(pageSource, /label: "100р РФ", priceRub: 30/);
 
 const sbpBlockMatch = productsSource.match(/name: "Оплата по СБП"[\s\S]*?name: "Вывод с карты РФ"/);
