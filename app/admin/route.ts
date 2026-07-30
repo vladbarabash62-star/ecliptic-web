@@ -241,6 +241,7 @@ const ADMIN_HTML = `<!doctype html>
     var dirtyProducts = false;
     var draggedProductSlug = '';
     var draggedOfferIndex = -1;
+    var dragScrollTimer = 0;
 
     function $(id) { return document.getElementById(id); }
     function esc(value) {
@@ -503,6 +504,38 @@ const ADMIN_HTML = `<!doctype html>
         element.classList.remove('dragging', 'drag-over');
       });
     }
+    function isDraggingSomething() {
+      return Boolean(draggedProductSlug) || draggedOfferIndex >= 0;
+    }
+    function stopDragAutoScroll() {
+      if (!dragScrollTimer) return;
+      window.clearInterval(dragScrollTimer);
+      dragScrollTimer = 0;
+    }
+    function startDragAutoScroll(speed) {
+      stopDragAutoScroll();
+      if (!speed) return;
+      dragScrollTimer = window.setInterval(function() {
+        window.scrollBy({ top: speed, behavior: 'auto' });
+      }, 16);
+    }
+    function updateDragAutoScroll(event) {
+      if (!isDraggingSomething()) return;
+      var edge = 96;
+      var maxSpeed = 28;
+      var y = event.clientY;
+      if (y < edge) {
+        startDragAutoScroll(-Math.max(8, Math.round((edge - y) / edge * maxSpeed)));
+      } else if (window.innerHeight - y < edge) {
+        startDragAutoScroll(Math.max(8, Math.round((edge - (window.innerHeight - y)) / edge * maxSpeed)));
+      } else {
+        stopDragAutoScroll();
+      }
+    }
+    function handleDragWheel(event) {
+      if (!isDraggingSomething()) return;
+      window.scrollBy({ top: event.deltaY, behavior: 'auto' });
+    }
     function handleProductDragStart(event) {
       var item = event.target.closest('.product-btn');
       if (!item) return;
@@ -517,6 +550,7 @@ const ADMIN_HTML = `<!doctype html>
       var item = event.target.closest('.product-btn');
       if (!item || !draggedProductSlug) return;
       event.preventDefault();
+      updateDragAutoScroll(event);
       item.classList.add('drag-over');
       if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
     }
@@ -537,6 +571,7 @@ const ADMIN_HTML = `<!doctype html>
         renderProductEditor();
       }
       draggedProductSlug = '';
+      stopDragAutoScroll();
       clearDragClasses();
     }
     function handleOfferDragStart(event) {
@@ -558,6 +593,7 @@ const ADMIN_HTML = `<!doctype html>
       var item = event.target.closest('.offer');
       if (!item || draggedOfferIndex < 0) return;
       event.preventDefault();
+      updateDragAutoScroll(event);
       item.classList.add('drag-over');
       if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
     }
@@ -576,11 +612,13 @@ const ADMIN_HTML = `<!doctype html>
         renderProductEditor();
       }
       draggedOfferIndex = -1;
+      stopDragAutoScroll();
       clearDragClasses();
     }
     function handleDragEnd() {
       draggedProductSlug = '';
       draggedOfferIndex = -1;
+      stopDragAutoScroll();
       clearDragClasses();
     }
     function deleteProduct() {
@@ -783,6 +821,7 @@ const ADMIN_HTML = `<!doctype html>
     $('productEditor').addEventListener('dragleave', handleOfferDragLeave);
     $('productEditor').addEventListener('drop', handleOfferDrop);
     $('productEditor').addEventListener('dragend', handleDragEnd);
+    document.addEventListener('wheel', handleDragWheel, { passive: true });
     $('imagePicker').addEventListener('change', handleImagePick);
     window.addEventListener('beforeunload', function(event) {
       if (!dirtyProducts) return;
