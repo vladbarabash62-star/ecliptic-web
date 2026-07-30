@@ -286,6 +286,20 @@ function formatPriceTag(priceRub: number) {
   return `${priceRub} р`;
 }
 
+function priceTagFontSize(priceRub: number) {
+  if (priceRub >= 1000) return 25;
+  if (priceRub >= 300) return 24;
+  if (priceRub >= 100) return 23;
+  if (priceRub >= 50) return 22;
+  return 20;
+}
+
+function priceTagStyle(priceRub: number) {
+  return {
+    "--offer-price-size": `${priceTagFontSize(priceRub)}px`,
+  } as CSSProperties;
+}
+
 const CURRENCY_RUB = "\u20BD";
 const CURRENCY_PMR = "Р ПМР";
 const CURRENCY_USD = "$";
@@ -526,9 +540,9 @@ export function ProductOffersWithDetails({
             style={{ animationDelay: `${140 + index * 55}ms` }}
           >
             <OfferIcon icon={offer.icon || offerIcon || fallbackOfferIcon(productSlug, offer.label)} scale={offer.iconScale ?? 1} />
-            <div className="min-w-0">
-              <p className="break-words text-sm font-bold text-white sm:text-base">{offer.label}</p>
-              <p className="mt-1 text-lg font-black leading-none text-emerald-300 sm:text-xl">
+            <div className="offer-copy flex h-12 min-w-0 flex-col justify-center overflow-hidden">
+              <p className="offer-title truncate text-sm font-bold leading-none text-white sm:text-base">{offer.label}</p>
+              <p className="offer-price font-black text-emerald-300" style={priceTagStyle(offer.priceRub)}>
                 {formatPriceTag(offer.priceRub)}
               </p>
             </div>

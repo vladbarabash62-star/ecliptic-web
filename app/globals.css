@@ -332,6 +332,19 @@ html {
   animation: softReveal 260ms ease-out both;
 }
 
+.offer-copy {
+  min-height: 48px;
+}
+
+.offer-price {
+  display: block;
+  margin-top: 3px;
+  font-size: var(--offer-price-size, 20px);
+  line-height: 0.92;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
 .category-divider {
   animation: softReveal 260ms ease-out both;
 }
