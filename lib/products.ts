@@ -203,7 +203,7 @@ export const products: Product[] = [
       { label: "72 алмаза", priceRub: 55 },
       { label: "257 алмазов", priceRub: 80 },
       { label: "429 алмазов", priceRub: 130 },
-      { label: "706 алмазов", priceRub: 210 },
+      { label: "706 алмазов", priceRub: 175 },
       { label: "1412 алмазов", priceRub: 410 },
       { label: "2195 алмазов", priceRub: 625 },
       { type: "divider", title: "Пропуски", description: "Пропуски Mobile Legends отдельно от алмазов." },
