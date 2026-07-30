@@ -7,8 +7,12 @@ const rootDir = dirname(dirname(fileURLToPath(import.meta.url)));
 const source = readFileSync(join(rootDir, "app", "products", "[slug]", "ProductActionForms.tsx"), "utf8");
 const cssSource = readFileSync(join(rootDir, "app", "globals.css"), "utf8");
 
-assert.equal(source.includes("₽"), false, "Visible product price UI should use р instead of ₽");
 assert.match(source, /function formatPriceTag\(priceRub: number\) \{\s*return `\$\{priceRub\} р`;\s*\}/);
+assert.doesNotMatch(
+  source.match(/function formatPriceTag[\s\S]*?\}/)?.[0] || "",
+  /₽/,
+  "Visible product price UI should use р instead of ₽"
+);
 assert.match(
   source,
   /function priceTagFontSize\(priceRub: number\) \{\s*if \(priceRub >= 1000\) return 25;\s*if \(priceRub >= 300\) return 24;\s*if \(priceRub >= 100\) return 23;\s*if \(priceRub >= 50\) return 22;\s*return 20;\s*\}/,

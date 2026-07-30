@@ -25,6 +25,7 @@ const PRODUCT_GROUPS: Array<{ id: ProductGroup; label: string }> = [
 ];
 
 const GAME_SLUGS = new Set([
+  "steam",
   "world-of-tanks",
   "brawl-stars",
   "roblox",
@@ -35,11 +36,15 @@ const GAME_SLUGS = new Set([
   "clash-royale",
   "free-fire",
   "gta-5-rp-majestic-rp",
+  "majestic-rp",
+  "arizona-rp",
   "radmir-rp",
   "amazing-rp",
   "black-russia",
   "minecraft",
   "oxide",
+  "epic-games-topup",
+  "playstation",
 ]);
 
 const SOCIAL_SLUGS = new Set([
@@ -50,11 +55,29 @@ const SOCIAL_SLUGS = new Set([
   "youtube-premium",
   "spotify-premium",
   "discord-nitro",
+  "boosty",
+  "twitch",
 ]);
 
 function getProductGroup(product: ProductCard): ProductGroup {
+  const name = product.name.toLowerCase();
+
   if (GAME_SLUGS.has(product.slug)) return "games";
   if (SOCIAL_SLUGS.has(product.slug)) return "social";
+  if (
+    name.includes("steam") ||
+    name.includes("gta") ||
+    name.includes("majestic") ||
+    name.includes("arizona") ||
+    name.includes("аризона") ||
+    name.includes("epic games") ||
+    name.includes("playstation")
+  ) {
+    return "games";
+  }
+  if (name.includes("boosty") || name.includes("бусти") || name.includes("twitch") || name.includes("твич")) {
+    return "social";
+  }
   return "services";
 }
 
@@ -141,7 +164,7 @@ export default function ProductSearchGrid({ products }: { products: ProductCard[
               <Link
                 key={product.slug}
                 href={`/products/${product.slug}`}
-                prefetch
+                prefetch={false}
                 data-analytics="product_open"
                 data-haptic-direct="true"
                 data-product={product.slug}
@@ -163,6 +186,9 @@ export default function ProductSearchGrid({ products }: { products: ProductCard[
                       loading={index < 6 ? "eager" : "lazy"}
                       decoding="async"
                       draggable={false}
+                      onError={(event) => {
+                        event.currentTarget.src = "/loading-icon.png";
+                      }}
                     />
                   </div>
 
