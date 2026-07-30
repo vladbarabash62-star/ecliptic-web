@@ -13,18 +13,21 @@ function escapeRegExp(value) {
 }
 
 const expectedOffers = [
-  ['"50 + 50 алмазов"', "30"],
+  ['"50 + 50 алмазов"', "25"],
   ['"150 + 150 алмазов"', "70"],
   ['"250 + 250 алмазов"', "95"],
-  ['"500 + 500 алмазов"', "185"],
-  ['"72 алмаза"', "55"],
-  ['"257 алмазов"', "80"],
-  ['"429 алмазов"', "130"],
-  ['"706 алмазов"', "175"],
+  ['"500 + 500 алмазов"', "180"],
+  ['"33 алмаза"', "15"],
+  ['"86 алмазов"', "25"],
+  ['"172 алмаза"', "65"],
+  ['"275 алмазов"', "95"],
+  ['"565 алмазов"', "175"],
   ['"Алмазный пропуск 7 дней"', "55"],
   ['"Элитный пропуск 7 дней"', "30"],
   ['"Эпический пропуск 30 дней"', "115"],
 ];
+
+const removedOffers = ['"72 алмаза"', '"257 алмазов"', '"429 алмазов"', '"706 алмазов"', '"1412 алмазов"', '"2195 алмазов"'];
 
 for (const [label, price] of expectedOffers) {
   assert.match(
@@ -32,4 +35,8 @@ for (const [label, price] of expectedOffers) {
     new RegExp(`label: ${escapeRegExp(label)}, priceRub: ${price}`),
     `${label} should cost ${price} rubles`
   );
+}
+
+for (const label of removedOffers) {
+  assert.equal(mobileLegendsBlock.includes(`label: ${label}`), false, `${label} should not remain in Mobile Legends pricing`);
 }
