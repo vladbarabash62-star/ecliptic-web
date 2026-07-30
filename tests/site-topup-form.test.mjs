@@ -13,9 +13,15 @@ assert.match(formSource, /Введите ссылку на сайт, котор�
 assert.match(formSource, /Сумма пополнения/);
 assert.match(formSource, /Введите сумму/);
 assert.match(formSource, /CURRENCY_RUB = "\\u20BD"/);
-assert.match(formSource, /Р ПМР/);
-assert.match(formSource, /value="\$"/);
+assert.match(formSource, /CURRENCY_PMR = "Р ПМР"/);
+assert.match(formSource, /CURRENCY_USD = "\$"/);
 assert.match(formSource, /CURRENCY_EUR = "\\u20AC"/);
+assert.match(formSource, /100р РФ/);
+assert.match(formSource, /30р ПМР/);
+assert.match(formSource, /2\$/);
+assert.match(formSource, /2\$\{CURRENCY_EUR\}/);
+assert.match(formSource, /Сумма маленькая\. Минимальная сумма пополнения:/);
+assert.match(formSource, /Пополнить/);
 
 assert.match(pageSource, /SiteTopupForm/);
 assert.match(pageSource, /product\.slug === "site-topups"/);

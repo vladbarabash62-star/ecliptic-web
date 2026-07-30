@@ -287,7 +287,16 @@ function formatPriceTag(priceRub: number) {
 }
 
 const CURRENCY_RUB = "\u20BD";
+const CURRENCY_PMR = "Р ПМР";
+const CURRENCY_USD = "$";
 const CURRENCY_EUR = "\u20AC";
+
+const SITE_TOPUP_MINIMUMS: Record<string, { amount: number; label: string }> = {
+  [CURRENCY_RUB]: { amount: 100, label: "100р РФ" },
+  [CURRENCY_PMR]: { amount: 30, label: "30р ПМР" },
+  [CURRENCY_USD]: { amount: 2, label: "2$" },
+  [CURRENCY_EUR]: { amount: 2, label: `2${CURRENCY_EUR}` },
+};
 
 function compactDividerTitle(title: string) {
   const normalizedTitle = title.trim();
@@ -640,11 +649,19 @@ export function SiteTopupForm({ productName, productSlug }: { productName: strin
   const [amount, setAmount] = useState("");
   const [currency, setCurrency] = useState(CURRENCY_RUB);
   const { notice, isVisible, showNotice } = useOrderNotice();
+  const numericAmount = Number(amount.replace(",", ".")) || 0;
   const hasLink = link.trim().length > 0;
-  const hasAmount = amount.trim().length > 0 && Number(amount.replace(",", ".")) > 0;
+  const hasAmount = amount.trim().length > 0 && numericAmount > 0;
 
   function validateOrder() {
-    return hasLink && hasAmount ? null : REQUIRED_FIELDS_MESSAGE;
+    if (!hasLink || !hasAmount) return REQUIRED_FIELDS_MESSAGE;
+
+    const minimum = SITE_TOPUP_MINIMUMS[currency];
+    if (minimum && numericAmount < minimum.amount) {
+      return `Сумма маленькая. Минимальная сумма пополнения: ${minimum.label}`;
+    }
+
+    return null;
   }
 
   const message = normalizeOrderMessage(
@@ -683,8 +700,8 @@ export function SiteTopupForm({ productName, productSlug }: { productName: strin
               className="w-full rounded-xl border border-white/10 bg-[#07101d] px-3 py-3 text-sm font-black text-white outline-none transition focus:border-sky-300/45"
             >
               <option value={CURRENCY_RUB}>{CURRENCY_RUB}</option>
-              <option value="Р ПМР">Р ПМР</option>
-              <option value="$">$</option>
+              <option value={CURRENCY_PMR}>{CURRENCY_PMR}</option>
+              <option value={CURRENCY_USD}>{CURRENCY_USD}</option>
               <option value={CURRENCY_EUR}>{CURRENCY_EUR}</option>
             </select>
           </div>
@@ -698,7 +715,7 @@ export function SiteTopupForm({ productName, productSlug }: { productName: strin
           onInvalid={showNotice}
           className="rounded-xl bg-emerald-500 px-3 py-3 text-center text-sm font-bold text-white shadow-[0_10px_24px_rgba(16,185,129,0.22)] transition-all duration-300 hover:bg-emerald-400 active:scale-95"
         >
-          Написать менеджеру
+          Пополнить
         </TelegramOrderLink>
       </div>
     </>
