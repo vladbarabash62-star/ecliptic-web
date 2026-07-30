@@ -341,6 +341,8 @@ export async function saveProducts(nextProducts: Product[]) {
 
   const hiddenBaseSlugs = products.filter((product) => !usedBaseSlugs.has(product.slug)).map((product) => product.slug);
 
-  await redisPipeline([["SET", PRODUCTS_KEY, JSON.stringify({ hiddenBaseSlugs, overrides, version: PRODUCT_STORAGE_VERSION })]]);
+  await redisPipeline([["SET", PRODUCTS_KEY, JSON.stringify({ hiddenBaseSlugs, overrides, version: PRODUCT_STORAGE_VERSION })]], {
+    timeoutMs: 20000,
+  });
   return getProducts();
 }

@@ -6,10 +6,17 @@ function isInlineImage(value?: string) {
   return Boolean(value?.startsWith("data:image/"));
 }
 
+const optimizedPathCache = new Map<string, string>();
+
 function optimizedIconPath(slug: string, suffix: string) {
   const path = `/optimized-icons/${slug}-${suffix}.webp`;
+  const cached = optimizedPathCache.get(path);
+  if (cached !== undefined) return cached;
+
   const filePath = join(process.cwd(), "public", path);
-  return existsSync(filePath) ? path : "";
+  const resolved = existsSync(filePath) ? path : "";
+  optimizedPathCache.set(path, resolved);
+  return resolved;
 }
 
 function optimizedImage(value: string | undefined, slug: string, suffix: string) {

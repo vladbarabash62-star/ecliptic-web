@@ -281,9 +281,9 @@ const ADMIN_HTML = `<!doctype html>
       var map = { 'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'e','ж':'zh','з':'z','и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'h','ц':'c','ч':'ch','ш':'sh','щ':'sch','ъ':'','ы':'y','ь':'','э':'e','ю':'yu','я':'ya' };
       return String(value || '').toLowerCase().split('').map(function(ch) { return map[ch] || ch; }).join('').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 64);
     }
-    async function postJson(url, body) {
+    async function postJson(url, body, timeoutMs) {
       var controller = new AbortController();
-      var timeout = setTimeout(function() { controller.abort(); }, 45000);
+      var timeout = setTimeout(function() { controller.abort(); }, timeoutMs || 45000);
       try {
         var response = await fetch(url, {
           method: 'POST',
@@ -617,7 +617,7 @@ const ADMIN_HTML = `<!doctype html>
       $('saveProductsBtn').disabled = true;
       showNotice('Сохраняю товары...', false);
       try {
-        var data = await postJson('/api/admin/products', { products: products });
+        var data = await postJson('/api/admin/products', { products: products }, 120000);
         products = data.products || products;
         if (!products.some(function(product) { return product.slug === selectedSlug; })) selectedSlug = products[0] ? products[0].slug : '';
         renderProductList();
@@ -636,7 +636,7 @@ const ADMIN_HTML = `<!doctype html>
       showNotice('Сохраняю настройки...', false);
       try {
         settings.reviewsCountLabel = $('reviewsCount').value.trim() || '400+';
-        var data = await postJson('/api/admin/settings', { settings: settings });
+        var data = await postJson('/api/admin/settings', { settings: settings }, 60000);
         settings = data.settings || settings;
         $('reviewsCount').value = settings.reviewsCountLabel || '400+';
         showNotice('Настройки главной сохранены.', false);
@@ -673,12 +673,6 @@ const ADMIN_HTML = `<!doctype html>
     $('productEditor').addEventListener('click', handleEditorClick);
     $('productEditor').addEventListener('input', handleEditorInput);
     $('imagePicker').addEventListener('change', handleImagePick);
-    document.addEventListener('visibilitychange', function() {
-      if (!document.hidden) loadAnalytics();
-    });
-    setInterval(function() {
-      if (!document.hidden) loadAnalytics();
-    }, 30000);
     window.addEventListener('beforeunload', function(event) {
       if (!dirtyProducts) return;
       event.preventDefault();

@@ -22,6 +22,8 @@ export async function POST(request: Request) {
     revalidateTag(PRODUCTS_CACHE_TAG, "max");
     revalidatePath("/", "page");
     revalidatePath("/product-links", "page");
+    revalidatePath("/shop", "page");
+    revalidatePath("/tags", "page");
     for (const product of products) {
       revalidatePath(`/products/${product.slug}`, "page");
     }
