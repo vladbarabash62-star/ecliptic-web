@@ -286,6 +286,9 @@ function formatPriceTag(priceRub: number) {
   return `${priceRub} Р`;
 }
 
+const CURRENCY_RUB = "\u20BD";
+const CURRENCY_EUR = "\u20AC";
+
 function compactDividerTitle(title: string) {
   const normalizedTitle = title.trim();
   const compactTitles: Record<string, string> = {
@@ -627,6 +630,76 @@ export function ManagerLinkForm({ productName, productSlug }: { productName: str
       >
         Написать менеджеру
       </TelegramOrderLink>
+      </div>
+    </>
+  );
+}
+
+export function SiteTopupForm({ productName, productSlug }: { productName: string; productSlug: string }) {
+  const [link, setLink] = useState("");
+  const [amount, setAmount] = useState("");
+  const [currency, setCurrency] = useState(CURRENCY_RUB);
+  const { notice, isVisible, showNotice } = useOrderNotice();
+  const hasLink = link.trim().length > 0;
+  const hasAmount = amount.trim().length > 0 && Number(amount.replace(",", ".")) > 0;
+
+  function validateOrder() {
+    return hasLink && hasAmount ? null : REQUIRED_FIELDS_MESSAGE;
+  }
+
+  const message = normalizeOrderMessage(
+    `🛍 Новый заказ\n📦 Сервис: ${productName}\n🔗 Ссылка: ${link.trim() || "не указана"}\n💵 Сумма пополнения: ${
+      hasAmount ? `${amount.trim()} ${currency}` : "не указана"
+    }`
+  );
+
+  return (
+    <>
+      {notice && <OrderNotice message={notice} isVisible={isVisible} />}
+      <div className="grid w-full gap-4 rounded-2xl border border-cyan-300/18 bg-cyan-950/20 p-4">
+        <label className="grid gap-2">
+          <span className="text-sm font-bold text-white/78">Ссылка:</span>
+          <input
+            value={link}
+            onChange={(event) => setLink(event.target.value)}
+            placeholder="Введите ссылку на сайт, который хотите пополнить"
+            className="w-full rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-sky-300/45"
+          />
+        </label>
+
+        <div className="grid gap-2">
+          <span className="text-sm font-bold text-white/78">Сумма пополнения</span>
+          <div className="grid grid-cols-[minmax(0,1fr)_118px] gap-2">
+            <input
+              value={amount}
+              onChange={(event) => setAmount(event.target.value.replace(/[^\d.,]/g, ""))}
+              inputMode="decimal"
+              placeholder="Введите сумму"
+              className="w-full rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-sky-300/45"
+            />
+            <select
+              value={currency}
+              onChange={(event) => setCurrency(event.target.value)}
+              className="w-full rounded-xl border border-white/10 bg-[#07101d] px-3 py-3 text-sm font-black text-white outline-none transition focus:border-sky-300/45"
+            >
+              <option value={CURRENCY_RUB}>{CURRENCY_RUB}</option>
+              <option value="Р ПМР">Р ПМР</option>
+              <option value="$">$</option>
+              <option value={CURRENCY_EUR}>{CURRENCY_EUR}</option>
+            </select>
+          </div>
+        </div>
+
+        <TelegramOrderLink
+          message={message}
+          productSlug={productSlug}
+          offer="site-topup"
+          validate={validateOrder}
+          onInvalid={showNotice}
+          className="rounded-xl bg-emerald-500 px-3 py-3 text-center text-sm font-bold text-white shadow-[0_10px_24px_rgba(16,185,129,0.22)] transition-all duration-300 hover:bg-emerald-400 active:scale-95"
+        >
+          Написать менеджеру
+        </TelegramOrderLink>
       </div>
     </>
   );

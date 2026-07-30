@@ -17,6 +17,7 @@ import {
   ManagerLinkForm,
   MinecraftOrderForm,
   ProductOffersWithDetails,
+  SiteTopupForm,
   SteamTopupForm,
 } from "./ProductActionForms";
 
@@ -64,6 +65,7 @@ export default async function ProductPage({ params }: PageProps) {
   const hasPurchasableOffers = offers.some((offer) => offer.type !== "divider");
   const needsSteamTopup = product.slug === "steam";
   const needsEpicTopup = product.slug === "epic-games-topup";
+  const needsSiteTopup = product.slug === "site-topups";
   const needsLinkManager =
     product.slug === "boosty" ||
     product.slug === "twitch" ||
@@ -118,6 +120,8 @@ export default async function ProductPage({ params }: PageProps) {
             <SteamTopupForm productName={product.name} productSlug={product.slug} />
           ) : needsEpicTopup ? (
             <EpicTopupForm productName={product.name} productSlug={product.slug} />
+          ) : needsSiteTopup ? (
+            <SiteTopupForm productName={product.name} productSlug={product.slug} />
           ) : needsLinkManager ? (
             <ManagerLinkForm productName={product.name} productSlug={product.slug} />
           ) : needsMinecraftForm ? (
