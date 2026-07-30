@@ -19,6 +19,7 @@ import {
   MinecraftOrderForm,
   ProductOffersWithDetails,
   SiteTopupForm,
+  SbpPaymentForm,
   SteamTopupForm,
 } from "./ProductActionForms";
 
@@ -74,17 +75,10 @@ export default async function ProductPage({ params }: PageProps) {
   }
 
   const offers = product.offers || [];
-  const displayOffers =
-    product.slug === "sbp-payment"
-      ? offers.filter((offer) => offer.type === "divider" || offer.label !== "ПМР").map((offer) =>
-          offer.type === "divider" || offer.label !== "РФ"
-            ? offer
-            : { ...offer, label: "100р РФ", priceRub: 30 }
-        )
-      : offers;
-  const hasPurchasableOffers = displayOffers.some((offer) => offer.type !== "divider");
+  const hasPurchasableOffers = offers.some((offer) => offer.type !== "divider");
   const needsSteamTopup = product.slug === "steam";
   const needsEpicTopup = product.slug === "epic-games-topup";
+  const needsSbpPayment = product.slug === "sbp-payment";
   const needsSiteTopup = product.slug === "site-topups";
   const needsManagerButton = isManagerButtonOnlyProduct(product);
   const needsLinkManager =
@@ -138,6 +132,8 @@ export default async function ProductPage({ params }: PageProps) {
             <SteamTopupForm productName={product.name} productSlug={product.slug} />
           ) : needsEpicTopup ? (
             <EpicTopupForm productName={product.name} productSlug={product.slug} />
+          ) : needsSbpPayment ? (
+            <SbpPaymentForm productName={product.name} productSlug={product.slug} />
           ) : needsSiteTopup ? (
             <SiteTopupForm productName={product.name} productSlug={product.slug} />
           ) : needsManagerButton ? (
@@ -154,7 +150,7 @@ export default async function ProductPage({ params }: PageProps) {
             <ProductOffersWithDetails
               productName={product.name}
               productSlug={product.slug}
-              offers={displayOffers}
+              offers={offers}
               offerIcon={product.offerIcon}
               productMessageTemplate={product.messageTemplate}
               fields={detailFields}
