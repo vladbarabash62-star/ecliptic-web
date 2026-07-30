@@ -381,7 +381,6 @@ export const products: Product[] = [
     slug: "sbp-payment",
     iconScale: 1.08,
     offers: [
-      { label: "ПМР", priceRub: 30 },
       { label: "РФ", priceRub: 100 },
     ],
   },

@@ -14,8 +14,8 @@ import {
 } from "../../../lib/seo";
 import {
   EpicTopupForm,
-  ManagerLinkForm,
   ManagerButtonForm,
+  ManagerLinkForm,
   MinecraftOrderForm,
   ProductOffersWithDetails,
   SiteTopupForm,
@@ -30,6 +30,17 @@ type PageProps = {
     slug: string;
   }>;
 };
+
+function isManagerButtonOnlyProduct(product: { name: string; slug: string }) {
+  const name = product.name.trim().toLowerCase();
+
+  return (
+    product.slug === "transfers" ||
+    product.slug.startsWith("card-withdrawal") ||
+    name === "переводы" ||
+    name.includes("вывод с карты")
+  );
+}
 
 export function generateStaticParams() {
   return products.map((product) => ({
@@ -75,12 +86,9 @@ export default async function ProductPage({ params }: PageProps) {
   const needsSteamTopup = product.slug === "steam";
   const needsEpicTopup = product.slug === "epic-games-topup";
   const needsSiteTopup = product.slug === "site-topups";
-  const needsManagerButton = product.slug === "transfers";
+  const needsManagerButton = isManagerButtonOnlyProduct(product);
   const needsLinkManager =
-    product.slug === "boosty" ||
-    product.slug === "twitch" ||
-    product.slug === "card-withdrawal-rf" ||
-    product.slug === "card-withdrawal-md";
+    product.slug === "boosty" || product.slug === "twitch";
   const needsMinecraftForm = product.slug === "minecraft";
   const detailFields =
     product.slug === "mobile-legends"
