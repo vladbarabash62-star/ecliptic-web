@@ -15,6 +15,7 @@ import {
 import {
   EpicTopupForm,
   ManagerLinkForm,
+  ManagerButtonForm,
   MinecraftOrderForm,
   ProductOffersWithDetails,
   SiteTopupForm,
@@ -62,10 +63,19 @@ export default async function ProductPage({ params }: PageProps) {
   }
 
   const offers = product.offers || [];
-  const hasPurchasableOffers = offers.some((offer) => offer.type !== "divider");
+  const displayOffers =
+    product.slug === "sbp-payment"
+      ? offers.map((offer) =>
+          offer.type === "divider" || offer.label !== "РФ"
+            ? offer
+            : { ...offer, label: "100р РФ", priceRub: 30 }
+        )
+      : offers;
+  const hasPurchasableOffers = displayOffers.some((offer) => offer.type !== "divider");
   const needsSteamTopup = product.slug === "steam";
   const needsEpicTopup = product.slug === "epic-games-topup";
   const needsSiteTopup = product.slug === "site-topups";
+  const needsManagerButton = product.slug === "transfers";
   const needsLinkManager =
     product.slug === "boosty" ||
     product.slug === "twitch" ||
@@ -122,6 +132,8 @@ export default async function ProductPage({ params }: PageProps) {
             <EpicTopupForm productName={product.name} productSlug={product.slug} />
           ) : needsSiteTopup ? (
             <SiteTopupForm productName={product.name} productSlug={product.slug} />
+          ) : needsManagerButton ? (
+            <ManagerButtonForm productName={product.name} productSlug={product.slug} />
           ) : needsLinkManager ? (
             <ManagerLinkForm productName={product.name} productSlug={product.slug} />
           ) : needsMinecraftForm ? (
@@ -134,7 +146,7 @@ export default async function ProductPage({ params }: PageProps) {
             <ProductOffersWithDetails
               productName={product.name}
               productSlug={product.slug}
-              offers={offers}
+              offers={displayOffers}
               offerIcon={product.offerIcon}
               productMessageTemplate={product.messageTemplate}
               fields={detailFields}

@@ -644,6 +644,23 @@ export function ManagerLinkForm({ productName, productSlug }: { productName: str
   );
 }
 
+export function ManagerButtonForm({ productName, productSlug }: { productName: string; productSlug: string }) {
+  const message = normalizeOrderMessage(`🛍 Новый заказ\n📦 Сервис: ${productName}`);
+
+  return (
+    <div className="flex w-full justify-center rounded-2xl border border-white/15 bg-[#0f1420]/90 p-4">
+      <TelegramOrderLink
+        message={message}
+        productSlug={productSlug}
+        offer="manager-button"
+        className="rounded-xl bg-emerald-500 px-3 py-3 text-center text-sm font-bold text-white shadow-[0_10px_24px_rgba(16,185,129,0.22)] transition-all duration-300 hover:bg-emerald-400 active:scale-95"
+      >
+        Написать менеджеру
+      </TelegramOrderLink>
+    </div>
+  );
+}
+
 export function SiteTopupForm({ productName, productSlug }: { productName: string; productSlug: string }) {
   const [link, setLink] = useState("");
   const [amount, setAmount] = useState("");
