@@ -46,8 +46,12 @@ const STYLE = `
   .bar span { display:block; height:100%; background:linear-gradient(90deg,#38bdf8,#22c55e); }
   .admin-grid { display:grid; grid-template-columns:330px minmax(0,1fr); gap:14px; }
   .sidebar { padding:12px; max-height:calc(100vh - 220px); overflow:auto; }
-  .product-btn { width:100%; display:grid; grid-template-columns:44px 1fr; gap:10px; align-items:center; margin:7px 0; padding:8px; border:1px solid rgba(255,255,255,.08); border-radius:14px; background:rgba(255,255,255,.035); color:#fff; text-align:left; }
+  .product-btn { width:100%; display:grid; grid-template-columns:24px 44px 1fr; gap:10px; align-items:center; margin:7px 0; padding:8px; border:1px solid rgba(255,255,255,.08); border-radius:14px; background:rgba(255,255,255,.035); color:#fff; text-align:left; cursor:grab; }
   .product-btn.active { border-color:rgba(56,189,248,.46); background:rgba(14,165,233,.14); }
+  .product-btn.dragging,.offer.dragging { opacity:.45; border-color:rgba(56,189,248,.72); }
+  .product-btn.drag-over,.offer.drag-over { border-color:rgba(16,185,129,.82); background:rgba(16,185,129,.12); }
+  .drag-handle { display:grid; place-items:center; color:rgba(255,255,255,.46); font-size:18px; line-height:1; cursor:grab; user-select:none; }
+  .product-btn:active .drag-handle,.offer:active .drag-handle { cursor:grabbing; }
   .thumb { width:44px; height:44px; display:grid; place-items:center; border-radius:12px; background:#07101d; overflow:hidden; }
   .thumb img { max-width:74%; max-height:74%; object-fit:contain; }
   .editor,.settings-card { padding:16px; }
@@ -57,7 +61,7 @@ const STYLE = `
   .image-preview { width:58px; height:58px; display:grid; place-items:center; margin-top:8px; border:1px solid rgba(255,255,255,.1); border-radius:14px; background:#07101d; overflow:hidden; color:rgba(255,255,255,.45); font-size:12px; }
   .image-preview img { max-width:80%; max-height:80%; object-fit:contain; transform-origin:center; }
   .offer { border:1px solid var(--line); background:rgba(7,16,29,.72); border-radius:14px; padding:12px; margin-top:10px; }
-  .offer-head { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px; }
+  .offer-head { display:grid; grid-template-columns:24px 1fr auto; align-items:center; gap:10px; margin-bottom:10px; }
   .mini-actions { display:flex; flex-wrap:wrap; gap:7px; }
   .mini { border:1px solid var(--line); border-radius:9px; padding:7px 9px; background:rgba(255,255,255,.07); color:#fff; font-size:12px; font-weight:800; }
   .empty { padding:28px; text-align:center; color:var(--muted); }
@@ -235,6 +239,8 @@ const ADMIN_HTML = `<!doctype html>
     var selectedSlug = '';
     var uploadTarget = null;
     var dirtyProducts = false;
+    var draggedProductSlug = '';
+    var draggedOfferIndex = -1;
 
     function $(id) { return document.getElementById(id); }
     function esc(value) {
@@ -334,7 +340,8 @@ const ADMIN_HTML = `<!doctype html>
     }
     function renderProductList() {
       $('productList').innerHTML = products.map(function(product) {
-        return '<button class="product-btn ' + (product.slug === selectedSlug ? 'active' : '') + '" type="button" data-action="select-product" data-slug="' + esc(product.slug) + '">' +
+        return '<button class="product-btn ' + (product.slug === selectedSlug ? 'active' : '') + '" type="button" draggable="true" data-action="select-product" data-slug="' + esc(product.slug) + '">' +
+          '<span class="drag-handle" title="Перетащить">↕</span>' +
           '<span class="thumb"><img src="' + esc(product.icon || '/loading-icon.png') + '" alt=""></span>' +
           '<span><strong>' + esc(product.name) + '</strong><br><span class="muted">' + esc(product.slug) + '</span></span>' +
         '</button>';
@@ -373,17 +380,17 @@ const ADMIN_HTML = `<!doctype html>
         '<div><label>Размер иконки товара (%)</label><input type="number" step="1" min="-100" max="100" value="' + esc(scaleToPercent(product.iconScale || 1)) + '" data-product-field="iconScale"></div></div>' +
         '<div><label>Общий текст Telegram</label><textarea data-product-field="messageTemplate">' + esc(product.messageTemplate || '') + '</textarea></div>' +
         '<div class="toolbar" style="justify-content:space-between;margin-top:8px"><h3>Варианты покупки</h3><div class="toolbar"><button class="btn secondary" type="button" data-action="add-divider">Раздел</button><button class="btn secondary" type="button" data-action="add-offer">Вариант</button></div></div>' +
-        '<div>' + renderOffers(product) + '</div>';
+        '<div id="offersList">' + renderOffers(product) + '</div>';
     }
     function renderOffers(product) {
       return (product.offers || []).map(function(offer, index) {
         var controls = '<div class="mini-actions"><button class="mini" type="button" data-action="move-offer" data-index="' + index + '" data-direction="-1">Вверх</button><button class="mini" type="button" data-action="move-offer" data-index="' + index + '" data-direction="1">Вниз</button><button class="mini" type="button" data-action="remove-offer" data-index="' + index + '">Удалить</button></div>';
         if (offer.type === 'divider') {
-          return '<div class="offer"><div class="offer-head"><strong>Раздел</strong>' + controls + '</div>' +
+          return '<div class="offer" draggable="true" data-offer-drag-index="' + index + '"><div class="offer-head"><span class="drag-handle" title="Перетащить">↕</span><strong>Раздел</strong>' + controls + '</div>' +
             '<div class="two"><div><label>Заголовок</label><input value="' + esc(offer.title || '') + '" data-offer-index="' + index + '" data-offer-field="title"></div>' +
             '<div><label>Описание</label><input value="' + esc(offer.description || '') + '" data-offer-index="' + index + '" data-offer-field="description"></div></div></div>';
         }
-        return '<div class="offer"><div class="offer-head"><strong>Вариант</strong>' + controls + '</div>' +
+        return '<div class="offer" draggable="true" data-offer-drag-index="' + index + '"><div class="offer-head"><span class="drag-handle" title="Перетащить">↕</span><strong>Вариант</strong>' + controls + '</div>' +
           '<div class="two"><div><label>Название</label><input value="' + esc(offer.label || '') + '" data-offer-index="' + index + '" data-offer-field="label"></div>' +
           '<div><label>Цена</label><input type="number" min="0" value="' + esc(offer.priceRub || 0) + '" data-offer-index="' + index + '" data-offer-field="priceRub"></div></div>' +
           offerImageField(index, offer.icon || '', offer.iconScale || 1) +
@@ -481,6 +488,100 @@ const ADMIN_HTML = `<!doctype html>
       product.offers.splice(next, 0, item);
       markProductsDirty();
       renderProductEditor();
+    }
+    function moveArrayItem(items, fromIndex, toIndex) {
+      if (!items || fromIndex === toIndex || fromIndex < 0 || toIndex < 0 || fromIndex >= items.length || toIndex >= items.length) return false;
+      var item = items.splice(fromIndex, 1)[0];
+      items.splice(toIndex, 0, item);
+      return true;
+    }
+    function productIndexBySlug(slug) {
+      return products.findIndex(function(product) { return product.slug === slug; });
+    }
+    function clearDragClasses() {
+      document.querySelectorAll('.dragging,.drag-over').forEach(function(element) {
+        element.classList.remove('dragging', 'drag-over');
+      });
+    }
+    function handleProductDragStart(event) {
+      var item = event.target.closest('.product-btn');
+      if (!item) return;
+      draggedProductSlug = item.dataset.slug || '';
+      if (event.dataTransfer) {
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', draggedProductSlug);
+      }
+      item.classList.add('dragging');
+    }
+    function handleProductDragOver(event) {
+      var item = event.target.closest('.product-btn');
+      if (!item || !draggedProductSlug) return;
+      event.preventDefault();
+      item.classList.add('drag-over');
+      if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+    }
+    function handleProductDragLeave(event) {
+      var item = event.target.closest('.product-btn');
+      if (item) item.classList.remove('drag-over');
+    }
+    function handleProductDrop(event) {
+      var item = event.target.closest('.product-btn');
+      if (!item || !draggedProductSlug) return;
+      event.preventDefault();
+      var fromIndex = productIndexBySlug(draggedProductSlug);
+      var toIndex = productIndexBySlug(item.dataset.slug || '');
+      if (moveArrayItem(products, fromIndex, toIndex)) {
+        selectedSlug = draggedProductSlug;
+        markProductsDirty();
+        renderProductList();
+        renderProductEditor();
+      }
+      draggedProductSlug = '';
+      clearDragClasses();
+    }
+    function handleOfferDragStart(event) {
+      var target = event.target;
+      if (target.closest('input,textarea,button,select')) {
+        event.preventDefault();
+        return;
+      }
+      var item = target.closest('.offer');
+      if (!item) return;
+      draggedOfferIndex = Number(item.dataset.offerDragIndex || -1);
+      if (event.dataTransfer) {
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', String(draggedOfferIndex));
+      }
+      item.classList.add('dragging');
+    }
+    function handleOfferDragOver(event) {
+      var item = event.target.closest('.offer');
+      if (!item || draggedOfferIndex < 0) return;
+      event.preventDefault();
+      item.classList.add('drag-over');
+      if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+    }
+    function handleOfferDragLeave(event) {
+      var item = event.target.closest('.offer');
+      if (item) item.classList.remove('drag-over');
+    }
+    function handleOfferDrop(event) {
+      var item = event.target.closest('.offer');
+      var product = currentProduct();
+      if (!item || !product || draggedOfferIndex < 0) return;
+      event.preventDefault();
+      var toIndex = Number(item.dataset.offerDragIndex || -1);
+      if (moveArrayItem(product.offers, draggedOfferIndex, toIndex)) {
+        markProductsDirty();
+        renderProductEditor();
+      }
+      draggedOfferIndex = -1;
+      clearDragClasses();
+    }
+    function handleDragEnd() {
+      draggedProductSlug = '';
+      draggedOfferIndex = -1;
+      clearDragClasses();
     }
     function deleteProduct() {
       if (!confirm('Удалить товар?')) return;
@@ -670,8 +771,18 @@ const ADMIN_HTML = `<!doctype html>
       var button = event.target.closest('[data-action="select-product"]');
       if (button) selectProduct(button.dataset.slug || '');
     });
+    $('productList').addEventListener('dragstart', handleProductDragStart);
+    $('productList').addEventListener('dragover', handleProductDragOver);
+    $('productList').addEventListener('dragleave', handleProductDragLeave);
+    $('productList').addEventListener('drop', handleProductDrop);
+    $('productList').addEventListener('dragend', handleDragEnd);
     $('productEditor').addEventListener('click', handleEditorClick);
     $('productEditor').addEventListener('input', handleEditorInput);
+    $('productEditor').addEventListener('dragstart', handleOfferDragStart);
+    $('productEditor').addEventListener('dragover', handleOfferDragOver);
+    $('productEditor').addEventListener('dragleave', handleOfferDragLeave);
+    $('productEditor').addEventListener('drop', handleOfferDrop);
+    $('productEditor').addEventListener('dragend', handleDragEnd);
     $('imagePicker').addEventListener('change', handleImagePick);
     window.addEventListener('beforeunload', function(event) {
       if (!dirtyProducts) return;
