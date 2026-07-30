@@ -3,6 +3,8 @@ import { redisPipeline } from "./security";
 
 const PRODUCTS_KEY = "ecliptic:products:overrides";
 export const PRODUCTS_CACHE_TAG = "ecliptic-products";
+const PRODUCT_STORAGE_VERSION = 3;
+const CODE_AUTHORED_OFFER_SLUGS = new Set(["mobile-legends", "pubg-mobile"]);
 const FALLBACK_ICON =
   "https://static.vecteezy.com/system/resources/previews/023/986/562/non_2x/telegram-logo-telegram-logo-transparent-telegram-icon-transparent-free-free-png.png";
 const PRODUCT_SLUG_ALIASES: Record<string, string> = {
@@ -20,6 +22,7 @@ type ProductOverrides = Record<string, ProductOverride>;
 type ProductStorage = {
   hiddenBaseSlugs: string[];
   overrides: ProductOverrides;
+  version: number;
 };
 
 function hasDividers(offers: Product["offers"]) {
@@ -70,20 +73,22 @@ function normalizeHiddenBaseSlugs(value: unknown) {
 
 function normalizeProductStorage(value: unknown): ProductStorage {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
-    return { hiddenBaseSlugs: [], overrides: {} };
+    return { hiddenBaseSlugs: [], overrides: {}, version: PRODUCT_STORAGE_VERSION };
   }
 
-  const stored = value as { hiddenBaseSlugs?: unknown; overrides?: unknown };
+  const stored = value as { hiddenBaseSlugs?: unknown; overrides?: unknown; version?: unknown };
   if (stored.overrides && typeof stored.overrides === "object" && !Array.isArray(stored.overrides)) {
     return {
       hiddenBaseSlugs: normalizeHiddenBaseSlugs(stored.hiddenBaseSlugs),
       overrides: normalizeOverrides(stored.overrides),
+      version: typeof stored.version === "number" ? stored.version : 1,
     };
   }
 
   return {
     hiddenBaseSlugs: [],
     overrides: normalizeOverrides(value),
+    version: 1,
   };
 }
 
@@ -237,17 +242,25 @@ async function readProductStorage(options: ProductReadOptions = {}): Promise<Pro
       : undefined
   );
   const raw = result?.[0]?.result;
-  if (!raw || typeof raw !== "string") return { hiddenBaseSlugs: [], overrides: {} };
+  if (!raw || typeof raw !== "string") return { hiddenBaseSlugs: [], overrides: {}, version: PRODUCT_STORAGE_VERSION };
 
   try {
     return normalizeProductStorage(JSON.parse(raw));
   } catch {
-    return { hiddenBaseSlugs: [], overrides: {} };
+    return { hiddenBaseSlugs: [], overrides: {}, version: PRODUCT_STORAGE_VERSION };
   }
 }
 
+function shouldPreferCodeAuthoredOffers(storage: ProductStorage, slug: string) {
+  return storage.version < PRODUCT_STORAGE_VERSION && CODE_AUTHORED_OFFER_SLUGS.has(slug);
+}
+
 export async function getProducts(options: ProductReadOptions = {}) {
-  const storage = await readProductStorage(options).catch(() => ({ hiddenBaseSlugs: [], overrides: {} }));
+  const storage = await readProductStorage(options).catch(() => ({
+    hiddenBaseSlugs: [],
+    overrides: {},
+    version: PRODUCT_STORAGE_VERSION,
+  }));
   const hiddenBaseSlugs = new Set(storage.hiddenBaseSlugs);
   const overrides = storage.overrides;
   const usedSlugs = new Set<string>();
@@ -264,10 +277,9 @@ export async function getProducts(options: ProductReadOptions = {}) {
       if (baseProduct) {
         if (usedBaseSlugs.has(baseProduct.slug)) return null;
         usedBaseSlugs.add(baseProduct.slug);
-        const offers =
-          baseProduct.slug === "mobile-legends"
-            ? baseProduct.offers
-            : mergeOffersWithBaseDividers(baseProduct.offers, override.offers);
+        const offers = shouldPreferCodeAuthoredOffers(storage, baseProduct.slug)
+          ? baseProduct.offers
+          : mergeOffersWithBaseDividers(baseProduct.offers, override.offers);
 
         return {
           ...baseProduct,
@@ -329,6 +341,6 @@ export async function saveProducts(nextProducts: Product[]) {
 
   const hiddenBaseSlugs = products.filter((product) => !usedBaseSlugs.has(product.slug)).map((product) => product.slug);
 
-  await redisPipeline([["SET", PRODUCTS_KEY, JSON.stringify({ hiddenBaseSlugs, overrides, version: 2 })]]);
+  await redisPipeline([["SET", PRODUCTS_KEY, JSON.stringify({ hiddenBaseSlugs, overrides, version: PRODUCT_STORAGE_VERSION })]]);
   return getProducts();
 }
