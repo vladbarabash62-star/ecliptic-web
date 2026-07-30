@@ -283,7 +283,7 @@ function fallbackOfferIcon(productSlug: string, label: string) {
 }
 
 function formatPriceTag(priceRub: number) {
-  return `${priceRub} Р`;
+  return `${priceRub} р`;
 }
 
 const CURRENCY_RUB = "\u20BD";
