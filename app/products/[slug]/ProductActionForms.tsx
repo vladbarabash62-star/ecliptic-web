@@ -282,6 +282,10 @@ function fallbackOfferIcon(productSlug: string, label: string) {
   return realOfferIcon(productSlug, label);
 }
 
+function formatPriceTag(priceRub: number) {
+  return `${priceRub} Р`;
+}
+
 function compactDividerTitle(title: string) {
   const normalizedTitle = title.trim();
   const compactTitles: Record<string, string> = {
@@ -366,7 +370,7 @@ export function SteamTopupForm({ productName, productSlug }: { productName: stri
         onInvalid={showNotice}
         className="mt-4 flex w-full items-center justify-center rounded-xl bg-indigo-500 px-3 py-3 text-sm font-bold text-white shadow-[0_10px_24px_rgba(99,102,241,0.24)] transition-all duration-300 hover:bg-indigo-400 active:scale-95"
       >
-        {hasAmount ? `Пополнить за ${priceRub} ₽` : "Пополнить"}
+        {hasAmount ? `Пополнить за ${formatPriceTag(priceRub)}` : "Пополнить"}
       </TelegramOrderLink>
       </div>
     </>
@@ -416,7 +420,7 @@ export function EpicTopupForm({ productName, productSlug }: { productName: strin
         onInvalid={showNotice}
         className="mt-4 flex w-full items-center justify-center rounded-xl bg-indigo-500 px-3 py-3 text-sm font-bold text-white shadow-[0_10px_24px_rgba(99,102,241,0.24)] transition-all duration-300 hover:bg-indigo-400 active:scale-95"
       >
-        {hasAmount ? `Пополнить за ${priceRub} ₽` : "Пополнить"}
+        {hasAmount ? `Пополнить за ${formatPriceTag(priceRub)}` : "Пополнить"}
       </TelegramOrderLink>
       </div>
     </>
@@ -512,7 +516,9 @@ export function ProductOffersWithDetails({
             <OfferIcon icon={offer.icon || offerIcon || fallbackOfferIcon(productSlug, offer.label)} scale={offer.iconScale ?? 1} />
             <div className="min-w-0">
               <p className="break-words text-sm font-bold text-white sm:text-base">{offer.label}</p>
-              <p className="mt-1 text-sm font-bold text-emerald-300">{offer.priceRub} ₽</p>
+              <p className="mt-1 text-lg font-black leading-none text-emerald-300 sm:text-xl">
+                {formatPriceTag(offer.priceRub)}
+              </p>
             </div>
 
             <TelegramOrderLink
