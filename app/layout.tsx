@@ -117,8 +117,8 @@ export const metadata: Metadata = {
       {
         url: SITE_IMAGE,
         alt: `${SITE_NAME} - Эклиптик Стор`,
-        width: 1200,
-        height: 630,
+        width: 640,
+        height: 640,
         type: "image/png",
       },
     ],
