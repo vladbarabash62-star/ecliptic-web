@@ -54,6 +54,7 @@ export async function POST(request: Request) {
   const country = headerList.get("x-vercel-ip-country") || headerList.get("cf-ipcountry") || undefined;
   const region = headerList.get("x-vercel-ip-country-region") || undefined;
   const city = headerList.get("x-vercel-ip-city") || undefined;
+  const ipAddress = forwardedFor || realIp || undefined;
   const ipHash = hashIp(forwardedFor || realIp || null);
   const type = String(body.type || "unknown").slice(0, 64);
   const product = body.product ? String(body.product).slice(0, 120) : undefined;
@@ -71,6 +72,7 @@ export async function POST(request: Request) {
     timezone: body.timezone,
     screen: body.screen,
     telegramUser: body.telegramUser,
+    ipAddress,
     ipHash,
     country,
     region,

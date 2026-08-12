@@ -14,6 +14,8 @@ assert.match(publicApi, /checkRateLimit\("analytics", 5000, 60\)/);
 assert.match(publicApi, /HINCRBY", ANALYTICS_TOTALS_KEY, "total", "1"/);
 assert.match(publicApi, /HINCRBY", ANALYTICS_ACTIONS_KEY, type, "1"/);
 assert.match(publicApi, /HINCRBY", ANALYTICS_PRODUCTS_KEY, product, "1"/);
+assert.match(publicApi, /ipAddress = forwardedFor \|\| realIp \|\| undefined/);
+assert.match(publicApi, /ipAddress,/);
 
 assert.match(adminApi, /"LRANGE", ANALYTICS_KEY, "0", "1999"/);
 assert.match(adminApi, /"HGETALL", ANALYTICS_TOTALS_KEY/);
@@ -26,8 +28,10 @@ assert.match(adminPage, /page_view: 'Просмотр страницы'/);
 assert.match(adminPage, /buy_click: 'Клик Купить'/);
 assert.match(adminPage, /Переход в Telegram/);
 assert.match(adminPage, /IP-метка:/);
+assert.match(adminPage, /IP: /);
 assert.match(adminPage, /не выбран/);
 assert.match(adminPage, /<th>Посетитель<\/th>/);
+assert.doesNotMatch(adminPage, /slice\(0, 8\) \+ '\.\.\.'/);
 
 assert.match(tracker, /navigator\.sendBeacon/);
 assert.match(tracker, /new Blob\(\[payload\], \{ type: "application\/json" \}\)/);

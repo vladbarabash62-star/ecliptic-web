@@ -74,7 +74,7 @@ const STYLE = `
   .nowrap { white-space:nowrap; }
   .visitor-cell { min-width:190px; }
   .visitor-main { font-weight:850; color:#e0f2fe; }
-  .visitor-meta { margin-top:4px; color:rgba(255,255,255,.56); font-size:12px; line-height:1.35; }
+  .visitor-meta { margin-top:4px; color:rgba(255,255,255,.56); font-size:12px; line-height:1.35; overflow-wrap:anywhere; }
   .login-page { position:relative; z-index:1; min-height:100vh; display:grid; place-items:center; padding:24px; }
   .login-card { width:min(440px,100%); padding:28px; text-align:center; }
   .login-card h1 { margin-top:14px; font-size:clamp(36px,7vw,50px); line-height:1; }
@@ -332,10 +332,13 @@ const ADMIN_HTML = `<!doctype html>
       };
       return labels[type] || type || 'Неизвестно';
     }
-    function shortId(value) {
+    function cleanText(value) {
       var text = String(value || '');
-      if (!text) return '';
-      return text.length > 12 ? text.slice(0, 8) + '...' + text.slice(-4) : text;
+      try {
+        return decodeURIComponent(text);
+      } catch (error) {
+        return text;
+      }
     }
     function deviceLabel(userAgent) {
       var text = String(userAgent || '');
@@ -351,10 +354,14 @@ const ADMIN_HTML = `<!doctype html>
     function visitorHtml(event) {
       var main = event.telegramUser && (event.telegramUser.username || event.telegramUser.firstName)
         ? '@' + (event.telegramUser.username || event.telegramUser.firstName)
-        : 'ID ' + (shortId(event.visitorId) || 'неизвестен');
+        : 'ID ' + (event.visitorId || 'неизвестен');
       var meta = [];
-      if (event.ipHash) meta.push('IP-метка: ' + shortId(event.ipHash));
-      if (event.city || event.region || event.country) meta.push([event.city, event.region, event.country].filter(Boolean).join(', '));
+      if (event.ipAddress) {
+        meta.push('IP: ' + event.ipAddress);
+      } else if (event.ipHash) {
+        meta.push('IP-метка: ' + event.ipHash);
+      }
+      if (event.city || event.region || event.country) meta.push([event.city, event.region, event.country].filter(Boolean).map(cleanText).join(', '));
       meta.push(deviceLabel(event.userAgent));
       if (event.screen) meta.push(event.screen);
       return '<div class="visitor-cell"><div class="visitor-main">' + esc(main) + '</div><div class="visitor-meta">' + esc(meta.join(' · ')) + '</div></div>';
