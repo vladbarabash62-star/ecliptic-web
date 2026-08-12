@@ -7,8 +7,8 @@ const rootDir = dirname(dirname(fileURLToPath(import.meta.url)));
 const seoSource = readFileSync(join(rootDir, "lib", "seo.ts"), "utf8");
 const layoutSource = readFileSync(join(rootDir, "app", "layout.tsx"), "utf8");
 
-assert.ok(existsSync(join(rootDir, "public", "ecliptic-og-preview-v3.png")));
-assert.match(seoSource, /SITE_IMAGE = `\$\{SITE_URL\}\/ecliptic-og-preview-v3\.png`/);
+assert.ok(existsSync(join(rootDir, "public", "cryptostore-og-preview-v4.png")));
+assert.match(seoSource, /SITE_IMAGE = `\$\{SITE_URL\}\/cryptostore-og-preview-v4\.png`/);
 assert.match(seoSource, /width: 1200,\s*height: 630/);
 assert.match(seoSource, /type: "image\/png"/);
 assert.match(seoSource, /card: "summary_large_image"/);
