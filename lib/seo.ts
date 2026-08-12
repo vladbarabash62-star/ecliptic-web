@@ -4,7 +4,7 @@ import { landingPageUrl, seoLandingPages } from "./seoLandingPages";
 
 export const SITE_URL = "https://ecliptic.website";
 export const SITE_NAME = "Ecliptic Store";
-export const SITE_IMAGE = `${SITE_URL}/ecliptic-link-preview.png?v=2`;
+export const SITE_IMAGE = `${SITE_URL}/ecliptic-og-preview-v3.png`;
 export const SITE_LOGO = `${SITE_URL}/google-favicon.png`;
 export const SITE_DESCRIPTION =
   "Ecliptic Store — интернет-магазин цифровых товаров, игровых пополнений и подписок в Приднестровье: Тирасполь, Бендеры, Рыбница и весь ПМР.";
@@ -492,12 +492,7 @@ export function buildProductMetadata(product: Product): Metadata {
           alt: product.name,
           width: 1200,
           height: 630,
-        },
-        {
-          url: SITE_LOGO,
-          alt: `${product.name} logo`,
-          width: 512,
-          height: 512,
+          type: "image/png",
         },
       ],
     },
