@@ -9,7 +9,6 @@ const ANALYTICS_KEY = "ecliptic:analytics:events";
 const ANALYTICS_TOTALS_KEY = "ecliptic:analytics:totals";
 const ANALYTICS_ACTIONS_KEY = "ecliptic:analytics:actions";
 const ANALYTICS_PRODUCTS_KEY = "ecliptic:analytics:products";
-const RECENT_EVENTS_LIMIT = 20000;
 
 type IncomingEvent = {
   type?: string;
@@ -83,7 +82,6 @@ export async function POST(request: Request) {
   try {
     const commands: unknown[][] = [
       ["LPUSH", ANALYTICS_KEY, JSON.stringify(event)],
-      ["LTRIM", ANALYTICS_KEY, "0", String(RECENT_EVENTS_LIMIT - 1)],
       ["HINCRBY", ANALYTICS_TOTALS_KEY, "total", "1"],
       ["HINCRBY", ANALYTICS_ACTIONS_KEY, type, "1"],
     ];

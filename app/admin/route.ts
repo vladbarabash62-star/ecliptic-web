@@ -75,6 +75,7 @@ const STYLE = `
   .visitor-cell { min-width:190px; }
   .visitor-main { font-weight:850; color:#e0f2fe; }
   .visitor-meta { margin-top:4px; color:rgba(255,255,255,.56); font-size:12px; line-height:1.35; overflow-wrap:anywhere; }
+  .load-more-wrap { display:flex; justify-content:center; margin-top:14px; }
   .login-page { position:relative; z-index:1; min-height:100vh; display:grid; place-items:center; padding:24px; }
   .login-card { width:min(440px,100%); padding:28px; text-align:center; }
   .login-card h1 { margin-top:14px; font-size:clamp(36px,7vw,50px); line-height:1; }
@@ -199,6 +200,9 @@ const ADMIN_HTML = `<!doctype html>
             <tbody id="eventsTable"></tbody>
           </table>
         </div>
+        <div class="load-more-wrap">
+          <button class="btn secondary" id="loadMoreEventsBtn" type="button">Показать еще события</button>
+        </div>
       </div>
     </section>
 
@@ -244,6 +248,7 @@ const ADMIN_HTML = `<!doctype html>
     var settings = { reviewsCountLabel: '400+' };
     var analyticsEvents = [];
     var analyticsSummary = { total: 0, views: 0, buys: 0, telegram: 0, actions: {}, products: {} };
+    var analyticsPagination = { offset: 0, limit: 200, loaded: 0, totalStored: 0, hasMore: false, nextOffset: 0 };
     var selectedSlug = '';
     var uploadTarget = null;
     var dirtyProducts = false;
@@ -391,11 +396,15 @@ const ADMIN_HTML = `<!doctype html>
       $('statTelegram').textContent = analyticsSummary.telegram || analyticsEvents.filter(function(e) { return String(e.type || '').indexOf('telegram') !== -1; }).length;
       renderBars('productStats', Object.keys(analyticsSummary.products || {}).length ? analyticsSummary.products : fallbackProducts);
       renderBars('actionStats', Object.keys(analyticsSummary.actions || {}).length ? analyticsSummary.actions : fallbackActions);
-      $('eventsTable').innerHTML = analyticsEvents.slice(0, 80).map(function(event) {
+      $('eventsTable').innerHTML = analyticsEvents.map(function(event) {
         var time = event.time ? new Date(event.time).toLocaleString('ru-RU') : '';
         var product = event.product ? productNameBySlug(event.product) : 'не выбран';
         return '<tr><td class="nowrap">' + esc(time) + '</td><td>' + esc(actionLabel(event.type)) + '</td><td>' + esc(product) + '</td><td>' + esc(event.path || '') + '</td><td>' + visitorHtml(event) + '</td></tr>';
       }).join('') || '<tr><td colspan="5" class="muted">Пока нет событий.</td></tr>';
+      $('loadMoreEventsBtn').style.display = analyticsPagination.hasMore ? 'inline-flex' : 'none';
+      $('loadMoreEventsBtn').textContent = analyticsPagination.hasMore
+        ? 'Показать еще события (' + analyticsEvents.length + ' из ' + analyticsPagination.totalStored + ')'
+        : 'Все события загружены';
     }
     function updateAnalyticsTimestamp() {
       $('analyticsUpdatedAt').textContent = 'Обновлено: ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -781,11 +790,22 @@ const ADMIN_HTML = `<!doctype html>
         showNotice(error.message || 'Не удалось загрузить админку.', true);
       }
     }
-    async function loadAnalytics() {
+    async function loadAnalytics(offset) {
+      var shouldAppend = Number(offset || 0) > 0;
+      var loadOffset = shouldAppend ? offset : 0;
+      $('loadMoreEventsBtn').disabled = true;
       try {
-        var data = await postJson('/api/admin/analytics', {});
-        analyticsEvents = data.events || [];
+        var data = await postJson('/api/admin/analytics', { offset: loadOffset, limit: analyticsPagination.limit });
+        analyticsEvents = shouldAppend ? analyticsEvents.concat(data.events || []) : data.events || [];
         analyticsSummary = data.summary || analyticsSummary;
+        analyticsPagination = data.pagination || {
+          offset: loadOffset,
+          limit: analyticsPagination.limit,
+          loaded: data.events ? data.events.length : 0,
+          totalStored: analyticsEvents.length,
+          hasMore: false,
+          nextOffset: analyticsEvents.length,
+        };
         renderAnalytics();
         updateAnalyticsTimestamp();
         showNotice('Готово.', false);
@@ -793,9 +813,12 @@ const ADMIN_HTML = `<!doctype html>
       } catch (error) {
         analyticsEvents = [];
         analyticsSummary = { total: 0, views: 0, buys: 0, telegram: 0, actions: {}, products: {} };
+        analyticsPagination = { offset: 0, limit: 200, loaded: 0, totalStored: 0, hasMore: false, nextOffset: 0 };
         renderAnalytics();
         $('analyticsUpdatedAt').textContent = 'Статистика временно не обновилась';
         showNotice('Товары загружены. Аналитика временно недоступна.', true);
+      } finally {
+        $('loadMoreEventsBtn').disabled = false;
       }
     }
     async function resetAnalytics() {
@@ -806,6 +829,7 @@ const ADMIN_HTML = `<!doctype html>
         var data = await postJson('/api/admin/analytics', { reset: true });
         analyticsEvents = data.events || [];
         analyticsSummary = data.summary || { total: 0, views: 0, buys: 0, telegram: 0, actions: {}, products: {} };
+        analyticsPagination = data.pagination || { offset: 0, limit: 200, loaded: 0, totalStored: 0, hasMore: false, nextOffset: 0 };
         renderAnalytics();
         updateAnalyticsTimestamp();
         showNotice('Статистика сброшена.', false);
@@ -863,7 +887,8 @@ const ADMIN_HTML = `<!doctype html>
       });
     });
     $('reloadBtn').addEventListener('click', loadAll);
-    $('reloadAnalyticsBtn').addEventListener('click', loadAnalytics);
+    $('reloadAnalyticsBtn').addEventListener('click', function() { loadAnalytics(0); });
+    $('loadMoreEventsBtn').addEventListener('click', function() { loadAnalytics(analyticsPagination.nextOffset || analyticsEvents.length); });
     $('resetAnalyticsBtn').addEventListener('click', resetAnalytics);
     $('logoutBtn').addEventListener('click', logout);
     $('addProductBtn').addEventListener('click', addProduct);
