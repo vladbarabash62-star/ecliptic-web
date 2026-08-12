@@ -4,7 +4,7 @@ import { landingPageUrl, seoLandingPages } from "./seoLandingPages";
 
 export const SITE_URL = "https://ecliptic.website";
 export const SITE_NAME = "Ecliptic Store";
-export const SITE_IMAGE = `${SITE_URL}/ecliptic-search-image.png`;
+export const SITE_IMAGE = `${SITE_URL}/ecliptic-link-preview.png?v=2`;
 export const SITE_LOGO = `${SITE_URL}/google-favicon.png`;
 export const SITE_DESCRIPTION =
   "Ecliptic Store — интернет-магазин цифровых товаров, игровых пополнений и подписок в Приднестровье: Тирасполь, Бендеры, Рыбница и весь ПМР.";
@@ -490,8 +490,8 @@ export function buildProductMetadata(product: Product): Metadata {
         {
           url: SITE_IMAGE,
           alt: product.name,
-          width: 1024,
-          height: 1024,
+          width: 1200,
+          height: 630,
         },
         {
           url: SITE_LOGO,
@@ -502,10 +502,10 @@ export function buildProductMetadata(product: Product): Metadata {
       ],
     },
     twitter: {
-      card: "summary",
+      card: "summary_large_image",
       title,
       description,
-      images: [SITE_LOGO],
+      images: [SITE_IMAGE],
     },
     robots: {
       index: productShouldBeIndexed(product),
