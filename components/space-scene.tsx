@@ -1,5 +1,3 @@
-"use client";
-
 const stars = Array.from({ length: 95 }, (_, index) => {
   const left = (index * 37 + 11) % 100;
   const top = (index * 53 + 7) % 100;

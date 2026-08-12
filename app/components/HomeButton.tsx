@@ -21,7 +21,7 @@ export default function HomeButton() {
         width={280}
         height={210}
         className="h-[4.2cm] w-[5.6cm] object-contain"
-        priority
+        loading="lazy"
       />
     </Link>
   );

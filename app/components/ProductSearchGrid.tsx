@@ -183,7 +183,10 @@ export default function ProductSearchGrid({ products }: { products: ProductCard[
                       src={product.icon}
                       alt={product.name}
                       className="product-icon product-grid-icon h-[64%] w-[64%] object-contain"
+                      width={180}
+                      height={180}
                       loading={index < 6 ? "eager" : "lazy"}
+                      fetchPriority={index < 3 ? "high" : "auto"}
                       decoding="async"
                       draggable={false}
                       onError={(event) => {

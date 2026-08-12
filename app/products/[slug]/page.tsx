@@ -116,6 +116,8 @@ export default async function ProductPage({ params }: PageProps) {
               src={product.icon}
               alt={product.name}
               className="product-icon h-[66%] w-[66%] object-contain"
+              width={180}
+              height={180}
               decoding="async"
               fetchPriority="high"
               style={iconStyle}

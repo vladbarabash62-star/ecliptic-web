@@ -237,7 +237,8 @@ html {
   opacity: 1;
   transform: none;
   animation: homeRevealDown 560ms cubic-bezier(0.22, 1, 0.36, 1) var(--home-card-delay, 220ms) backwards;
-  will-change: opacity, transform;
+  content-visibility: auto;
+  contain-intrinsic-size: 180px 210px;
 }
 
 .contact-float {
@@ -294,6 +295,8 @@ html {
 
 .product-page-enter {
   animation: softReveal 320ms ease-out both;
+  content-visibility: auto;
+  contain-intrinsic-size: 720px;
 }
 
 .swipe-home-transition .site-content,

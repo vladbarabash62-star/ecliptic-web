@@ -120,7 +120,7 @@ export default function PageLoader() {
       return clearTimers;
     }
 
-    hideSoon(650);
+    hideSoon(260);
     return clearTimers;
   }, [clearTimers, hideSoon, pathname]);
 
@@ -146,7 +146,7 @@ export default function PageLoader() {
       return;
     }
     showLoader();
-    hideSoon(430);
+    hideSoon(260);
   }, [clearTimers, hideSoon, pathname, showLoader]);
 
   useEffect(() => {
@@ -159,7 +159,7 @@ export default function PageLoader() {
 
       if (shouldSkipLoaderForSwipeHome()) return;
       showLoader();
-      hideSoon(1600);
+      hideSoon(760);
     };
 
     const handleClick = (event: MouseEvent) => {

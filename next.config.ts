@@ -17,7 +17,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: "X-DNS-Prefetch-Control",
-            value: "off",
+            value: "on",
           },
           {
             key: "X-Download-Options",
@@ -43,6 +43,15 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value:
               "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' https://t.me https://telegram.me; connect-src 'self' https://t.me https://telegram.me; img-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' https://telegram.org; style-src 'self' 'unsafe-inline'; font-src 'self' data:; manifest-src 'self'; media-src 'self' https:; worker-src 'self' blob:; upgrade-insecure-requests",
+          },
+        ],
+      },
+      {
+        source: "/:path*\\.(png|jpg|jpeg|webp|svg|ico)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
           },
         ],
       },
