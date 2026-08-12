@@ -42,6 +42,8 @@ const STYLE = `
   .panel { padding:16px; }
   .list { display:grid; gap:8px; margin-top:14px; }
   .row { display:grid; grid-template-columns:1fr auto; gap:10px; align-items:center; padding:10px 12px; border:1px solid rgba(255,255,255,.08); border-radius:12px; background:rgba(255,255,255,.035); }
+  .row strong { overflow-wrap:anywhere; }
+  .row-meta { margin-top:3px; color:rgba(255,255,255,.48); font-size:12px; font-weight:700; }
   .bar { height:8px; margin-top:8px; overflow:hidden; border-radius:999px; background:rgba(255,255,255,.08); }
   .bar span { display:block; height:100%; background:linear-gradient(90deg,#38bdf8,#22c55e); }
   .admin-grid { display:grid; grid-template-columns:330px minmax(0,1fr); gap:14px; }
@@ -68,6 +70,11 @@ const STYLE = `
   .table { width:100%; border-collapse:collapse; margin-top:12px; }
   .table th,.table td { padding:10px; border-bottom:1px solid rgba(255,255,255,.08); text-align:left; font-size:13px; }
   .table th { color:rgba(255,255,255,.65); }
+  .table td { vertical-align:top; }
+  .nowrap { white-space:nowrap; }
+  .visitor-cell { min-width:190px; }
+  .visitor-main { font-weight:850; color:#e0f2fe; }
+  .visitor-meta { margin-top:4px; color:rgba(255,255,255,.56); font-size:12px; line-height:1.35; }
   .login-page { position:relative; z-index:1; min-height:100vh; display:grid; place-items:center; padding:24px; }
   .login-card { width:min(440px,100%); padding:28px; text-align:center; }
   .login-card h1 { margin-top:14px; font-size:clamp(36px,7vw,50px); line-height:1; }
@@ -188,7 +195,7 @@ const ADMIN_HTML = `<!doctype html>
         <h2>Последние события</h2>
         <div style="overflow:auto">
           <table class="table">
-            <thead><tr><th>Время</th><th>Действие</th><th>Товар</th><th>Страница</th></tr></thead>
+            <thead><tr><th>Время</th><th>Действие</th><th>Товар</th><th>Страница</th><th>Посетитель</th></tr></thead>
             <tbody id="eventsTable"></tbody>
           </table>
         </div>
@@ -236,6 +243,7 @@ const ADMIN_HTML = `<!doctype html>
     var products = [];
     var settings = { reviewsCountLabel: '400+' };
     var analyticsEvents = [];
+    var analyticsSummary = { total: 0, views: 0, buys: 0, telegram: 0, actions: {}, products: {} };
     var selectedSlug = '';
     var uploadTarget = null;
     var dirtyProducts = false;
@@ -310,6 +318,47 @@ const ADMIN_HTML = `<!doctype html>
     function currentProduct() {
       return products.find(function(product) { return product.slug === selectedSlug; });
     }
+    function productNameBySlug(slug) {
+      var product = products.find(function(item) { return item.slug === slug; });
+      return product ? product.name : slug;
+    }
+    function actionLabel(type) {
+      var labels = {
+        page_view: 'Просмотр страницы',
+        product_open: 'Открытие товара',
+        buy_click: 'Клик Купить',
+        telegram_contact: 'Переход в Telegram',
+        click: 'Клик'
+      };
+      return labels[type] || type || 'Неизвестно';
+    }
+    function shortId(value) {
+      var text = String(value || '');
+      if (!text) return '';
+      return text.length > 12 ? text.slice(0, 8) + '...' + text.slice(-4) : text;
+    }
+    function deviceLabel(userAgent) {
+      var text = String(userAgent || '');
+      if (!text) return 'устройство не определено';
+      if (/Telegram/i.test(text)) return 'Telegram';
+      if (/iPhone|iPad|iPod/i.test(text)) return 'iPhone/iPad';
+      if (/Android/i.test(text)) return 'Android';
+      if (/Mobile/i.test(text)) return 'Телефон';
+      if (/Windows/i.test(text)) return 'Windows';
+      if (/Macintosh|Mac OS/i.test(text)) return 'Mac';
+      return 'Браузер';
+    }
+    function visitorHtml(event) {
+      var main = event.telegramUser && (event.telegramUser.username || event.telegramUser.firstName)
+        ? '@' + (event.telegramUser.username || event.telegramUser.firstName)
+        : 'ID ' + (shortId(event.visitorId) || 'неизвестен');
+      var meta = [];
+      if (event.ipHash) meta.push('IP-метка: ' + shortId(event.ipHash));
+      if (event.city || event.region || event.country) meta.push([event.city, event.region, event.country].filter(Boolean).join(', '));
+      meta.push(deviceLabel(event.userAgent));
+      if (event.screen) meta.push(event.screen);
+      return '<div class="visitor-cell"><div class="visitor-main">' + esc(main) + '</div><div class="visitor-meta">' + esc(meta.join(' · ')) + '</div></div>';
+    }
     function countBy(items, getter) {
       return items.reduce(function(acc, item) {
         var key = getter(item) || 'Неизвестно';
@@ -321,20 +370,25 @@ const ADMIN_HTML = `<!doctype html>
       var rows = Object.entries(data).sort(function(a,b) { return b[1] - a[1]; }).slice(0, 8);
       var max = Math.max(1, ...rows.map(function(row) { return row[1]; }));
       $(id).innerHTML = rows.length ? rows.map(function(row) {
-        return '<div class="row"><div><strong>' + esc(row[0]) + '</strong><div class="bar"><span style="width:' + Math.max(8, Math.round(row[1] / max * 100)) + '%"></span></div></div><strong>' + row[1] + '</strong></div>';
+        var label = id === 'actionStats' ? actionLabel(row[0]) : productNameBySlug(row[0]);
+        var meta = label !== row[0] ? '<div class="row-meta">' + esc(row[0]) + '</div>' : '';
+        return '<div class="row"><div><strong>' + esc(label) + '</strong>' + meta + '<div class="bar"><span style="width:' + Math.max(8, Math.round(row[1] / max * 100)) + '%"></span></div></div><strong>' + row[1] + '</strong></div>';
       }).join('') : '<p class="muted">Пока нет данных.</p>';
     }
     function renderAnalytics() {
-      $('statTotal').textContent = analyticsEvents.length;
-      $('statViews').textContent = analyticsEvents.filter(function(e) { return e.type === 'page_view'; }).length;
-      $('statBuys').textContent = analyticsEvents.filter(function(e) { return e.type === 'buy_click'; }).length;
-      $('statTelegram').textContent = analyticsEvents.filter(function(e) { return String(e.type || '').indexOf('telegram') !== -1; }).length;
-      renderBars('productStats', countBy(analyticsEvents.filter(function(e) { return e.product; }), function(e) { return e.product; }));
-      renderBars('actionStats', countBy(analyticsEvents, function(e) { return e.type; }));
+      var fallbackProducts = countBy(analyticsEvents.filter(function(e) { return e.product; }), function(e) { return e.product; });
+      var fallbackActions = countBy(analyticsEvents, function(e) { return e.type; });
+      $('statTotal').textContent = analyticsSummary.total || analyticsEvents.length;
+      $('statViews').textContent = analyticsSummary.views || analyticsEvents.filter(function(e) { return e.type === 'page_view'; }).length;
+      $('statBuys').textContent = analyticsSummary.buys || analyticsEvents.filter(function(e) { return e.type === 'buy_click'; }).length;
+      $('statTelegram').textContent = analyticsSummary.telegram || analyticsEvents.filter(function(e) { return String(e.type || '').indexOf('telegram') !== -1; }).length;
+      renderBars('productStats', Object.keys(analyticsSummary.products || {}).length ? analyticsSummary.products : fallbackProducts);
+      renderBars('actionStats', Object.keys(analyticsSummary.actions || {}).length ? analyticsSummary.actions : fallbackActions);
       $('eventsTable').innerHTML = analyticsEvents.slice(0, 80).map(function(event) {
         var time = event.time ? new Date(event.time).toLocaleString('ru-RU') : '';
-        return '<tr><td>' + esc(time) + '</td><td>' + esc(event.type || '') + '</td><td>' + esc(event.product || '') + '</td><td>' + esc(event.path || '') + '</td></tr>';
-      }).join('') || '<tr><td colspan="4" class="muted">Пока нет событий.</td></tr>';
+        var product = event.product ? productNameBySlug(event.product) : 'не выбран';
+        return '<tr><td class="nowrap">' + esc(time) + '</td><td>' + esc(actionLabel(event.type)) + '</td><td>' + esc(product) + '</td><td>' + esc(event.path || '') + '</td><td>' + visitorHtml(event) + '</td></tr>';
+      }).join('') || '<tr><td colspan="5" class="muted">Пока нет событий.</td></tr>';
     }
     function updateAnalyticsTimestamp() {
       $('analyticsUpdatedAt').textContent = 'Обновлено: ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -724,12 +778,14 @@ const ADMIN_HTML = `<!doctype html>
       try {
         var data = await postJson('/api/admin/analytics', {});
         analyticsEvents = data.events || [];
+        analyticsSummary = data.summary || analyticsSummary;
         renderAnalytics();
         updateAnalyticsTimestamp();
         showNotice('Готово.', false);
         hideNoticeSoon();
       } catch (error) {
         analyticsEvents = [];
+        analyticsSummary = { total: 0, views: 0, buys: 0, telegram: 0, actions: {}, products: {} };
         renderAnalytics();
         $('analyticsUpdatedAt').textContent = 'Статистика временно не обновилась';
         showNotice('Товары загружены. Аналитика временно недоступна.', true);
@@ -742,6 +798,7 @@ const ADMIN_HTML = `<!doctype html>
       try {
         var data = await postJson('/api/admin/analytics', { reset: true });
         analyticsEvents = data.events || [];
+        analyticsSummary = data.summary || { total: 0, views: 0, buys: 0, telegram: 0, actions: {}, products: {} };
         renderAnalytics();
         updateAnalyticsTimestamp();
         showNotice('Статистика сброшена.', false);

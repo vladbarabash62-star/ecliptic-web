@@ -6,7 +6,10 @@ import { checkRateLimit, getRedisConfig, redisPipeline } from "../../../lib/secu
 export const runtime = "nodejs";
 
 const ANALYTICS_KEY = "ecliptic:analytics:events";
-const MAX_EVENTS = 5000;
+const ANALYTICS_TOTALS_KEY = "ecliptic:analytics:totals";
+const ANALYTICS_ACTIONS_KEY = "ecliptic:analytics:actions";
+const ANALYTICS_PRODUCTS_KEY = "ecliptic:analytics:products";
+const RECENT_EVENTS_LIMIT = 20000;
 
 type IncomingEvent = {
   type?: string;
@@ -38,7 +41,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "Payload too large" }, { status: 413 });
   }
 
-  const rateLimit = await checkRateLimit("analytics", 180, 60);
+  const rateLimit = await checkRateLimit("analytics", 5000, 60);
   if (!rateLimit.allowed) {
     return NextResponse.json({ ok: false, error: "Too many requests" }, { status: 429 });
   }
@@ -46,16 +49,19 @@ export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as IncomingEvent;
   const headerList = await headers();
   const forwardedFor = headerList.get("x-forwarded-for")?.split(",")[0]?.trim();
-  const realIp = headerList.get("x-real-ip");
+  const realIp = headerList.get("x-real-ip") || headerList.get("cf-connecting-ip");
   const userAgent = headerList.get("user-agent") || undefined;
-  const country = headerList.get("x-vercel-ip-country") || undefined;
+  const country = headerList.get("x-vercel-ip-country") || headerList.get("cf-ipcountry") || undefined;
   const region = headerList.get("x-vercel-ip-country-region") || undefined;
   const city = headerList.get("x-vercel-ip-city") || undefined;
+  const ipHash = hashIp(forwardedFor || realIp || null);
+  const type = String(body.type || "unknown").slice(0, 64);
+  const product = body.product ? String(body.product).slice(0, 120) : undefined;
 
   const event = {
-    type: body.type || "unknown",
+    type,
     path: body.path || "/",
-    product: body.product,
+    product,
     offer: body.offer,
     time: body.time || new Date().toISOString(),
     visitorId: body.visitorId,
@@ -65,7 +71,7 @@ export async function POST(request: Request) {
     timezone: body.timezone,
     screen: body.screen,
     telegramUser: body.telegramUser,
-    ipHash: hashIp(forwardedFor || realIp || null),
+    ipHash,
     country,
     region,
     city,
@@ -73,10 +79,19 @@ export async function POST(request: Request) {
   };
 
   try {
-    await redisPipeline([
+    const commands: unknown[][] = [
       ["LPUSH", ANALYTICS_KEY, JSON.stringify(event)],
-      ["LTRIM", ANALYTICS_KEY, "0", String(MAX_EVENTS - 1)],
-    ]);
+      ["LTRIM", ANALYTICS_KEY, "0", String(RECENT_EVENTS_LIMIT - 1)],
+      ["HINCRBY", ANALYTICS_TOTALS_KEY, "total", "1"],
+      ["HINCRBY", ANALYTICS_ACTIONS_KEY, type, "1"],
+    ];
+
+    if (type === "page_view") commands.push(["HINCRBY", ANALYTICS_TOTALS_KEY, "views", "1"]);
+    if (type === "buy_click") commands.push(["HINCRBY", ANALYTICS_TOTALS_KEY, "buys", "1"]);
+    if (type.includes("telegram")) commands.push(["HINCRBY", ANALYTICS_TOTALS_KEY, "telegram", "1"]);
+    if (product) commands.push(["HINCRBY", ANALYTICS_PRODUCTS_KEY, product, "1"]);
+
+    await redisPipeline(commands);
   } catch {
     return NextResponse.json({ ok: true, stored: false });
   }

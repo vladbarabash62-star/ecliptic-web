@@ -71,12 +71,22 @@ function writeEvent(event: AnalyticsEvent) {
 function trackEvent(event: AnalyticsEvent) {
   writeEvent(event);
 
+  const payload = JSON.stringify(event);
+  if (typeof navigator.sendBeacon === "function") {
+    try {
+      const blob = new Blob([payload], { type: "application/json" });
+      if (navigator.sendBeacon("/api/analytics", blob)) return;
+    } catch {
+      // Fall back to fetch below.
+    }
+  }
+
   fetch("/api/analytics", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(event),
+    body: payload,
     keepalive: true,
   }).catch(() => {
     // Local storage remains as a fallback if the network is unavailable.
