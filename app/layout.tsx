@@ -159,6 +159,7 @@ export default function RootLayout({
 
         {/* ЗВЕЗДЫ */}
         <SpaceScene />
+        <div className="site-corner-marker" aria-hidden="true" />
 
         {/* КНОПКА */}
         <PageLoader />
