@@ -151,17 +151,6 @@ html {
   display: none !important;
 }
 
-.site-corner-marker {
-  position: fixed;
-  top: 10px;
-  left: 10px;
-  z-index: 80;
-  width: 18px;
-  height: 18px;
-  pointer-events: none;
-  background: #ef1d1d;
-}
-
 .site-loader__orbit {
   display: grid;
   width: 150px;
