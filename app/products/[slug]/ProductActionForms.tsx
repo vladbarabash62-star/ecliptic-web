@@ -137,6 +137,7 @@ function TelegramOrderLink({
   message,
   productSlug,
   offer,
+  priceRub,
   className,
   validate,
   onInvalid,
@@ -145,6 +146,7 @@ function TelegramOrderLink({
   message: string;
   productSlug: string;
   offer: string;
+  priceRub?: number;
   className: string;
   validate?: () => string | null;
   onInvalid?: (message: string) => void;
@@ -161,6 +163,7 @@ function TelegramOrderLink({
       data-haptic-direct="true"
       data-product={productSlug}
       data-offer={offer}
+      data-price={Number.isFinite(priceRub) ? String(priceRub) : undefined}
       onClick={(event) => {
         const validationMessage = validate?.();
         if (validationMessage) {
@@ -392,6 +395,7 @@ export function SteamTopupForm({ productName, productSlug }: { productName: stri
         message={message}
         productSlug={productSlug}
         offer="steam-topup"
+        priceRub={hasAmount ? priceRub : undefined}
         validate={validateOrder}
         onInvalid={showNotice}
         className="mt-4 flex w-full items-center justify-center rounded-xl bg-indigo-500 px-3 py-3 text-sm font-bold text-white shadow-[0_10px_24px_rgba(99,102,241,0.24)] transition-all duration-300 hover:bg-indigo-400 active:scale-95"
@@ -442,6 +446,7 @@ export function EpicTopupForm({ productName, productSlug }: { productName: strin
         message={message}
         productSlug={productSlug}
         offer="epic-topup"
+        priceRub={hasAmount ? priceRub : undefined}
         validate={validateOrder}
         onInvalid={showNotice}
         className="mt-4 flex w-full items-center justify-center rounded-xl bg-indigo-500 px-3 py-3 text-sm font-bold text-white shadow-[0_10px_24px_rgba(99,102,241,0.24)] transition-all duration-300 hover:bg-indigo-400 active:scale-95"
@@ -492,6 +497,7 @@ export function SbpPaymentForm({ productName, productSlug }: { productName: stri
           message={message}
           productSlug={productSlug}
           offer="sbp-payment"
+          priceRub={hasAmount ? pricePmr : undefined}
           validate={validateOrder}
           onInvalid={showNotice}
           className="mt-4 flex w-full items-center justify-center rounded-xl bg-indigo-500 px-3 py-3 text-sm font-bold text-white shadow-[0_10px_24px_rgba(99,102,241,0.24)] transition-all duration-300 hover:bg-indigo-400 active:scale-95"
@@ -601,6 +607,7 @@ export function ProductOffersWithDetails({
               message={message}
               productSlug={productSlug}
               offer={offer.label}
+              priceRub={offer.priceRub}
               validate={fields.length > 0 ? validateDetails : undefined}
               onInvalid={showNotice}
               className="shrink-0 rounded-xl bg-emerald-500 px-3 py-2 text-sm font-bold text-white shadow-[0_10px_24px_rgba(16,185,129,0.22)] transition-all duration-300 hover:bg-emerald-400 active:scale-95"

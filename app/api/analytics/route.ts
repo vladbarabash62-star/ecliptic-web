@@ -15,6 +15,7 @@ type IncomingEvent = {
   path?: string;
   product?: string;
   offer?: string;
+  price?: number;
   time?: string;
   visitorId?: string;
   sessionId?: string;

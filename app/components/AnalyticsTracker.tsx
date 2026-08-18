@@ -9,6 +9,7 @@ type AnalyticsEvent = {
   path: string;
   product?: string;
   offer?: string;
+  price?: number;
   time: string;
   visitorId?: string;
   sessionId?: string;
@@ -316,6 +317,7 @@ export default function AnalyticsTracker() {
           path: window.location.pathname,
           product: element.dataset.product,
           offer: element.dataset.offer,
+          price: element.dataset.price ? Number(element.dataset.price) : undefined,
           time: new Date().toISOString(),
           telegramUser: getTelegramUser(),
         }));

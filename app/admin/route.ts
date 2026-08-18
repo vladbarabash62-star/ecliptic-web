@@ -90,11 +90,16 @@ const STYLE = `
   .chart-empty { display:grid; min-height:210px; place-items:center; color:var(--muted); text-align:center; }
   .wide-chart { padding:16px; margin-bottom:14px; }
   .week-bars { display:flex; gap:12px; align-items:end; min-height:230px; margin-top:18px; padding:12px 2px 4px; border-top:1px solid rgba(255,255,255,.08); overflow-x:auto; }
-  .week-bar { flex:0 0 118px; display:grid; gap:8px; align-content:end; min-height:205px; }
+  .week-bar { position:relative; flex:0 0 118px; display:grid; gap:8px; align-content:end; min-height:205px; cursor:default; }
   .week-fill { min-height:8px; border-radius:12px 12px 6px 6px; background:linear-gradient(180deg,#38bdf8,#22c55e); box-shadow:0 12px 28px rgba(34,197,94,.2); }
   .week-label { color:var(--muted); font-size:11px; line-height:1.25; text-align:center; }
   .week-value { font-weight:950; text-align:center; line-height:1.2; }
   .week-value small { display:block; margin-top:2px; color:var(--muted); font-size:11px; font-weight:800; }
+  .week-tip { position:absolute; left:50%; bottom:100%; z-index:20; width:245px; transform:translate(-50%,-12px); border:1px solid rgba(148,163,184,.28); border-radius:14px; background:rgba(7,16,29,.98); padding:12px; box-shadow:0 22px 58px rgba(0,0,0,.38); opacity:0; pointer-events:none; transition:opacity .18s ease, transform .18s ease; }
+  .week-bar:hover .week-tip { opacity:1; transform:translate(-50%,-18px); }
+  .week-tip strong { display:block; margin-bottom:8px; color:#fff; }
+  .week-tip-row { display:flex; justify-content:space-between; gap:10px; color:rgba(255,255,255,.72); font-size:12px; line-height:1.55; }
+  .week-tip-total { margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,.08); color:#e0f2fe; font-size:12px; font-weight:900; line-height:1.45; }
   .return-list { display:grid; gap:10px; margin-top:14px; }
   .insight-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:14px; }
   .insight { padding:14px; }
@@ -523,12 +528,29 @@ const ADMIN_HTML = `<!doctype html>
     function formatShortDate(date) {
       return date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
     }
+    function formatDayName(date) {
+      return date.toLocaleDateString('ru-RU', { weekday: 'short', day: '2-digit', month: '2-digit' });
+    }
+    function mondayStart(date) {
+      var copy = new Date(date);
+      copy.setHours(0, 0, 0, 0);
+      var day = copy.getDay();
+      var shift = day === 0 ? -6 : 1 - day;
+      copy.setDate(copy.getDate() + shift);
+      return copy;
+    }
+    function parsePrice(event) {
+      var direct = Number(event.price || event.priceRub || 0);
+      if (Number.isFinite(direct) && direct > 0) return direct;
+      var text = String(event.offer || '') + ' ' + String(event.message || '');
+      var match = text.match(/(?:к оплате|оплате|цена)?\\D*(\\d{1,7})\\s*(?:р|₽)/i);
+      return match ? Number(match[1]) : 0;
+    }
     function weekRanges(events) {
       var dates = events.map(function(event) { return event.time ? new Date(event.time) : null; }).filter(function(date) { return date && !Number.isNaN(date.getTime()); });
       if (!dates.length) return [];
-      var first = new Date(Math.min.apply(null, dates));
-      var last = new Date(Math.max.apply(null, dates));
-      first.setHours(0, 0, 0, 0);
+      var first = mondayStart(new Date(Math.min.apply(null, dates)));
+      var last = mondayStart(new Date(Math.max.apply(null, dates)));
       last.setHours(23, 59, 59, 999);
       var ranges = [];
       var start = new Date(first);
@@ -551,18 +573,42 @@ const ADMIN_HTML = `<!doctype html>
         $(id).innerHTML = '<div class="chart-empty">Пока нет данных для недельного графика.</div>';
         return;
       }
-      var rows = ranges.map(function(range) { return { label: range.label, start: range.start, end: range.end, value: 0 }; });
+      var rows = ranges.map(function(range) {
+        var days = [];
+        for (var index = 0; index < 7; index += 1) {
+          var day = new Date(range.start);
+          day.setDate(day.getDate() + index);
+          days.push({ date: day, value: 0, sum: 0 });
+        }
+        return { label: range.label, start: range.start, end: range.end, value: 0, sum: 0, days: days };
+      });
       events.forEach(function(event) {
         if (event.type !== type || !event.time) return;
         var date = new Date(event.time);
         if (Number.isNaN(date.getTime())) return;
         var row = rows.find(function(item) { return date >= item.start && date <= item.end; });
-        if (row) row.value += 1;
+        if (!row) return;
+        var price = type === 'buy_click' ? parsePrice(event) : 0;
+        row.value += 1;
+        row.sum += price;
+        var stamp = dayStamp(date);
+        var day = row.days.find(function(item) { return dayStamp(item.date) === stamp; });
+        if (day) {
+          day.value += 1;
+          day.sum += price;
+        }
       });
       var max = Math.max(1, ...rows.map(function(row) { return row.value; }));
       $(id).innerHTML = '<div class="week-bars">' + rows.map(function(row) {
         var height = Math.max(8, Math.round(row.value / max * 150));
-        return '<div class="week-bar"><div class="week-value">' + row.value + '<small>' + esc(unit) + '</small></div><div class="week-fill" style="height:' + height + 'px"></div><div class="week-label">' + esc(row.label) + '</div></div>';
+        var dayRows = row.days.map(function(day) {
+          var sumText = type === 'buy_click' && day.sum ? ' · ' + day.sum + ' р' : '';
+          return '<div class="week-tip-row"><span>' + esc(formatDayName(day.date)) + '</span><b>' + day.value + sumText + '</b></div>';
+        }).join('');
+        var totalText = type === 'buy_click'
+          ? 'Заказов: ' + row.value + '<br>Сумма: ' + row.sum + ' р'
+          : 'Открытий: ' + row.value;
+        return '<div class="week-bar"><div class="week-tip"><strong>' + esc(row.label) + '</strong>' + dayRows + '<div class="week-tip-total">' + totalText + '</div></div><div class="week-value">' + row.value + '<small>' + esc(unit) + '</small></div><div class="week-fill" style="height:' + height + 'px"></div><div class="week-label">' + esc(row.label) + '</div></div>';
       }).join('') + '</div>';
     }
     function dayStamp(date) {
@@ -587,15 +633,30 @@ const ADMIN_HTML = `<!doctype html>
         return days.some(function(day, index) { return index > 0 && day - days[0] >= 86400000; });
       }).sort(function(a, b) { return b.events - a.events; });
     }
+    function visitorDisplayKey(key) {
+      var text = String(key || 'неизвестно');
+      return text.length > 18 ? text.slice(0, 8) + '...' + text.slice(-6) : text;
+    }
     function renderReturnVisitors(id, events) {
       var rows = returningVisitors(events);
       if (!rows.length) {
         $(id).innerHTML = '<div class="chart-empty">Пока нет повторных посетителей по текущим данным.</div>';
         return;
       }
-      $(id).innerHTML = '<div class="return-list">' + rows.slice(0, 12).map(function(row) {
-        return '<div class="row"><div><strong>' + esc(row.label || 'Неизвестно') + '</strong><div class="row-meta">' + row.days.size + ' дн. активности · событий: ' + row.events + '</div></div><strong>вернулся</strong></div>';
-      }).join('') + '</div>';
+      var visible = rows.slice(0, 12);
+      var total = visible.reduce(function(sum, row) { return sum + row.events; }, 0);
+      var used = 0;
+      var segments = visible.map(function(row, index) {
+        var from = used / total * 100;
+        used += row.events;
+        var to = used / total * 100;
+        return chartColors[index % chartColors.length] + ' ' + from.toFixed(2) + '% ' + to.toFixed(2) + '%';
+      }).join(',');
+      var legend = visible.map(function(row, index) {
+        var days = Array.from(row.days).sort(function(a, b) { return a - b; }).map(function(stamp) { return formatShortDate(new Date(stamp)); }).join(', ');
+        return '<div class="legend-row"><span class="dot" style="--dot:' + chartColors[index % chartColors.length] + '"></span><span>' + esc(row.label || visitorDisplayKey(row.key)) + '<br><span class="row-meta">' + esc(visitorDisplayKey(row.key)) + ' · ' + esc(days) + '</span></span><strong>' + row.events + ' · ' + percent(row.events, total) + '%</strong></div>';
+      }).join('');
+      $(id).innerHTML = '<div class="pie-wrap"><div class="pie" style="background:conic-gradient(' + segments + ')"></div><div class="legend scroll">' + legend + '</div></div>';
     }
     function renderBars(id, data) {
       var rows = Object.entries(data).sort(function(a,b) { return b[1] - a[1]; }).slice(0, 8);
