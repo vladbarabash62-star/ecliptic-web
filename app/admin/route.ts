@@ -85,14 +85,16 @@ const STYLE = `
   .pie { width:170px; aspect-ratio:1; border-radius:50%; background:conic-gradient(rgba(255,255,255,.12) 0 100%); box-shadow:inset 0 0 0 14px rgba(0,0,0,.18),0 18px 42px rgba(0,0,0,.28); }
   .legend { display:grid; gap:8px; align-content:center; }
   .legend-row { display:grid; grid-template-columns:12px 1fr auto; gap:8px; align-items:center; font-size:13px; }
+  .legend.scroll { max-height:260px; overflow:auto; padding-right:4px; }
   .dot { width:12px; height:12px; border-radius:50%; background:var(--dot,#38bdf8); }
   .chart-empty { display:grid; min-height:210px; place-items:center; color:var(--muted); text-align:center; }
   .wide-chart { padding:16px; margin-bottom:14px; }
-  .week-bars { display:grid; grid-template-columns:repeat(auto-fit,minmax(88px,1fr)); gap:10px; align-items:end; min-height:210px; margin-top:18px; padding-top:12px; border-top:1px solid rgba(255,255,255,.08); }
+  .week-bars { display:grid; grid-template-columns:repeat(auto-fit,minmax(112px,1fr)); gap:10px; align-items:end; min-height:210px; margin-top:18px; padding-top:12px; border-top:1px solid rgba(255,255,255,.08); }
   .week-bar { display:grid; gap:8px; align-content:end; min-height:190px; }
   .week-fill { min-height:8px; border-radius:12px 12px 6px 6px; background:linear-gradient(180deg,#38bdf8,#22c55e); box-shadow:0 12px 28px rgba(34,197,94,.2); }
-  .week-label { color:var(--muted); font-size:12px; text-align:center; }
+  .week-label { color:var(--muted); font-size:11px; line-height:1.25; text-align:center; }
   .week-value { font-weight:950; text-align:center; }
+  .conversion-list { display:grid; gap:10px; margin-top:14px; }
   .insight-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:14px; }
   .insight { padding:14px; }
   .insight strong { display:block; margin-top:8px; font-size:22px; }
@@ -278,8 +280,13 @@ const ADMIN_HTML = `<!doctype html>
       </div>
       <div class="card wide-chart">
         <h2>Открытия товаров по неделям</h2>
-        <p class="muted" style="margin-top:6px">Показывает общий интерес к каталогу по неделям.</p>
+        <p class="muted" style="margin-top:6px">Сколько раз люди открывали страницы товаров в каждую неделю.</p>
         <div id="chartWeeklyProductViews"></div>
+      </div>
+      <div class="card wide-chart">
+        <h2>Товары с лучшей конверсией</h2>
+        <p class="muted" style="margin-top:6px">Показывает, где люди после открытия товара чаще нажимают «Купить».</p>
+        <div id="chartProductConversion"></div>
       </div>
     </section>
 
@@ -408,8 +415,12 @@ const ADMIN_HTML = `<!doctype html>
       var labels = {
         page_view: 'Просмотр страницы',
         product_open: 'Открытие товара',
-        buy_click: 'Клик Купить',
+        buy_click: 'Нажали «Купить»',
         telegram_contact: 'Переход в Telegram',
+        telegram_channel: 'Переход в канал',
+        telegram_support: 'Переход к менеджеру',
+        telegram_reviews: 'Переход в отзывы',
+        reviews_click: 'Открыли отзывы',
         click: 'Клик'
       };
       return labels[type] || type || 'Неизвестно';
@@ -476,7 +487,7 @@ const ADMIN_HTML = `<!doctype html>
     function eventProductName(event) {
       return event.product ? productName(event.product) : 'Неизвестно';
     }
-    var chartColors = ['#38bdf8','#22c55e','#f59e0b','#a78bfa','#fb7185','#2dd4bf','#f97316','#60a5fa'];
+    var chartColors = ['#38bdf8','#22c55e','#f59e0b','#a78bfa','#fb7185','#2dd4bf','#f97316','#60a5fa','#facc15','#34d399','#c084fc','#fb923c','#67e8f9','#fda4af'];
     function renderPie(id, rows) {
       var total = rows.reduce(function(sum, row) { return sum + row[1]; }, 0);
       if (!total) {
@@ -493,39 +504,67 @@ const ADMIN_HTML = `<!doctype html>
       var legend = rows.map(function(row, index) {
         return '<div class="legend-row"><span class="dot" style="--dot:' + chartColors[index % chartColors.length] + '"></span><span>' + esc(row[0]) + '</span><strong>' + row[1] + ' · ' + percent(row[1], total) + '%</strong></div>';
       }).join('');
-      $(id).innerHTML = '<div class="pie-wrap"><div class="pie" style="background:conic-gradient(' + segments + ')"></div><div class="legend">' + legend + '</div></div>';
+      $(id).innerHTML = '<div class="pie-wrap"><div class="pie" style="background:conic-gradient(' + segments + ')"></div><div class="legend ' + (rows.length > 8 ? 'scroll' : '') + '">' + legend + '</div></div>';
     }
-    function weekKey(date) {
-      var first = new Date(date.getFullYear(), 0, 1);
-      var days = Math.floor((date - first) / 86400000);
-      var week = Math.ceil((days + first.getDay() + 1) / 7);
-      return date.getFullYear() + ' · ' + week + ' нед.';
+    function formatShortDate(date) {
+      return date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
     }
-    function lastWeeks(count) {
-      var weeks = [];
-      var now = new Date();
-      for (var i = count - 1; i >= 0; i--) {
-        var date = new Date(now);
-        date.setDate(date.getDate() - i * 7);
-        weeks.push(weekKey(date));
+    function weekRanges(events) {
+      var dates = events.map(function(event) { return event.time ? new Date(event.time) : null; }).filter(function(date) { return date && !Number.isNaN(date.getTime()); });
+      if (!dates.length) return [];
+      var first = new Date(Math.min.apply(null, dates));
+      var last = new Date(Math.max.apply(null, dates));
+      first.setHours(0, 0, 0, 0);
+      last.setHours(23, 59, 59, 999);
+      var ranges = [];
+      var start = new Date(first);
+      while (start <= last) {
+        var end = new Date(start);
+        end.setDate(end.getDate() + 6);
+        end.setHours(23, 59, 59, 999);
+        ranges.push({
+          start: new Date(start),
+          end: new Date(end),
+          label: formatShortDate(start) + ' - ' + formatShortDate(end)
+        });
+        start.setDate(start.getDate() + 7);
       }
-      return weeks;
+      return ranges;
     }
     function renderWeekBars(id, events, type) {
-      var weeks = lastWeeks(8);
-      var data = Object.fromEntries(weeks.map(function(key) { return [key, 0]; }));
+      var ranges = weekRanges(events);
+      if (!ranges.length) {
+        $(id).innerHTML = '<div class="chart-empty">Пока нет данных для недельного графика.</div>';
+        return;
+      }
+      var rows = ranges.map(function(range) { return { label: range.label, start: range.start, end: range.end, value: 0 }; });
       events.forEach(function(event) {
         if (event.type !== type || !event.time) return;
         var date = new Date(event.time);
         if (Number.isNaN(date.getTime())) return;
-        var key = weekKey(date);
-        if (key in data) data[key] += 1;
+        var row = rows.find(function(item) { return date >= item.start && date <= item.end; });
+        if (row) row.value += 1;
       });
-      var rows = Object.entries(data);
-      var max = Math.max(1, ...rows.map(function(row) { return row[1]; }));
+      var max = Math.max(1, ...rows.map(function(row) { return row.value; }));
       $(id).innerHTML = '<div class="week-bars">' + rows.map(function(row) {
-        var height = Math.max(8, Math.round(row[1] / max * 150));
-        return '<div class="week-bar"><div class="week-value">' + row[1] + '</div><div class="week-fill" style="height:' + height + 'px"></div><div class="week-label">' + esc(row[0]) + '</div></div>';
+        var height = Math.max(8, Math.round(row.value / max * 150));
+        return '<div class="week-bar"><div class="week-value">' + row.value + '</div><div class="week-fill" style="height:' + height + 'px"></div><div class="week-label">' + esc(row.label) + '</div></div>';
+      }).join('') + '</div>';
+    }
+    function renderProductConversion(id, opens, buys) {
+      var openCounts = countBy(opens.filter(function(e) { return e.product; }), eventProductName);
+      var buyCounts = countBy(buys.filter(function(e) { return e.product; }), eventProductName);
+      var rows = Object.keys(openCounts).map(function(name) {
+        return { name: name, opens: openCounts[name] || 0, buys: buyCounts[name] || 0, conversion: percent(buyCounts[name] || 0, openCounts[name] || 0) };
+      }).filter(function(row) { return row.opens > 0; }).sort(function(a, b) {
+        return b.conversion - a.conversion || b.buys - a.buys || b.opens - a.opens;
+      }).slice(0, 10);
+      if (!rows.length) {
+        $(id).innerHTML = '<div class="chart-empty">Пока нет данных для расчёта конверсии.</div>';
+        return;
+      }
+      $(id).innerHTML = '<div class="conversion-list">' + rows.map(function(row) {
+        return '<div class="row"><div><strong>' + esc(row.name) + '</strong><div class="row-meta">Открытий: ' + row.opens + ' · Купить: ' + row.buys + '</div><div class="bar"><span style="width:' + Math.max(6, row.conversion) + '%"></span></div></div><strong>' + row.conversion + '%</strong></div>';
       }).join('') + '</div>';
     }
     function renderBars(id, data) {
@@ -565,21 +604,22 @@ const ADMIN_HTML = `<!doctype html>
       var regions = countBy(analyticsEvents, eventRegion);
       var productCounts = countBy(productEvents, eventProductName);
       var buyProductCounts = countBy(buyEvents.filter(function(e) { return e.product; }), eventProductName);
-      var actions = countBy(analyticsEvents, function(e) { return e.type || 'unknown'; });
-      var conversionRows = [['Просмотры', pageViews.length], ['Купить', buyEvents.length]];
+      var actions = countBy(analyticsEvents, function(e) { return actionLabel(e.type); });
+      var conversionRows = [['Просто просмотрели страницу', pageViews.length], ['Нажали «Купить»', buyEvents.length]];
       var topProduct = topEntries(productCounts, 1)[0];
       var topRegion = topEntries(regions, 1)[0];
       var lastWeekStart = new Date();
       lastWeekStart.setDate(lastWeekStart.getDate() - 7);
       var weekBuys = buyEvents.filter(function(e) { return e.time && new Date(e.time) >= lastWeekStart; }).length;
 
-      renderPie('chartProducts', topEntries(productCounts, 6));
+      renderPie('chartProducts', topEntries(productCounts, products.length || 100));
       renderPie('chartRegions', topEntries(regions, 6));
       renderPie('chartConversion', conversionRows);
-      renderPie('chartActions', topEntries(actions, 6));
-      renderPie('chartBuyProducts', topEntries(buyProductCounts, 6));
+      renderPie('chartActions', topEntries(actions, 10));
+      renderPie('chartBuyProducts', topEntries(buyProductCounts, products.length || 100));
       renderWeekBars('chartWeeklyBuys', analyticsEvents, 'buy_click');
       renderWeekBars('chartWeeklyProductViews', analyticsEvents, 'product_open');
+      renderProductConversion('chartProductConversion', productOpens, buyEvents);
 
       $('insightConversion').textContent = percent(buyEvents.length, Math.max(1, pageViews.length)) + '%';
       $('insightTopProduct').textContent = topProduct ? topProduct[0] : '-';
