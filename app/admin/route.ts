@@ -76,11 +76,32 @@ const STYLE = `
   .visitor-main { font-weight:850; color:#e0f2fe; }
   .visitor-meta { margin-top:4px; color:rgba(255,255,255,.56); font-size:12px; line-height:1.35; overflow-wrap:anywhere; }
   .load-more-wrap { display:flex; justify-content:center; margin-top:14px; }
+  .chart-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; margin-bottom:14px; }
+  .chart-grid.two { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .chart-card { padding:16px; min-height:330px; }
+  .chart-card h2 { font-size:22px; margin-bottom:6px; }
+  .chart-card .hint { min-height:36px; color:var(--muted); font-size:13px; line-height:1.35; }
+  .pie-wrap { display:grid; grid-template-columns:170px minmax(0,1fr); gap:16px; align-items:center; margin-top:18px; }
+  .pie { width:170px; aspect-ratio:1; border-radius:50%; background:conic-gradient(rgba(255,255,255,.12) 0 100%); box-shadow:inset 0 0 0 14px rgba(0,0,0,.18),0 18px 42px rgba(0,0,0,.28); }
+  .legend { display:grid; gap:8px; align-content:center; }
+  .legend-row { display:grid; grid-template-columns:12px 1fr auto; gap:8px; align-items:center; font-size:13px; }
+  .dot { width:12px; height:12px; border-radius:50%; background:var(--dot,#38bdf8); }
+  .chart-empty { display:grid; min-height:210px; place-items:center; color:var(--muted); text-align:center; }
+  .wide-chart { padding:16px; margin-bottom:14px; }
+  .week-bars { display:grid; grid-template-columns:repeat(auto-fit,minmax(88px,1fr)); gap:10px; align-items:end; min-height:210px; margin-top:18px; padding-top:12px; border-top:1px solid rgba(255,255,255,.08); }
+  .week-bar { display:grid; gap:8px; align-content:end; min-height:190px; }
+  .week-fill { min-height:8px; border-radius:12px 12px 6px 6px; background:linear-gradient(180deg,#38bdf8,#22c55e); box-shadow:0 12px 28px rgba(34,197,94,.2); }
+  .week-label { color:var(--muted); font-size:12px; text-align:center; }
+  .week-value { font-weight:950; text-align:center; }
+  .insight-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:14px; }
+  .insight { padding:14px; }
+  .insight strong { display:block; margin-top:8px; font-size:22px; }
   .login-page { position:relative; z-index:1; min-height:100vh; display:grid; place-items:center; padding:24px; }
   .login-card { width:min(440px,100%); padding:28px; text-align:center; }
   .login-card h1 { margin-top:14px; font-size:clamp(36px,7vw,50px); line-height:1; }
   .login-form { display:grid; gap:14px; margin-top:24px; text-align:left; }
   .login-form .btn { width:100%; }
+  @media (max-width:1100px) { .chart-grid,.chart-grid.two,.insight-grid { grid-template-columns:1fr; } .pie-wrap { grid-template-columns:1fr; justify-items:center; } }
   @media (max-width:940px) { .stats,.grid2,.admin-grid,.two { grid-template-columns:1fr; } .top { align-items:flex-start; flex-direction:column; } .sidebar { max-height:none; } .upload-row { grid-template-columns:1fr; } }
 `;
 
@@ -170,6 +191,7 @@ const ADMIN_HTML = `<!doctype html>
 
     <nav class="card tabs">
       <button class="tab active" type="button" data-tab="analytics">Аналитика</button>
+      <button class="tab" type="button" data-tab="charts">Диаграммы</button>
       <button class="tab" type="button" data-tab="products">Товары</button>
       <button class="tab" type="button" data-tab="settings">Главная</button>
     </nav>
@@ -203,6 +225,61 @@ const ADMIN_HTML = `<!doctype html>
         <div class="load-more-wrap">
           <button class="btn secondary" id="loadMoreEventsBtn" type="button">Показать еще события</button>
         </div>
+      </div>
+    </section>
+
+    <section id="charts" class="section">
+      <div class="toolbar" style="justify-content:space-between;margin-bottom:12px">
+        <div>
+          <h2>Диаграммы</h2>
+          <p class="muted" id="chartsUpdatedAt" style="margin-top:6px">Данные загружаются...</p>
+        </div>
+        <button class="btn secondary" id="reloadChartsBtn" type="button">Обновить диаграммы</button>
+      </div>
+      <div class="chart-grid">
+        <div class="card chart-card">
+          <h2>Популярность товаров</h2>
+          <p class="hint">Какие товары чаще открывают. Помогает понять, что стоит держать выше на главной.</p>
+          <div id="chartProducts"></div>
+        </div>
+        <div class="card chart-card">
+          <h2>Регионы</h2>
+          <p class="hint">Откуда заходят посетители по данным сервера. Если город не определён, показывается страна или «Неизвестно».</p>
+          <div id="chartRegions"></div>
+        </div>
+        <div class="card chart-card">
+          <h2>Просмотры / покупки</h2>
+          <p class="hint">Соотношение обычных просмотров и нажатий «Купить». Чем больше доля покупок, тем лучше конверсия.</p>
+          <div id="chartConversion"></div>
+        </div>
+      </div>
+      <div class="insight-grid">
+        <div class="card insight"><span class="muted">Конверсия в покупку</span><strong id="insightConversion">0%</strong></div>
+        <div class="card insight"><span class="muted">Самый популярный товар</span><strong id="insightTopProduct">-</strong></div>
+        <div class="card insight"><span class="muted">Лучший регион</span><strong id="insightTopRegion">-</strong></div>
+        <div class="card insight"><span class="muted">Клики за 7 дней</span><strong id="insightWeekBuys">0</strong></div>
+      </div>
+      <div class="chart-grid two">
+        <div class="card chart-card">
+          <h2>Типы действий</h2>
+          <p class="hint">Что чаще делают на сайте: смотрят, открывают товары, нажимают купить, переходят в Telegram.</p>
+          <div id="chartActions"></div>
+        </div>
+        <div class="card chart-card">
+          <h2>Интерес к товарам</h2>
+          <p class="hint">Какие товары чаще доводят до кнопки «Купить», а не просто просмотра.</p>
+          <div id="chartBuyProducts"></div>
+        </div>
+      </div>
+      <div class="card wide-chart">
+        <h2>Клики «Купить» по неделям</h2>
+        <p class="muted" style="margin-top:6px">Сравнение недель показывает, растёт ли желание купить.</p>
+        <div id="chartWeeklyBuys"></div>
+      </div>
+      <div class="card wide-chart">
+        <h2>Открытия товаров по неделям</h2>
+        <p class="muted" style="margin-top:6px">Показывает общий интерес к каталогу по неделям.</p>
+        <div id="chartWeeklyProductViews"></div>
       </div>
     </section>
 
@@ -248,7 +325,7 @@ const ADMIN_HTML = `<!doctype html>
     var settings = { reviewsCountLabel: '400+' };
     var analyticsEvents = [];
     var analyticsSummary = { total: 0, views: 0, buys: 0, telegram: 0, actions: {}, products: {} };
-    var analyticsPagination = { offset: 0, limit: 200, loaded: 0, totalStored: 0, hasMore: false, nextOffset: 0 };
+    var analyticsPagination = { offset: 0, limit: 1000, loaded: 0, totalStored: 0, hasMore: false, nextOffset: 0 };
     var selectedSlug = '';
     var uploadTarget = null;
     var dirtyProducts = false;
@@ -378,6 +455,79 @@ const ADMIN_HTML = `<!doctype html>
         return acc;
       }, {});
     }
+    function topEntries(data, limit) {
+      return Object.entries(data).sort(function(a,b) { return b[1] - a[1]; }).slice(0, limit || 8);
+    }
+    function percent(value, total) {
+      return total > 0 ? Math.round(value / total * 100) : 0;
+    }
+    function decodeText(value) {
+      var text = String(value || '').trim();
+      if (!text) return '';
+      try { return decodeURIComponent(text); } catch { return text; }
+    }
+    function eventRegion(event) {
+      return decodeText(event.city) || decodeText(event.region) || decodeText(event.country) || 'Неизвестно';
+    }
+    function productName(slug) {
+      var product = products.find(function(item) { return item.slug === slug; });
+      return product ? product.name : slug;
+    }
+    function eventProductName(event) {
+      return event.product ? productName(event.product) : 'Неизвестно';
+    }
+    var chartColors = ['#38bdf8','#22c55e','#f59e0b','#a78bfa','#fb7185','#2dd4bf','#f97316','#60a5fa'];
+    function renderPie(id, rows) {
+      var total = rows.reduce(function(sum, row) { return sum + row[1]; }, 0);
+      if (!total) {
+        $(id).innerHTML = '<div class="chart-empty">Пока нет данных для диаграммы.</div>';
+        return;
+      }
+      var used = 0;
+      var segments = rows.map(function(row, index) {
+        var from = used / total * 100;
+        used += row[1];
+        var to = used / total * 100;
+        return chartColors[index % chartColors.length] + ' ' + from.toFixed(2) + '% ' + to.toFixed(2) + '%';
+      }).join(',');
+      var legend = rows.map(function(row, index) {
+        return '<div class="legend-row"><span class="dot" style="--dot:' + chartColors[index % chartColors.length] + '"></span><span>' + esc(row[0]) + '</span><strong>' + row[1] + ' · ' + percent(row[1], total) + '%</strong></div>';
+      }).join('');
+      $(id).innerHTML = '<div class="pie-wrap"><div class="pie" style="background:conic-gradient(' + segments + ')"></div><div class="legend">' + legend + '</div></div>';
+    }
+    function weekKey(date) {
+      var first = new Date(date.getFullYear(), 0, 1);
+      var days = Math.floor((date - first) / 86400000);
+      var week = Math.ceil((days + first.getDay() + 1) / 7);
+      return date.getFullYear() + ' · ' + week + ' нед.';
+    }
+    function lastWeeks(count) {
+      var weeks = [];
+      var now = new Date();
+      for (var i = count - 1; i >= 0; i--) {
+        var date = new Date(now);
+        date.setDate(date.getDate() - i * 7);
+        weeks.push(weekKey(date));
+      }
+      return weeks;
+    }
+    function renderWeekBars(id, events, type) {
+      var weeks = lastWeeks(8);
+      var data = Object.fromEntries(weeks.map(function(key) { return [key, 0]; }));
+      events.forEach(function(event) {
+        if (event.type !== type || !event.time) return;
+        var date = new Date(event.time);
+        if (Number.isNaN(date.getTime())) return;
+        var key = weekKey(date);
+        if (key in data) data[key] += 1;
+      });
+      var rows = Object.entries(data);
+      var max = Math.max(1, ...rows.map(function(row) { return row[1]; }));
+      $(id).innerHTML = '<div class="week-bars">' + rows.map(function(row) {
+        var height = Math.max(8, Math.round(row[1] / max * 150));
+        return '<div class="week-bar"><div class="week-value">' + row[1] + '</div><div class="week-fill" style="height:' + height + 'px"></div><div class="week-label">' + esc(row[0]) + '</div></div>';
+      }).join('') + '</div>';
+    }
     function renderBars(id, data) {
       var rows = Object.entries(data).sort(function(a,b) { return b[1] - a[1]; }).slice(0, 8);
       var max = Math.max(1, ...rows.map(function(row) { return row[1]; }));
@@ -405,6 +555,37 @@ const ADMIN_HTML = `<!doctype html>
       $('loadMoreEventsBtn').textContent = analyticsPagination.hasMore
         ? 'Показать еще события (' + analyticsEvents.length + ' из ' + analyticsPagination.totalStored + ')'
         : 'Все события загружены';
+      renderCharts();
+    }
+    function renderCharts() {
+      var productEvents = analyticsEvents.filter(function(e) { return e.product; });
+      var buyEvents = analyticsEvents.filter(function(e) { return e.type === 'buy_click'; });
+      var pageViews = analyticsEvents.filter(function(e) { return e.type === 'page_view'; });
+      var productOpens = analyticsEvents.filter(function(e) { return e.type === 'product_open'; });
+      var regions = countBy(analyticsEvents, eventRegion);
+      var productCounts = countBy(productEvents, eventProductName);
+      var buyProductCounts = countBy(buyEvents.filter(function(e) { return e.product; }), eventProductName);
+      var actions = countBy(analyticsEvents, function(e) { return e.type || 'unknown'; });
+      var conversionRows = [['Просмотры', pageViews.length], ['Купить', buyEvents.length]];
+      var topProduct = topEntries(productCounts, 1)[0];
+      var topRegion = topEntries(regions, 1)[0];
+      var lastWeekStart = new Date();
+      lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+      var weekBuys = buyEvents.filter(function(e) { return e.time && new Date(e.time) >= lastWeekStart; }).length;
+
+      renderPie('chartProducts', topEntries(productCounts, 6));
+      renderPie('chartRegions', topEntries(regions, 6));
+      renderPie('chartConversion', conversionRows);
+      renderPie('chartActions', topEntries(actions, 6));
+      renderPie('chartBuyProducts', topEntries(buyProductCounts, 6));
+      renderWeekBars('chartWeeklyBuys', analyticsEvents, 'buy_click');
+      renderWeekBars('chartWeeklyProductViews', analyticsEvents, 'product_open');
+
+      $('insightConversion').textContent = percent(buyEvents.length, Math.max(1, pageViews.length)) + '%';
+      $('insightTopProduct').textContent = topProduct ? topProduct[0] : '-';
+      $('insightTopRegion').textContent = topRegion ? topRegion[0] : '-';
+      $('insightWeekBuys').textContent = String(weekBuys);
+      $('chartsUpdatedAt').textContent = 'Обновлено: ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' · событий: ' + analyticsEvents.length + ' · открытий товаров: ' + productOpens.length;
     }
     function updateAnalyticsTimestamp() {
       $('analyticsUpdatedAt').textContent = 'Обновлено: ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -813,7 +994,7 @@ const ADMIN_HTML = `<!doctype html>
       } catch (error) {
         analyticsEvents = [];
         analyticsSummary = { total: 0, views: 0, buys: 0, telegram: 0, actions: {}, products: {} };
-        analyticsPagination = { offset: 0, limit: 200, loaded: 0, totalStored: 0, hasMore: false, nextOffset: 0 };
+        analyticsPagination = { offset: 0, limit: 1000, loaded: 0, totalStored: 0, hasMore: false, nextOffset: 0 };
         renderAnalytics();
         $('analyticsUpdatedAt').textContent = 'Статистика временно не обновилась';
         showNotice('Товары загружены. Аналитика временно недоступна.', true);
@@ -829,7 +1010,7 @@ const ADMIN_HTML = `<!doctype html>
         var data = await postJson('/api/admin/analytics', { reset: true });
         analyticsEvents = data.events || [];
         analyticsSummary = data.summary || { total: 0, views: 0, buys: 0, telegram: 0, actions: {}, products: {} };
-        analyticsPagination = data.pagination || { offset: 0, limit: 200, loaded: 0, totalStored: 0, hasMore: false, nextOffset: 0 };
+        analyticsPagination = data.pagination || { offset: 0, limit: 1000, loaded: 0, totalStored: 0, hasMore: false, nextOffset: 0 };
         renderAnalytics();
         updateAnalyticsTimestamp();
         showNotice('Статистика сброшена.', false);
@@ -889,6 +1070,7 @@ const ADMIN_HTML = `<!doctype html>
     $('reloadBtn').addEventListener('click', loadAll);
     $('reloadAnalyticsBtn').addEventListener('click', function() { loadAnalytics(0); });
     $('loadMoreEventsBtn').addEventListener('click', function() { loadAnalytics(analyticsPagination.nextOffset || analyticsEvents.length); });
+    $('reloadChartsBtn').addEventListener('click', function() { loadAnalytics(0); });
     $('resetAnalyticsBtn').addEventListener('click', resetAnalytics);
     $('logoutBtn').addEventListener('click', logout);
     $('addProductBtn').addEventListener('click', addProduct);

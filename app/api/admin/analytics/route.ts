@@ -7,8 +7,8 @@ const ANALYTICS_KEY = "ecliptic:analytics:events";
 const ANALYTICS_TOTALS_KEY = "ecliptic:analytics:totals";
 const ANALYTICS_ACTIONS_KEY = "ecliptic:analytics:actions";
 const ANALYTICS_PRODUCTS_KEY = "ecliptic:analytics:products";
-const DEFAULT_EVENTS_LIMIT = 200;
-const MAX_EVENTS_LIMIT = 1000;
+const DEFAULT_EVENTS_LIMIT = 1000;
+const MAX_EVENTS_LIMIT = 5000;
 
 function hashArrayToObject(value: unknown) {
   if (value && typeof value === "object" && !Array.isArray(value)) {
