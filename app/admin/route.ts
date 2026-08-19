@@ -95,9 +95,10 @@ const STYLE = `
   .week-label { color:var(--muted); font-size:11px; line-height:1.25; text-align:center; }
   .week-value { font-weight:950; text-align:center; line-height:1.2; }
   .week-value small { display:block; margin-top:2px; color:var(--muted); font-size:11px; font-weight:800; }
-  .week-tip { position:absolute; left:50%; bottom:100%; z-index:20; width:245px; transform:translate(-50%,-12px); border:1px solid rgba(148,163,184,.28); border-radius:14px; background:rgba(7,16,29,.98); padding:12px; box-shadow:0 22px 58px rgba(0,0,0,.38); opacity:0; pointer-events:none; transition:opacity .18s ease, transform .18s ease; }
-  .week-bar:hover .week-tip { opacity:1; transform:translate(-50%,-18px); }
-  .week-tip strong { display:block; margin-bottom:8px; color:#fff; }
+  .week-tip { display:none; }
+  .floating-week-tip { position:fixed; left:0; top:0; z-index:99999; width:265px; transform:translate(-50%,-110%); border:1px solid rgba(148,163,184,.34); border-radius:14px; background:rgba(7,16,29,.98); padding:12px; box-shadow:0 22px 58px rgba(0,0,0,.46); opacity:0; pointer-events:none; transition:opacity .12s ease; }
+  .floating-week-tip.show { opacity:1; }
+  .floating-week-tip strong { display:block; margin-bottom:8px; color:#fff; }
   .week-tip-row { display:flex; justify-content:space-between; gap:10px; color:rgba(255,255,255,.72); font-size:12px; line-height:1.55; }
   .week-tip-total { margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,.08); color:#e0f2fe; font-size:12px; font-weight:900; line-height:1.45; }
   .return-list { display:grid; gap:10px; margin-top:14px; }
@@ -274,8 +275,8 @@ const ADMIN_HTML = `<!doctype html>
           <div id="chartActions"></div>
         </div>
         <div class="card chart-card">
-          <h2>Интерес к товарам</h2>
-          <p class="hint">Какие товары чаще доводят до кнопки «Купить», а не просто просмотра.</p>
+          <h2>Товары без покупки</h2>
+          <p class="hint">Какие товары открывают, но реже нажимают «Купить». Здесь видно, где стоит улучшить цену или описание.</p>
           <div id="chartBuyProducts"></div>
         </div>
       </div>
@@ -295,6 +296,8 @@ const ADMIN_HTML = `<!doctype html>
         <div id="chartReturnVisitors"></div>
       </div>
     </section>
+
+    <div id="floatingWeekTip" class="floating-week-tip"></div>
 
     <section id="products" class="section">
       <div class="admin-grid">
@@ -608,8 +611,28 @@ const ADMIN_HTML = `<!doctype html>
         var totalText = type === 'buy_click'
           ? 'Заказов: ' + row.value + '<br>Сумма: ' + row.sum + ' р'
           : 'Открытий: ' + row.value;
-        return '<div class="week-bar"><div class="week-tip"><strong>' + esc(row.label) + '</strong>' + dayRows + '<div class="week-tip-total">' + totalText + '</div></div><div class="week-value">' + row.value + '<small>' + esc(unit) + '</small></div><div class="week-fill" style="height:' + height + 'px"></div><div class="week-label">' + esc(row.label) + '</div></div>';
+        var tip = '<strong>' + esc(row.label) + '</strong>' + dayRows + '<div class="week-tip-total">' + totalText + '</div>';
+        return '<div class="week-bar" data-week-tip="' + esc(tip) + '"><div class="week-value">' + row.value + '<small>' + esc(unit) + '</small></div><div class="week-fill" style="height:' + height + 'px"></div><div class="week-label">' + esc(row.label) + '</div></div>';
       }).join('') + '</div>';
+    }
+    function showFloatingWeekTip(event, html) {
+      var tip = $('floatingWeekTip');
+      tip.innerHTML = html;
+      tip.classList.add('show');
+      moveFloatingWeekTip(event);
+    }
+    function moveFloatingWeekTip(event) {
+      var tip = $('floatingWeekTip');
+      var margin = 16;
+      var width = 265;
+      var x = Math.min(window.innerWidth - width / 2 - margin, Math.max(width / 2 + margin, event.clientX));
+      var y = Math.max(130, event.clientY - 18);
+      tip.style.left = x + 'px';
+      tip.style.top = y + 'px';
+    }
+    function hideFloatingWeekTip() {
+      var tip = $('floatingWeekTip');
+      tip.classList.remove('show');
     }
     function dayStamp(date) {
       return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
@@ -695,6 +718,12 @@ const ADMIN_HTML = `<!doctype html>
       var fallbackProductCounts = countBy(analyticsEvents.filter(function(e) { return e.product; }), eventProductName);
       var productCounts = Object.keys(analyticsSummary.products || {}).length ? productSummaryNames(analyticsSummary.products) : fallbackProductCounts;
       var buyProductCounts = countBy(buyEvents.filter(function(e) { return e.product; }), eventProductName);
+      var openProductCounts = countBy(productOpens.filter(function(e) { return e.product; }), eventProductName);
+      var noBuyCounts = Object.keys(openProductCounts).reduce(function(acc, name) {
+        var missed = Math.max(0, (openProductCounts[name] || 0) - (buyProductCounts[name] || 0));
+        if (missed > 0) acc[name] = missed;
+        return acc;
+      }, {});
       var fallbackActions = countBy(analyticsEvents, function(e) { return actionLabel(e.type); });
       var actions = Object.keys(analyticsSummary.actions || {}).length ? actionSummaryNames(analyticsSummary.actions) : fallbackActions;
       var conversionRows = [['Просто просмотрели страницу', pageViews.length], ['Нажали «Купить»', buyEvents.length]];
@@ -706,7 +735,7 @@ const ADMIN_HTML = `<!doctype html>
       renderPie('chartRegions', topEntries(regions, 6));
       renderPie('chartConversion', conversionRows);
       renderPie('chartActions', topEntries(actions, 10));
-      renderPie('chartBuyProducts', topEntries(buyProductCounts, products.length || 100));
+      renderPie('chartBuyProducts', topEntries(noBuyCounts, products.length || 100));
       renderWeekBars('chartWeeklyBuys', analyticsEvents, 'buy_click', 'кликов');
       renderWeekBars('chartWeeklyProductViews', analyticsEvents, 'product_open', 'открытий');
       renderReturnVisitors('chartReturnVisitors', analyticsEvents);
@@ -1201,6 +1230,19 @@ const ADMIN_HTML = `<!doctype html>
     $('reloadAnalyticsBtn').addEventListener('click', function() { loadAnalytics(0); });
     $('loadMoreEventsBtn').addEventListener('click', function() { loadAnalytics(analyticsPagination.nextOffset || analyticsEvents.length); });
     $('reloadChartsBtn').addEventListener('click', function() { loadAnalytics(0); });
+    document.addEventListener('mouseover', function(event) {
+      var bar = event.target.closest && event.target.closest('.week-bar[data-week-tip]');
+      if (!bar) return;
+      showFloatingWeekTip(event, bar.dataset.weekTip || '');
+    });
+    document.addEventListener('mousemove', function(event) {
+      if (event.target.closest && event.target.closest('.week-bar[data-week-tip]')) moveFloatingWeekTip(event);
+    });
+    document.addEventListener('mouseout', function(event) {
+      var bar = event.target.closest && event.target.closest('.week-bar[data-week-tip]');
+      if (!bar || (event.relatedTarget && bar.contains(event.relatedTarget))) return;
+      hideFloatingWeekTip();
+    });
     $('resetAnalyticsBtn').addEventListener('click', resetAnalytics);
     $('logoutBtn').addEventListener('click', logout);
     $('addProductBtn').addEventListener('click', addProduct);
