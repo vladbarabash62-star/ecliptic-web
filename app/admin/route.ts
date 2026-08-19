@@ -537,9 +537,27 @@ const ADMIN_HTML = `<!doctype html>
       copy.setDate(copy.getDate() + shift);
       return copy;
     }
+    function normalizeOfferText(value) {
+      return String(value || '').toLowerCase().replace(/ё/g, 'е').replace(/\\s+/g, ' ').trim();
+    }
+    function priceFromProductOffer(event) {
+      if (!event.product || !event.offer) return 0;
+      var product = products.find(function(item) { return item.slug === event.product; });
+      if (!product || !Array.isArray(product.offers)) return 0;
+      var offerText = normalizeOfferText(event.offer);
+      var offer = product.offers.find(function(item) {
+        return item && item.type !== 'divider' && normalizeOfferText(item.label) === offerText;
+      }) || product.offers.find(function(item) {
+        var label = item && item.type !== 'divider' ? normalizeOfferText(item.label) : '';
+        return label && (offerText.indexOf(label) !== -1 || label.indexOf(offerText) !== -1);
+      });
+      return offer && Number(offer.priceRub) > 0 ? Number(offer.priceRub) : 0;
+    }
     function parsePrice(event) {
       var direct = Number(event.price || event.priceRub || 0);
       if (Number.isFinite(direct) && direct > 0) return direct;
+      var offerPrice = priceFromProductOffer(event);
+      if (offerPrice > 0) return offerPrice;
       var text = String(event.offer || '') + ' ' + String(event.message || '');
       var match = text.match(/(?:к оплате|оплате|цена)?\\D*(\\d{1,7})\\s*(?:р|₽)/i);
       return match ? Number(match[1]) : 0;
