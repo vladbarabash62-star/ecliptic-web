@@ -617,10 +617,11 @@ const ADMIN_HTML = `<!doctype html>
       var max = Math.max(1, ...rows.map(function(row) { return row.value; }));
       $(id).innerHTML = '<div class="week-bars">' + rows.map(function(row) {
         var height = Math.max(8, Math.round(row.value / max * 150));
-        var dayRows = row.days.map(function(day) {
+        var activeDays = row.days.filter(function(day) { return day.value > 0; });
+        var dayRows = activeDays.map(function(day) {
           var valueText = type === 'buy_click' ? day.value + ' - ' + day.sum + ' р' : String(day.value);
           return '<div class="week-tip-row"><span>' + esc(formatDayName(day.date)) + '</span><b>' + valueText + '</b></div>';
-        }).join('');
+        }).join('') || '<div class="week-tip-row"><span>Нет действий</span><b>-</b></div>';
         var totalText = type === 'buy_click'
           ? 'Заказов: ' + row.value + '<br>Сумма: ' + row.sum + ' р'
           : 'Открытий: ' + row.value;
@@ -724,7 +725,7 @@ const ADMIN_HTML = `<!doctype html>
       renderCharts();
     }
     function renderCharts() {
-      var chartEvents = analyticsEvents.filter(function(e) { return e.path !== '/'; });
+      var chartEvents = analyticsEvents.filter(function(e) { return !(e.type === 'page_view' && e.path === '/'); });
       var buyEvents = chartEvents.filter(function(e) { return e.type === 'buy_click'; });
       var pageViews = chartEvents.filter(function(e) { return e.type === 'page_view'; });
       var productOpens = chartEvents.filter(function(e) { return e.type === 'product_open'; });
