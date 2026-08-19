@@ -274,11 +274,6 @@ const ADMIN_HTML = `<!doctype html>
           <p class="hint">Что чаще делают на сайте: смотрят, открывают товары, нажимают купить, переходят в Telegram.</p>
           <div id="chartActions"></div>
         </div>
-        <div class="card chart-card">
-          <h2>Товары без покупки</h2>
-          <p class="hint">Какие товары открывают, но реже нажимают «Купить». Здесь видно, где стоит улучшить цену или описание.</p>
-          <div id="chartBuyProducts"></div>
-        </div>
       </div>
       <div class="card wide-chart">
         <h2>Клики «Купить» по неделям</h2>
@@ -605,8 +600,8 @@ const ADMIN_HTML = `<!doctype html>
       $(id).innerHTML = '<div class="week-bars">' + rows.map(function(row) {
         var height = Math.max(8, Math.round(row.value / max * 150));
         var dayRows = row.days.map(function(day) {
-          var sumText = type === 'buy_click' && day.sum ? ' · ' + day.sum + ' р' : '';
-          return '<div class="week-tip-row"><span>' + esc(formatDayName(day.date)) + '</span><b>' + day.value + sumText + '</b></div>';
+          var valueText = type === 'buy_click' ? day.value + ' - ' + day.sum + ' р' : String(day.value);
+          return '<div class="week-tip-row"><span>' + esc(formatDayName(day.date)) + '</span><b>' + valueText + '</b></div>';
         }).join('');
         var totalText = type === 'buy_click'
           ? 'Заказов: ' + row.value + '<br>Сумма: ' + row.sum + ' р'
@@ -711,21 +706,15 @@ const ADMIN_HTML = `<!doctype html>
       renderCharts();
     }
     function renderCharts() {
-      var buyEvents = analyticsEvents.filter(function(e) { return e.type === 'buy_click'; });
-      var pageViews = analyticsEvents.filter(function(e) { return e.type === 'page_view'; });
-      var productOpens = analyticsEvents.filter(function(e) { return e.type === 'product_open'; });
-      var regions = countBy(analyticsEvents, eventRegion);
-      var fallbackProductCounts = countBy(analyticsEvents.filter(function(e) { return e.product; }), eventProductName);
+      var chartEvents = analyticsEvents.filter(function(e) { return e.path !== '/'; });
+      var buyEvents = chartEvents.filter(function(e) { return e.type === 'buy_click'; });
+      var pageViews = chartEvents.filter(function(e) { return e.type === 'page_view'; });
+      var productOpens = chartEvents.filter(function(e) { return e.type === 'product_open'; });
+      var regions = countBy(chartEvents, eventRegion);
+      var fallbackProductCounts = countBy(chartEvents.filter(function(e) { return e.product; }), eventProductName);
       var productCounts = Object.keys(analyticsSummary.products || {}).length ? productSummaryNames(analyticsSummary.products) : fallbackProductCounts;
-      var buyProductCounts = countBy(buyEvents.filter(function(e) { return e.product; }), eventProductName);
-      var openProductCounts = countBy(productOpens.filter(function(e) { return e.product; }), eventProductName);
-      var noBuyCounts = Object.keys(openProductCounts).reduce(function(acc, name) {
-        var missed = Math.max(0, (openProductCounts[name] || 0) - (buyProductCounts[name] || 0));
-        if (missed > 0) acc[name] = missed;
-        return acc;
-      }, {});
-      var fallbackActions = countBy(analyticsEvents, function(e) { return actionLabel(e.type); });
-      var actions = Object.keys(analyticsSummary.actions || {}).length ? actionSummaryNames(analyticsSummary.actions) : fallbackActions;
+      var fallbackActions = countBy(chartEvents, function(e) { return actionLabel(e.type); });
+      var actions = fallbackActions;
       var conversionRows = [['Просто просмотрели страницу', pageViews.length], ['Нажали «Купить»', buyEvents.length]];
       var topProduct = topEntries(productCounts, 1)[0];
       var topRegion = topEntries(regions, 1)[0];
@@ -735,16 +724,15 @@ const ADMIN_HTML = `<!doctype html>
       renderPie('chartRegions', topEntries(regions, 6));
       renderPie('chartConversion', conversionRows);
       renderPie('chartActions', topEntries(actions, 10));
-      renderPie('chartBuyProducts', topEntries(noBuyCounts, products.length || 100));
-      renderWeekBars('chartWeeklyBuys', analyticsEvents, 'buy_click', 'кликов');
-      renderWeekBars('chartWeeklyProductViews', analyticsEvents, 'product_open', 'открытий');
-      renderReturnVisitors('chartReturnVisitors', analyticsEvents);
+      renderWeekBars('chartWeeklyBuys', chartEvents, 'buy_click', 'кликов');
+      renderWeekBars('chartWeeklyProductViews', chartEvents, 'product_open', 'открытий');
+      renderReturnVisitors('chartReturnVisitors', chartEvents);
 
       $('insightConversion').textContent = percent(buyEvents.length, Math.max(1, pageViews.length)) + '%';
       $('insightTopProduct').textContent = topProduct ? topProduct[0] : '-';
       $('insightTopRegion').textContent = topRegion ? topRegion[0] : '-';
       $('insightReturnVisitors').textContent = String(returnCount);
-      $('chartsUpdatedAt').textContent = 'Обновлено: ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' · событий: ' + analyticsEvents.length + ' · открытий товаров: ' + productOpens.length;
+      $('chartsUpdatedAt').textContent = 'Обновлено: ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' · событий без главной: ' + chartEvents.length + ' · открытий товаров: ' + productOpens.length;
     }
     function updateAnalyticsTimestamp() {
       $('analyticsUpdatedAt').textContent = 'Обновлено: ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
