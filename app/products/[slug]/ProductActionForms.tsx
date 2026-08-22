@@ -274,6 +274,25 @@ function formatPurchaseMessage(
   return appendDetails(normalizeOrderMessage(base), filledDetails);
 }
 
+function offerDividerTitle(offers: ProductItem[], offerIndex: number) {
+  for (let index = offerIndex - 1; index >= 0; index -= 1) {
+    const offer = offers[index];
+    if (offer.type === "divider") return offer.title;
+  }
+
+  return "";
+}
+
+function spotifyOfferLabel(productName: string, offerLabel: string, dividerTitle: string) {
+  if (!productName.toLowerCase().includes("spotify")) return offerLabel;
+
+  const title = dividerTitle.toLowerCase();
+  const plan = title.includes("duo") ? "Duo" : title.includes("individual") ? "Individual" : "";
+  if (!plan || offerLabel.toLowerCase().includes(plan.toLowerCase())) return offerLabel;
+
+  return `${plan} ${offerLabel}`;
+}
+
 function topupServiceName(productName: string) {
   return productName
     .replace(/^Пополнение\s+/i, "")
@@ -581,9 +600,10 @@ export function ProductOffersWithDetails({
           );
         }
 
+        const telegramOfferLabel = spotifyOfferLabel(productName, offer.label, offerDividerTitle(offers, index));
         const message = formatPurchaseMessage(
           productName,
-          offer.label,
+          telegramOfferLabel,
           offer.priceRub,
           offer.messageTemplate || productMessageTemplate,
           details
@@ -606,7 +626,7 @@ export function ProductOffersWithDetails({
             <TelegramOrderLink
               message={message}
               productSlug={productSlug}
-              offer={offer.label}
+              offer={telegramOfferLabel}
               priceRub={offer.priceRub}
               validate={fields.length > 0 ? validateDetails : undefined}
               onInvalid={showNotice}
