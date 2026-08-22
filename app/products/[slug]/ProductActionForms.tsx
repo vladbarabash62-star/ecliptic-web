@@ -220,8 +220,28 @@ function appendDetails(message: string, details: string[]) {
   return details.length ? `${message}\n${details.join("\n")}` : message;
 }
 
+function spotifyPlanAndPeriod(offerLabel: string) {
+  const offer = offerLabel.trim();
+  const planMatch = offer.match(/^(duo|individual)\s+/i);
+  if (!planMatch) return { plan: "", period: offer };
+
+  const plan = planMatch[1].replace(/^./, (letter) => letter.toUpperCase());
+  const period = offer.slice(planMatch[0].length).trim();
+
+  return { plan, period };
+}
+
 function formatKnownPurchaseMessage(productName: string, offerLabel: string, priceRub: number) {
   const offer = offerLabel.trim();
+
+  if (productName.toLowerCase().includes("spotify")) {
+    const { plan, period } = spotifyPlanAndPeriod(offer);
+    const service = plan ? `${productName} ${plan}` : productName;
+
+    return normalizeOrderMessage(
+      `🛍 Новый заказ\n📦 Сервис: ${service}\n🗓 Период: ${period}\n💰 К оплате: ${priceRub}р`
+    );
+  }
 
   if (productName === "PlayStation") {
     const service = offer.toLowerCase().includes("plus")
