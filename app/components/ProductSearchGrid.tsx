@@ -45,6 +45,7 @@ const GAME_SLUGS = new Set([
   "oxide",
   "epic-games-topup",
   "playstation",
+  "fortnite",
 ]);
 
 const SOCIAL_SLUGS = new Set([
