@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import LegalPage from "../components/LegalPage";
 
 export const metadata: Metadata = {
-  title: "Пользовательское соглашение",
+  title: "Ecliptic Store — Пользовательское соглашение",
 };
 
 export default function TermsPage() {

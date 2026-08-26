@@ -5,19 +5,16 @@ export default function SiteFooter() {
         <div>
           <p className="text-xl font-black">Ecliptic Store</p>
           <p className="mt-3 max-w-[460px] text-sm leading-6 text-white/62">
-            Ecliptic Store — интернет магазин. Оформление интернет-покупок в
-            Приднестровье.
+            Ecliptic Store — цифровые товары, донат игр и подписки для ПМР.
           </p>
           <p className="mt-3 max-w-[560px] text-sm leading-6 text-white/55">
-            Цифровые товары, игровые пополнения и подписки: Steam, Telegram
-            Premium, Telegram Stars, Roblox, PUBG Mobile, Brawl Stars, Standoff
-            2, PlayStation, Minecraft и другие направления.
+            Steam, Telegram Premium, Telegram Stars, Roblox, PUBG Mobile,
+            Brawl Stars, Standoff 2, PlayStation, Minecraft и другие
+            направления.
           </p>
-          <p className="mt-3 max-w-[620px] text-sm leading-6 text-white/48">
-            Нас ищут как Ecliptic Store, Эклиптик Стор, Эклиптик магазин или
-            донат игры в Тирасполе. Мы работаем для покупателей из ПМР и
-            Приднестровья, помогаем быстро оформить игровые услуги, подписки и
-            интернет-покупки через менеджера.
+          <p className="mt-3 max-w-[560px] text-sm leading-6 text-white/48">
+            Для запросов: Ecliptic Store, Эклиптик Стор, донат ПМР, игровые
+            пополнения Тирасполь и Приднестровье.
           </p>
         </div>
 

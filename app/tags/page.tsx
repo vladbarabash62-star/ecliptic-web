@@ -5,7 +5,7 @@ import { SITE_NAME, SITE_URL } from "../../lib/seo";
 import { seoLandingPages } from "../../lib/seoLandingPages";
 
 export const metadata: Metadata = {
-  title: `Поисковые теги | ${SITE_NAME}`,
+  title: `${SITE_NAME} — Поисковые теги`,
   description:
     "Поисковые направления Ecliptic Store: донат, игровые пополнения, подписки и цифровые товары в ПМР, Тирасполе и Приднестровье.",
   alternates: {

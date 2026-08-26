@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import LegalPage from "../components/LegalPage";
 
 export const metadata: Metadata = {
-  title: "Политика возврата",
+  title: "Ecliptic Store — Политика возврата",
 };
 
 export default function RefundPage() {

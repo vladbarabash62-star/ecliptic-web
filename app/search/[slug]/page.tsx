@@ -23,15 +23,17 @@ export async function generateMetadata({ params }: SearchLandingPageProps): Prom
 
   if (!page) return {};
 
+  const title = `${SITE_NAME} — ${page.h1}`;
+
   return {
-    title: page.title,
+    title,
     description: page.description,
     keywords: [...page.phrases, ...page.services, SITE_NAME],
     alternates: {
       canonical: landingPageUrl(page.slug),
     },
     openGraph: {
-      title: page.title,
+      title,
       description: page.description,
       url: landingPageUrl(page.slug),
       siteName: SITE_NAME,
@@ -96,4 +98,3 @@ export default async function SearchLandingPage({ params }: SearchLandingPagePro
     </main>
   );
 }
-

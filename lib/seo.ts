@@ -26,14 +26,25 @@ const seoBrandKeywords = [
   "еклиптик магазин",
   "эклиптик сторе",
   "эклиптик тсор",
+  "эклиптик тсор пмр",
+  "эклиптик стори",
+  "эклиптик стор донат",
+  "эклиптик стор игры",
   "эклиптек стор",
   "эклиптки стор",
   "эклиптикстор",
   "еклиптикстор",
   "жэклиптик стор",
+  "иклиптик стор",
+  "эклиптик store",
   "ecliptic stor",
   "ecliptic stroe",
+  "ecliptic strore",
+  "ecliptic sotore",
   "ecliptik store",
+  "ecliptic store pmr",
+  "ecliptic store donat",
+  "ecliptic store tiraspol",
   "eclipticstore",
   "ecliptic shop",
 ];
@@ -49,6 +60,12 @@ const seoBaseKeywords = [
   "цифровые товары Приднестровье",
   "цифровые товары Тирасполь",
   "донат ПМР",
+  "donat PMR",
+  "donate PMR",
+  "donat pmr games",
+  "game donate PMR",
+  "купить донат PMR",
+  "донат PMR купить",
   "донат Приднестровье",
   "донат Тирасполь",
   "донат игры Тирасполь",
@@ -468,7 +485,7 @@ export function stringifyJsonLd(value: unknown) {
 }
 
 export function buildProductMetadata(product: Product): Metadata {
-  const title = `${product.name} купить онлайн в ПМР - Эклиптик Стор`;
+  const title = `${SITE_NAME} — ${product.name}`;
   const description = buildProductDescription(product);
   const url = `${SITE_URL}/products/${product.slug}`;
 
@@ -480,7 +497,7 @@ export function buildProductMetadata(product: Product): Metadata {
       canonical: url,
     },
     openGraph: {
-      title: `${product.name} | ${SITE_NAME}`,
+      title,
       description,
       url,
       siteName: SITE_NAME,
