@@ -339,6 +339,8 @@ const ADMIN_HTML = `<!doctype html>
   <script>
     var products = [];
     var savedProductsSnapshot = [];
+    var dirtyProductSlugs = {};
+    var deletedProductSlugs = [];
     var settings = { reviewsCountLabel: '400+' };
     var analyticsEvents = [];
     var analyticsSummary = { total: 0, views: 0, buys: 0, telegram: 0, actions: {}, products: {} };
@@ -367,12 +369,15 @@ const ADMIN_HTML = `<!doctype html>
     function hideNoticeSoon() {
       setTimeout(function() { $('notice').className = 'notice'; }, 2200);
     }
-    function markProductsDirty() {
+    function markProductsDirty(slug) {
       dirtyProducts = true;
+      if (slug || selectedSlug) dirtyProductSlugs[slug || selectedSlug] = true;
       $('saveProductsBtn').textContent = 'Сохранить товары *';
     }
     function markProductsClean() {
       dirtyProducts = false;
+      dirtyProductSlugs = {};
+      deletedProductSlugs = [];
       $('saveProductsBtn').textContent = 'Сохранить товары';
     }
     function parseDecimal(value, fallback) {
@@ -454,6 +459,27 @@ const ADMIN_HTML = `<!doctype html>
         });
         return nextProduct;
       });
+    }
+    function compactDirtyProductsForSave() {
+      var dirtySlugs = Object.keys(dirtyProductSlugs);
+      var patches = products.filter(function(product) {
+        return dirtySlugs.indexOf(product.slug) !== -1 || product.slug === selectedSlug || !previousProduct(product.slug);
+      }).map(function(product) {
+        var previous = previousProduct(product.slug);
+        var nextProduct = Object.assign({}, product);
+        if (previous && sameStoredImage(nextProduct.icon, previous.icon)) nextProduct.icon = KEEP_IMAGE;
+        if (previous && sameStoredImage(nextProduct.offerIcon, previous.offerIcon)) nextProduct.offerIcon = KEEP_IMAGE;
+        nextProduct.offers = (product.offers || []).map(function(offer, index) {
+          return compactOfferForSave(offer, previous && previous.offers ? previous.offers[index] : null, previous && previous.offers);
+        });
+        return nextProduct;
+      });
+
+      return {
+        productPatches: patches,
+        productOrder: products.map(function(product) { return product.slug; }),
+        deletedSlugs: deletedProductSlugs
+      };
     }
     function productNameBySlug(slug) {
       var product = products.find(function(item) { return item.slug === slug; });
@@ -885,7 +911,9 @@ const ADMIN_HTML = `<!doctype html>
       var product = currentProduct();
       if (!product || !target) return;
       if (target.dataset.action === 'update-slug') {
+        var previousSlug = product.slug;
         product.slug = slugify(target.value) || product.slug;
+        if (previousSlug !== product.slug && deletedProductSlugs.indexOf(previousSlug) === -1) deletedProductSlugs.push(previousSlug);
         selectedSlug = product.slug;
         markProductsDirty();
         renderProductList();
@@ -1111,6 +1139,7 @@ const ADMIN_HTML = `<!doctype html>
     }
     function deleteProduct() {
       if (!confirm('Удалить товар?')) return;
+      if (selectedSlug && deletedProductSlugs.indexOf(selectedSlug) === -1) deletedProductSlugs.push(selectedSlug);
       products = products.filter(function(product) { return product.slug !== selectedSlug; });
       selectedSlug = products[0] ? products[0].slug : '';
       markProductsDirty();
@@ -1263,7 +1292,7 @@ const ADMIN_HTML = `<!doctype html>
       $('saveProductsBtn').disabled = true;
       showNotice('Сохраняю товары...', false);
       try {
-        var data = await postJson('/api/admin/products', { products: compactProductsForSave() }, 120000);
+        var data = await postJson('/api/admin/products', compactDirtyProductsForSave(), 120000);
         if (data.products) {
           products = data.products;
           if (!products.some(function(product) { return product.slug === selectedSlug; })) selectedSlug = products[0] ? products[0].slug : '';
