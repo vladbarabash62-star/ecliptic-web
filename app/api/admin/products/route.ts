@@ -18,7 +18,8 @@ export async function POST(request: Request) {
   if (authError) return authError;
 
   if (Array.isArray(body.products)) {
-    const products = await saveProducts(body.products);
+    const products = body.products;
+    await saveProducts(products);
     revalidateTag(PRODUCTS_CACHE_TAG, "max");
     revalidatePath("/", "page");
     revalidatePath("/product-links", "page");
@@ -27,7 +28,7 @@ export async function POST(request: Request) {
     for (const product of products) {
       revalidatePath(`/products/${product.slug}`, "page");
     }
-    return NextResponse.json({ ok: true, saved: true, products });
+    return NextResponse.json({ ok: true, saved: true });
   }
 
   const products = await getProducts();

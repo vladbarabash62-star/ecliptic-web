@@ -1226,10 +1226,12 @@ const ADMIN_HTML = `<!doctype html>
       showNotice('Сохраняю товары...', false);
       try {
         var data = await postJson('/api/admin/products', { products: products }, 120000);
-        products = data.products || products;
-        if (!products.some(function(product) { return product.slug === selectedSlug; })) selectedSlug = products[0] ? products[0].slug : '';
-        renderProductList();
-        renderProductEditor();
+        if (data.products) {
+          products = data.products;
+          if (!products.some(function(product) { return product.slug === selectedSlug; })) selectedSlug = products[0] ? products[0].slug : '';
+          renderProductList();
+          renderProductEditor();
+        }
         markProductsClean();
         showNotice('Товары сохранены.', false);
         hideNoticeSoon();

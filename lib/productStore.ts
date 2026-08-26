@@ -344,5 +344,4 @@ export async function saveProducts(nextProducts: Product[]) {
   await redisPipeline([["SET", PRODUCTS_KEY, JSON.stringify({ hiddenBaseSlugs, overrides, version: PRODUCT_STORAGE_VERSION })]], {
     timeoutMs: 20000,
   });
-  return getProducts();
 }
