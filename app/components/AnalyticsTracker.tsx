@@ -154,6 +154,11 @@ function getTelegramUser() {
   };
 }
 
+function productSlugFromPath(path: string) {
+  const match = path.match(/^\/products\/([^/?#]+)/);
+  return match ? decodeURIComponent(match[1]) : undefined;
+}
+
 function playClickHaptic(target: HTMLElement) {
   const hasDirectHaptic = target.closest("[data-haptic-direct='true']");
   const isBuyClick = target.closest("[data-analytics='buy_click']");
@@ -297,6 +302,7 @@ export default function AnalyticsTracker() {
       trackEvent(enrichEvent({
         type: "page_view",
         path: pathname,
+        product: productSlugFromPath(pathname),
         time: new Date().toISOString(),
         telegramUser: getTelegramUser(),
       }));
@@ -312,10 +318,12 @@ export default function AnalyticsTracker() {
       if (!element) return;
 
       try {
+        const href = element instanceof HTMLAnchorElement ? element.getAttribute("href") || "" : "";
+        const path = href.startsWith("/") ? href.split("?")[0] : window.location.pathname;
         trackEvent(enrichEvent({
           type: element.dataset.analytics || "click",
-          path: window.location.pathname,
-          product: element.dataset.product,
+          path,
+          product: element.dataset.product || productSlugFromPath(path),
           offer: element.dataset.offer,
           price: element.dataset.price ? Number(element.dataset.price) : undefined,
           time: new Date().toISOString(),

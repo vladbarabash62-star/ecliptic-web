@@ -35,6 +35,11 @@ function hashIp(value: string | null) {
   return createHash("sha256").update(value).digest("hex").slice(0, 16);
 }
 
+function productSlugFromPath(path: string | undefined) {
+  const match = String(path || "").match(/^\/products\/([^/?#]+)/);
+  return match ? decodeURIComponent(match[1]).slice(0, 120) : undefined;
+}
+
 export async function POST(request: Request) {
   const contentLength = Number(request.headers.get("content-length") || 0);
   if (contentLength > 32_000) {
@@ -57,7 +62,7 @@ export async function POST(request: Request) {
   const ipAddress = forwardedFor || realIp || undefined;
   const ipHash = hashIp(forwardedFor || realIp || null);
   const type = String(body.type || "unknown").slice(0, 64);
-  const product = body.product ? String(body.product).slice(0, 120) : undefined;
+  const product = body.product ? String(body.product).slice(0, 120) : productSlugFromPath(body.path);
 
   const event = {
     type,

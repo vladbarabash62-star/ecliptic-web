@@ -485,6 +485,25 @@ const ADMIN_HTML = `<!doctype html>
       var product = products.find(function(item) { return item.slug === slug; });
       return product ? product.name : slug;
     }
+    function productSlugFromPath(path) {
+      var match = String(path || '').match(/^\\/products\\/([^/?#]+)/);
+      return match ? decodeURIComponent(match[1]) : '';
+    }
+    function eventProductSlug(event) {
+      return event.product || productSlugFromPath(event.path);
+    }
+    function eventProductLabel(event) {
+      var slug = eventProductSlug(event);
+      if (slug) return productNameBySlug(slug);
+      return event.path === '/' ? 'Главная страница' : 'Страница сайта';
+    }
+    function pageLabel(path) {
+      var value = String(path || '/');
+      var slug = productSlugFromPath(value);
+      if (slug) return '/products/' + slug + ' · ' + productNameBySlug(slug);
+      if (value === '/') return '/ · Главная';
+      return value;
+    }
     function actionLabel(type) {
       var labels = {
         page_view: 'Просмотр страницы',
@@ -559,7 +578,8 @@ const ADMIN_HTML = `<!doctype html>
       return product ? product.name : slug;
     }
     function eventProductName(event) {
-      return event.product ? productName(event.product) : 'Неизвестно';
+      var slug = eventProductSlug(event);
+      return slug ? productName(slug) : 'Неизвестно';
     }
     function productSummaryNames(data) {
       return Object.entries(data || {}).reduce(function(acc, row) {
@@ -775,7 +795,7 @@ const ADMIN_HTML = `<!doctype html>
       }).join('') : '<p class="muted">Пока нет данных.</p>';
     }
     function renderAnalytics() {
-      var fallbackProducts = countBy(analyticsEvents.filter(function(e) { return e.product; }), function(e) { return e.product; });
+      var fallbackProducts = countBy(analyticsEvents.filter(function(e) { return eventProductSlug(e); }), function(e) { return eventProductSlug(e); });
       var fallbackActions = countBy(analyticsEvents, function(e) { return e.type; });
       $('statTotal').textContent = analyticsSummary.total || analyticsEvents.length;
       $('statViews').textContent = analyticsSummary.views || analyticsEvents.filter(function(e) { return e.type === 'page_view'; }).length;
@@ -785,8 +805,7 @@ const ADMIN_HTML = `<!doctype html>
       renderBars('actionStats', Object.keys(analyticsSummary.actions || {}).length ? analyticsSummary.actions : fallbackActions);
       $('eventsTable').innerHTML = analyticsEvents.map(function(event) {
         var time = event.time ? new Date(event.time).toLocaleString('ru-RU') : '';
-        var product = event.product ? productNameBySlug(event.product) : 'не выбран';
-        return '<tr><td class="nowrap">' + esc(time) + '</td><td>' + esc(actionLabel(event.type)) + '</td><td>' + esc(product) + '</td><td>' + esc(event.path || '') + '</td><td>' + visitorHtml(event) + '</td></tr>';
+        return '<tr><td class="nowrap">' + esc(time) + '</td><td>' + esc(actionLabel(event.type)) + '</td><td>' + esc(eventProductLabel(event)) + '</td><td>' + esc(pageLabel(event.path)) + '</td><td>' + visitorHtml(event) + '</td></tr>';
       }).join('') || '<tr><td colspan="5" class="muted">Пока нет событий.</td></tr>';
       $('loadMoreEventsBtn').style.display = analyticsPagination.hasMore ? 'inline-flex' : 'none';
       $('loadMoreEventsBtn').textContent = analyticsPagination.hasMore
