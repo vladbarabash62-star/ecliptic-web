@@ -48,7 +48,7 @@ const STYLE = `
   .bar span { display:block; height:100%; background:linear-gradient(90deg,#38bdf8,#22c55e); }
   .admin-grid { display:grid; grid-template-columns:330px minmax(0,1fr); gap:14px; }
   .sidebar { padding:12px; max-height:calc(100vh - 220px); overflow:auto; }
-  .product-btn { width:100%; display:grid; grid-template-columns:24px 44px 1fr; gap:10px; align-items:center; margin:7px 0; padding:8px; border:1px solid rgba(255,255,255,.08); border-radius:14px; background:rgba(255,255,255,.035); color:#fff; text-align:left; cursor:grab; }
+  .product-btn { width:100%; display:grid; grid-template-columns:24px 44px 1fr; gap:10px; align-items:center; margin:7px 0; padding:8px; border:1px solid rgba(56,189,248,.18); border-radius:14px; background:linear-gradient(135deg,rgba(14,165,233,.12),rgba(255,255,255,.035)); color:#fff; text-align:left; cursor:grab; }
   .product-btn.active { border-color:rgba(56,189,248,.46); background:rgba(14,165,233,.14); }
   .product-btn.dragging,.offer.dragging { opacity:.45; border-color:rgba(56,189,248,.72); }
   .product-btn.drag-over,.offer.drag-over { border-color:rgba(16,185,129,.82); background:rgba(16,185,129,.12); }
@@ -63,7 +63,12 @@ const STYLE = `
   .image-preview { width:58px; height:58px; display:grid; place-items:center; margin-top:8px; border:1px solid rgba(255,255,255,.1); border-radius:14px; background:#07101d; overflow:hidden; color:rgba(255,255,255,.45); font-size:12px; }
   .image-preview img { max-width:80%; max-height:80%; object-fit:contain; transform-origin:center; }
   .offer { border:1px solid var(--line); background:rgba(7,16,29,.72); border-radius:14px; padding:12px; margin-top:10px; }
+  .offer.variant { border-color:rgba(56,189,248,.42); background:linear-gradient(135deg,rgba(14,165,233,.18),rgba(7,16,29,.78)); box-shadow:inset 0 0 0 1px rgba(56,189,248,.08); }
+  .offer.divider { border-color:rgba(250,204,21,.5); background:linear-gradient(135deg,rgba(250,204,21,.18),rgba(7,16,29,.78)); box-shadow:inset 0 0 0 1px rgba(250,204,21,.1); }
   .offer-head { display:grid; grid-template-columns:24px 1fr auto; align-items:center; gap:10px; margin-bottom:10px; }
+  .offer-kind { display:inline-flex; width:max-content; align-items:center; border-radius:999px; padding:5px 10px; font-size:12px; font-weight:950; letter-spacing:.02em; }
+  .offer.variant .offer-kind { border:1px solid rgba(125,211,252,.44); background:rgba(14,165,233,.2); color:#dff6ff; }
+  .offer.divider .offer-kind { border:1px solid rgba(253,224,71,.5); background:rgba(250,204,21,.22); color:#fff7ad; }
   .mini-actions { display:flex; flex-wrap:wrap; gap:7px; }
   .mini { border:1px solid var(--line); border-radius:9px; padding:7px 9px; background:rgba(255,255,255,.07); color:#fff; font-size:12px; font-weight:800; }
   .empty { padding:28px; text-align:center; color:var(--muted); }
@@ -343,6 +348,8 @@ const ADMIN_HTML = `<!doctype html>
     var draggedProductSlug = '';
     var draggedOfferIndex = -1;
     var dragScrollTimer = 0;
+    var dragScrollTarget = null;
+    var dragScrollSpeed = 0;
 
     function $(id) { return document.getElementById(id); }
     function esc(value) {
@@ -804,11 +811,11 @@ const ADMIN_HTML = `<!doctype html>
       return (product.offers || []).map(function(offer, index) {
         var controls = '<div class="mini-actions"><button class="mini" type="button" data-action="move-offer" data-index="' + index + '" data-direction="-1">Вверх</button><button class="mini" type="button" data-action="move-offer" data-index="' + index + '" data-direction="1">Вниз</button><button class="mini" type="button" data-action="remove-offer" data-index="' + index + '">Удалить</button></div>';
         if (offer.type === 'divider') {
-          return '<div class="offer" draggable="true" data-offer-drag-index="' + index + '"><div class="offer-head"><span class="drag-handle" title="Перетащить">↕</span><strong>Раздел</strong>' + controls + '</div>' +
+          return '<div class="offer divider" draggable="true" data-offer-drag-index="' + index + '"><div class="offer-head"><span class="drag-handle" title="Перетащить">↕</span><strong class="offer-kind">Раздел</strong>' + controls + '</div>' +
             '<div class="two"><div><label>Заголовок</label><input value="' + esc(offer.title || '') + '" data-offer-index="' + index + '" data-offer-field="title"></div>' +
             '<div><label>Описание</label><input value="' + esc(offer.description || '') + '" data-offer-index="' + index + '" data-offer-field="description"></div></div></div>';
         }
-        return '<div class="offer" draggable="true" data-offer-drag-index="' + index + '"><div class="offer-head"><span class="drag-handle" title="Перетащить">↕</span><strong>Вариант</strong>' + controls + '</div>' +
+        return '<div class="offer variant" draggable="true" data-offer-drag-index="' + index + '"><div class="offer-head"><span class="drag-handle" title="Перетащить">↕</span><strong class="offer-kind">Вариант</strong>' + controls + '</div>' +
           '<div class="two"><div><label>Название</label><input value="' + esc(offer.label || '') + '" data-offer-index="' + index + '" data-offer-field="label"></div>' +
           '<div><label>Цена</label><input type="number" min="0" value="' + esc(offer.priceRub || 0) + '" data-offer-index="' + index + '" data-offer-field="priceRub"></div></div>' +
           offerImageField(index, offer.icon || '', offer.iconScale || 1) +
@@ -928,23 +935,50 @@ const ADMIN_HTML = `<!doctype html>
       if (!dragScrollTimer) return;
       window.clearInterval(dragScrollTimer);
       dragScrollTimer = 0;
+      dragScrollTarget = null;
+      dragScrollSpeed = 0;
     }
-    function startDragAutoScroll(speed) {
-      stopDragAutoScroll();
+    function startDragAutoScroll(target, speed) {
       if (!speed) return;
+      if (dragScrollTimer && dragScrollTarget === target && dragScrollSpeed === speed) return;
+      stopDragAutoScroll();
+      dragScrollTarget = target;
+      dragScrollSpeed = speed;
       dragScrollTimer = window.setInterval(function() {
-        window.scrollBy({ top: speed, behavior: 'auto' });
+        if (dragScrollTarget === window) {
+          window.scrollBy({ top: dragScrollSpeed, behavior: 'auto' });
+        } else if (dragScrollTarget) {
+          dragScrollTarget.scrollTop += dragScrollSpeed;
+        }
       }, 16);
+    }
+    function scrollContainerAtPoint(x, y) {
+      var element = document.elementFromPoint(x, y);
+      var container = element && element.closest ? element.closest('.sidebar') : null;
+      if (container && container.scrollHeight > container.clientHeight) return container;
+      return window;
     }
     function updateDragAutoScroll(event) {
       if (!isDraggingSomething()) return;
-      var edge = 96;
-      var maxSpeed = 28;
+      var edge = 120;
+      var maxSpeed = 34;
       var y = event.clientY;
+      var target = scrollContainerAtPoint(event.clientX, y);
+      var top = 0;
+      var bottom = window.innerHeight;
+      if (target !== window) {
+        var rect = target.getBoundingClientRect();
+        top = rect.top;
+        bottom = rect.bottom;
+      }
       if (y < edge) {
-        startDragAutoScroll(-Math.max(8, Math.round((edge - y) / edge * maxSpeed)));
+        startDragAutoScroll(window, -Math.max(10, Math.round((edge - y) / edge * maxSpeed)));
       } else if (window.innerHeight - y < edge) {
-        startDragAutoScroll(Math.max(8, Math.round((edge - (window.innerHeight - y)) / edge * maxSpeed)));
+        startDragAutoScroll(window, Math.max(10, Math.round((edge - (window.innerHeight - y)) / edge * maxSpeed)));
+      } else if (target !== window && y - top < edge) {
+        startDragAutoScroll(target, -Math.max(10, Math.round((edge - (y - top)) / edge * maxSpeed)));
+      } else if (target !== window && bottom - y < edge) {
+        startDragAutoScroll(target, Math.max(10, Math.round((edge - (bottom - y)) / edge * maxSpeed)));
       } else {
         stopDragAutoScroll();
       }
@@ -1271,6 +1305,8 @@ const ADMIN_HTML = `<!doctype html>
     $('productEditor').addEventListener('dragleave', handleOfferDragLeave);
     $('productEditor').addEventListener('drop', handleOfferDrop);
     $('productEditor').addEventListener('dragend', handleDragEnd);
+    document.addEventListener('dragover', updateDragAutoScroll);
+    document.addEventListener('drop', handleDragEnd);
     document.addEventListener('wheel', handleDragWheel, { passive: true });
     $('imagePicker').addEventListener('change', handleImagePick);
     window.addEventListener('beforeunload', function(event) {
