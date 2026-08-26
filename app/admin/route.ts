@@ -338,6 +338,7 @@ const ADMIN_HTML = `<!doctype html>
 
   <script>
     var products = [];
+    var savedProductsSnapshot = [];
     var settings = { reviewsCountLabel: '400+' };
     var analyticsEvents = [];
     var analyticsSummary = { total: 0, views: 0, buys: 0, telegram: 0, actions: {}, products: {} };
@@ -350,6 +351,7 @@ const ADMIN_HTML = `<!doctype html>
     var dragScrollTimer = 0;
     var dragScrollTarget = null;
     var dragScrollSpeed = 0;
+    var KEEP_IMAGE = '__ECLIPTIC_KEEP_IMAGE__';
 
     function $(id) { return document.getElementById(id); }
     function esc(value) {
@@ -417,6 +419,41 @@ const ADMIN_HTML = `<!doctype html>
     }
     function currentProduct() {
       return products.find(function(product) { return product.slug === selectedSlug; });
+    }
+    function cloneProducts(value) {
+      return JSON.parse(JSON.stringify(value || []));
+    }
+    function previousProduct(slug) {
+      return savedProductsSnapshot.find(function(product) { return product.slug === slug; });
+    }
+    function sameStoredImage(value, previousValue) {
+      return Boolean(value && previousValue && value === previousValue);
+    }
+    function compactOfferForSave(offer, previousOffer, previousOffers) {
+      var nextOffer = Object.assign({}, offer);
+      if (nextOffer.type === 'divider') return nextOffer;
+
+      var matchingOffer = previousOffer && previousOffer.type !== 'divider' && previousOffer.label === nextOffer.label
+        ? previousOffer
+        : (previousOffers || []).find(function(item) { return item && item.type !== 'divider' && item.label === nextOffer.label; });
+
+      if (matchingOffer && sameStoredImage(nextOffer.icon, matchingOffer.icon)) {
+        nextOffer.icon = KEEP_IMAGE;
+      }
+
+      return nextOffer;
+    }
+    function compactProductsForSave() {
+      return products.map(function(product) {
+        var previous = previousProduct(product.slug);
+        var nextProduct = Object.assign({}, product);
+        if (previous && sameStoredImage(nextProduct.icon, previous.icon)) nextProduct.icon = KEEP_IMAGE;
+        if (previous && sameStoredImage(nextProduct.offerIcon, previous.offerIcon)) nextProduct.offerIcon = KEEP_IMAGE;
+        nextProduct.offers = (product.offers || []).map(function(offer, index) {
+          return compactOfferForSave(offer, previous && previous.offers ? previous.offers[index] : null, previous && previous.offers);
+        });
+        return nextProduct;
+      });
     }
     function productNameBySlug(slug) {
       var product = products.find(function(item) { return item.slug === slug; });
@@ -1108,18 +1145,18 @@ const ADMIN_HTML = `<!doctype html>
     async function imageFileToDataUrl(file) {
       if (!file || !/^image\\/(png|jpe?g|webp)$/i.test(file.type)) throw new Error('Выберите PNG, JPG или WEBP.');
       var original = await readFileDataUrl(file);
-      if (original.length <= 220000) return original;
+      if (original.length <= 95000) return original;
       var image = await loadImage(original);
-      var maxSide = 512;
+      var maxSide = 420;
       while (maxSide >= 160) {
         var scale = Math.min(1, maxSide / Math.max(image.width, image.height));
         var canvas = document.createElement('canvas');
         canvas.width = Math.max(1, Math.round(image.width * scale));
         canvas.height = Math.max(1, Math.round(image.height * scale));
         canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
-        for (var quality = 0.9; quality >= 0.5; quality -= 0.1) {
+        for (var quality = 0.82; quality >= 0.45; quality -= 0.08) {
           var result = canvas.toDataURL('image/webp', quality);
-          if (result.length <= 220000) return result;
+          if (result.length <= 95000) return result;
         }
         maxSide = Math.round(maxSide * 0.75);
       }
@@ -1154,6 +1191,7 @@ const ADMIN_HTML = `<!doctype html>
       try {
         var result = await Promise.allSettled([postJson('/api/admin/products', {}), postJson('/api/admin/settings', {})]);
         if (result[0].status === 'fulfilled') products = result[0].value.products || [];
+        savedProductsSnapshot = cloneProducts(products);
         if (result[1].status === 'fulfilled') settings = result[1].value.settings || settings;
         var failed = result.filter(function(item) { return item.status === 'rejected'; }).length;
         selectedSlug = products[0] ? products[0].slug : '';
@@ -1225,13 +1263,14 @@ const ADMIN_HTML = `<!doctype html>
       $('saveProductsBtn').disabled = true;
       showNotice('Сохраняю товары...', false);
       try {
-        var data = await postJson('/api/admin/products', { products: products }, 120000);
+        var data = await postJson('/api/admin/products', { products: compactProductsForSave() }, 120000);
         if (data.products) {
           products = data.products;
           if (!products.some(function(product) { return product.slug === selectedSlug; })) selectedSlug = products[0] ? products[0].slug : '';
           renderProductList();
           renderProductEditor();
         }
+        savedProductsSnapshot = cloneProducts(products);
         markProductsClean();
         showNotice('Товары сохранены.', false);
         hideNoticeSoon();
