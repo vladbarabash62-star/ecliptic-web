@@ -27,6 +27,7 @@ type AnalyticsEvent = {
 const STORAGE_KEY = "ecliptic_analytics_events";
 const VISITOR_KEY = "ecliptic_visitor_id";
 const SESSION_KEY = "ecliptic_session_id";
+const TELEGRAM_USER_KEY = "ecliptic_telegram_user";
 const RECOVERY_KEY = "ecliptic_recovered_runtime_error";
 
 declare global {
@@ -143,15 +144,64 @@ function enrichEvent(event: Omit<AnalyticsEvent, "visitorId" | "sessionId">) {
   };
 }
 
+function saveTelegramUser(user: AnalyticsEvent["telegramUser"]) {
+  if (!user || (!user.id && !user.username && !user.firstName)) return;
+
+  try {
+    localStorage.setItem(TELEGRAM_USER_KEY, JSON.stringify(user));
+  } catch {
+    // Telegram identity is optional analytics metadata.
+  }
+}
+
+function readCachedTelegramUser() {
+  try {
+    const user = JSON.parse(localStorage.getItem(TELEGRAM_USER_KEY) || "null");
+    if (user && (user.id || user.username || user.firstName)) return user as AnalyticsEvent["telegramUser"];
+  } catch {
+    // Ignore broken/blocked storage.
+  }
+
+  return undefined;
+}
+
+function getTelegramUserFromUrl() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("telegram_id") || params.get("tg_id");
+    const username = params.get("telegram_username") || params.get("tg_username");
+    const firstName = params.get("telegram_name") || params.get("tg_name");
+    if (!id && !username && !firstName) return undefined;
+
+    return {
+      id: id ? Number(id) : undefined,
+      username: username ? username.replace(/^@/, "") : undefined,
+      firstName: firstName || undefined,
+    };
+  } catch {
+    return undefined;
+  }
+}
+
 function getTelegramUser() {
   const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
-  if (!user) return undefined;
+  if (user) {
+    const telegramUser = {
+      id: user.id,
+      username: user.username,
+      firstName: user.first_name,
+    };
+    saveTelegramUser(telegramUser);
+    return telegramUser;
+  }
 
-  return {
-    id: user.id,
-    username: user.username,
-    firstName: user.first_name,
-  };
+  const urlUser = getTelegramUserFromUrl();
+  if (urlUser) {
+    saveTelegramUser(urlUser);
+    return urlUser;
+  }
+
+  return readCachedTelegramUser();
 }
 
 function productSlugFromPath(path: string) {
