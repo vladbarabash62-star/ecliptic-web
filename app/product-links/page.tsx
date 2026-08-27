@@ -14,10 +14,37 @@ export const metadata: Metadata = {
 
 const SITE_URL = "https://ecliptic.website";
 
+function getTelegramBotUsername() {
+  const username =
+    process.env.TELEGRAM_WEBAPP_BOT_USERNAME ||
+    process.env.NEXT_PUBLIC_TELEGRAM_WEBAPP_BOT_USERNAME ||
+    "Ecliptic_Store_BOT";
+
+  const normalized = username.replace(/^@/, "").trim();
+  return /^[a-zA-Z0-9_]{5,32}$/.test(normalized) ? normalized : "";
+}
+
+function getTelegramMiniAppShortName() {
+  const shortName =
+    process.env.TELEGRAM_WEBAPP_SHORT_NAME ||
+    process.env.NEXT_PUBLIC_TELEGRAM_WEBAPP_SHORT_NAME ||
+    "Ecliptic_Store";
+
+  return /^[a-zA-Z0-9_]{3,64}$/.test(shortName) ? shortName : "";
+}
+
+function getTelegramMiniAppLink(slug: string) {
+  const botUsername = getTelegramBotUsername();
+  const miniAppShortName = getTelegramMiniAppShortName();
+  if (!botUsername || !miniAppShortName) return `${SITE_URL}/go/${slug}`;
+
+  return `https://t.me/${botUsername}/${miniAppShortName}?startapp=${slug}`;
+}
+
 export default async function ProductLinksPage() {
   const products = await getProducts();
   const listText = products
-    .map((product) => `${product.name}: ${SITE_URL}/go/${product.slug}`)
+    .map((product) => `${product.name}: ${getTelegramMiniAppLink(product.slug)}`)
     .join("\n");
 
   return (
@@ -25,7 +52,7 @@ export default async function ProductLinksPage() {
       <div className="mx-auto w-full max-w-[860px] rounded-3xl border border-white/10 bg-[#0a0d14]/82 p-5 shadow-[0_24px_90px_rgba(0,0,0,0.34)] backdrop-blur-md sm:p-8">
         <h1 className="text-3xl font-black sm:text-4xl">Ссылки на товары</h1>
         <p className="mt-3 text-sm leading-6 text-white/58">
-          Эти ссылки можно вставлять в Telegram-лист. На ПК они открывают сайт, на телефоне открывают мобильное веб-приложение товара.
+          Эти ссылки вставляй в Telegram-канал. Они открывают товар через Telegram Mini App, чтобы Telegram мог передать username в аналитику.
         </p>
 
         <textarea
@@ -42,7 +69,8 @@ export default async function ProductLinksPage() {
               className="grid gap-1 rounded-2xl border border-white/10 bg-[#0f1420]/88 px-4 py-3 transition hover:border-white/20 hover:bg-[#151b2a]/95"
             >
               <span className="font-black text-white">{product.name}</span>
-              <span className="break-all text-sm text-sky-200/76">{SITE_URL}/go/{product.slug}</span>
+              <span className="break-all text-sm text-sky-200/76">{getTelegramMiniAppLink(product.slug)}</span>
+              <span className="break-all text-xs text-white/42">Запасная ссылка: {SITE_URL}/go/{product.slug}</span>
             </a>
           ))}
         </div>
