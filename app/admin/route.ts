@@ -72,7 +72,7 @@ const STYLE = `
   .mini-actions { display:flex; flex-wrap:wrap; gap:7px; }
   .mini { border:1px solid var(--line); border-radius:9px; padding:7px 9px; background:rgba(255,255,255,.07); color:#fff; font-size:12px; font-weight:800; }
   .empty { padding:28px; text-align:center; color:var(--muted); }
-  .table { width:100%; border-collapse:collapse; margin-top:12px; }
+  .table { width:100%; min-width:1180px; border-collapse:collapse; margin-top:12px; }
   .table th,.table td { padding:10px; border-bottom:1px solid rgba(255,255,255,.08); text-align:left; font-size:13px; }
   .table th { color:rgba(255,255,255,.65); }
   .table td { vertical-align:top; }
@@ -232,7 +232,7 @@ const ADMIN_HTML = `<!doctype html>
         <h2>Последние события</h2>
         <div style="overflow:auto">
           <table class="table">
-            <thead><tr><th>Время</th><th>Действие</th><th>Товар</th><th>Страница</th><th>Посетитель</th></tr></thead>
+            <thead><tr><th>Время</th><th>Действие</th><th>Товар</th><th>Страница</th><th>Telegram username</th><th>Telegram ID</th><th>Посетитель</th></tr></thead>
             <tbody id="eventsTable"></tbody>
           </table>
         </div>
@@ -537,10 +537,18 @@ const ADMIN_HTML = `<!doctype html>
       if (/Macintosh|Mac OS/i.test(text)) return 'Mac';
       return 'Браузер';
     }
+    function telegramUsername(event) {
+      var user = event.telegramUser || {};
+      if (user.username) return '@' + user.username;
+      if (user.firstName) return user.firstName;
+      return 'нет данных';
+    }
+    function telegramId(event) {
+      var user = event.telegramUser || {};
+      return user.id ? String(user.id) : 'нет данных';
+    }
     function visitorHtml(event) {
-      var main = event.telegramUser && (event.telegramUser.username || event.telegramUser.firstName)
-        ? '@' + (event.telegramUser.username || event.telegramUser.firstName)
-        : 'ID ' + (event.visitorId || 'неизвестен');
+      var main = 'ID ' + (event.visitorId || 'неизвестен');
       var meta = [];
       if (event.ipAddress) {
         meta.push('IP: ' + event.ipAddress);
@@ -805,8 +813,8 @@ const ADMIN_HTML = `<!doctype html>
       renderBars('actionStats', Object.keys(analyticsSummary.actions || {}).length ? analyticsSummary.actions : fallbackActions);
       $('eventsTable').innerHTML = analyticsEvents.map(function(event) {
         var time = event.time ? new Date(event.time).toLocaleString('ru-RU') : '';
-        return '<tr><td class="nowrap">' + esc(time) + '</td><td>' + esc(actionLabel(event.type)) + '</td><td>' + esc(eventProductLabel(event)) + '</td><td>' + esc(pageLabel(event.path)) + '</td><td>' + visitorHtml(event) + '</td></tr>';
-      }).join('') || '<tr><td colspan="5" class="muted">Пока нет событий.</td></tr>';
+        return '<tr><td class="nowrap">' + esc(time) + '</td><td>' + esc(actionLabel(event.type)) + '</td><td>' + esc(eventProductLabel(event)) + '</td><td>' + esc(pageLabel(event.path)) + '</td><td class="nowrap">' + esc(telegramUsername(event)) + '</td><td class="nowrap">' + esc(telegramId(event)) + '</td><td>' + visitorHtml(event) + '</td></tr>';
+      }).join('') || '<tr><td colspan="7" class="muted">Пока нет событий.</td></tr>';
       $('loadMoreEventsBtn').style.display = analyticsPagination.hasMore ? 'inline-flex' : 'none';
       $('loadMoreEventsBtn').textContent = analyticsPagination.hasMore
         ? 'Показать еще события (' + analyticsEvents.length + ' из ' + analyticsPagination.totalStored + ')'

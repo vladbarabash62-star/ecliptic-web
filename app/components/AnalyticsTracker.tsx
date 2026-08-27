@@ -298,17 +298,31 @@ export default function AnalyticsTracker() {
   }, [pathname]);
 
   useEffect(() => {
+    let timer: number | undefined;
+
+    const sendPageView = () => {
+      try {
+        trackEvent(enrichEvent({
+          type: "page_view",
+          path: pathname,
+          product: productSlugFromPath(pathname),
+          time: new Date().toISOString(),
+          telegramUser: getTelegramUser(),
+        }));
+      } catch {
+        // Page view tracking is best-effort.
+      }
+    };
+
     try {
-      trackEvent(enrichEvent({
-        type: "page_view",
-        path: pathname,
-        product: productSlugFromPath(pathname),
-        time: new Date().toISOString(),
-        telegramUser: getTelegramUser(),
-      }));
+      timer = window.setTimeout(sendPageView, shouldLoadTelegramScript() ? 300 : 0);
     } catch {
-      // Page view tracking is best-effort.
+      sendPageView();
     }
+
+    return () => {
+      if (timer) window.clearTimeout(timer);
+    };
   }, [pathname]);
 
   useEffect(() => {
