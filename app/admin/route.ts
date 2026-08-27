@@ -232,7 +232,7 @@ const ADMIN_HTML = `<!doctype html>
         <h2>Последние события</h2>
         <div style="overflow:auto">
           <table class="table">
-            <thead><tr><th>Время</th><th>Действие</th><th>Товар</th><th>Страница</th><th>Telegram username</th><th>Посетитель</th></tr></thead>
+            <thead><tr><th>Время</th><th>Действие</th><th>Товар</th><th>Страница</th><th>Посетитель</th></tr></thead>
             <tbody id="eventsTable"></tbody>
           </table>
         </div>
@@ -537,12 +537,6 @@ const ADMIN_HTML = `<!doctype html>
       if (/Macintosh|Mac OS/i.test(text)) return 'Mac';
       return 'Браузер';
     }
-    function telegramUsername(event) {
-      var user = event.telegramUser || {};
-      if (user.username) return '@' + user.username;
-      if (user.firstName) return user.firstName;
-      return 'не передан Telegram';
-    }
     function visitorHtml(event) {
       var main = 'ID ' + (event.visitorId || 'неизвестен');
       var meta = [];
@@ -809,8 +803,8 @@ const ADMIN_HTML = `<!doctype html>
       renderBars('actionStats', Object.keys(analyticsSummary.actions || {}).length ? analyticsSummary.actions : fallbackActions);
       $('eventsTable').innerHTML = analyticsEvents.map(function(event) {
         var time = event.time ? new Date(event.time).toLocaleString('ru-RU') : '';
-        return '<tr><td class="nowrap">' + esc(time) + '</td><td>' + esc(actionLabel(event.type)) + '</td><td>' + esc(eventProductLabel(event)) + '</td><td>' + esc(pageLabel(event.path)) + '</td><td class="nowrap">' + esc(telegramUsername(event)) + '</td><td>' + visitorHtml(event) + '</td></tr>';
-      }).join('') || '<tr><td colspan="6" class="muted">Пока нет событий.</td></tr>';
+        return '<tr><td class="nowrap">' + esc(time) + '</td><td>' + esc(actionLabel(event.type)) + '</td><td>' + esc(eventProductLabel(event)) + '</td><td>' + esc(pageLabel(event.path)) + '</td><td>' + visitorHtml(event) + '</td></tr>';
+      }).join('') || '<tr><td colspan="5" class="muted">Пока нет событий.</td></tr>';
       $('loadMoreEventsBtn').style.display = analyticsPagination.hasMore ? 'inline-flex' : 'none';
       $('loadMoreEventsBtn').textContent = analyticsPagination.hasMore
         ? 'Показать еще события (' + analyticsEvents.length + ' из ' + analyticsPagination.totalStored + ')'

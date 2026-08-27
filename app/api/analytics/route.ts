@@ -23,11 +23,6 @@ type IncomingEvent = {
   language?: string;
   timezone?: string;
   screen?: string;
-  telegramUser?: {
-    id?: number;
-    username?: string;
-    firstName?: string;
-  };
 };
 
 function hashIp(value: string | null) {
@@ -76,7 +71,6 @@ export async function POST(request: Request) {
     language: body.language,
     timezone: body.timezone,
     screen: body.screen,
-    telegramUser: body.telegramUser,
     ipAddress,
     ipHash,
     country,

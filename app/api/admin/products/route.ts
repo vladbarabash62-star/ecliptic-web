@@ -76,7 +76,6 @@ export async function POST(request: Request) {
     await saveProducts(products);
     revalidateTag(PRODUCTS_CACHE_TAG, "max");
     revalidatePath("/", "page");
-    revalidatePath("/product-links", "page");
     revalidatePath("/shop", "page");
     revalidatePath("/tags", "page");
     for (const product of products) {
@@ -90,7 +89,6 @@ export async function POST(request: Request) {
     await saveProducts(products);
     revalidateTag(PRODUCTS_CACHE_TAG, "max");
     revalidatePath("/", "page");
-    revalidatePath("/product-links", "page");
     revalidatePath("/shop", "page");
     revalidatePath("/tags", "page");
     for (const product of products) {
