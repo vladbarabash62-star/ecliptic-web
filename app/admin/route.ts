@@ -279,6 +279,11 @@ const ADMIN_HTML = `<!doctype html>
           <p class="hint">Что чаще делают на сайте: смотрят, открывают товары, нажимают купить, переходят в Telegram.</p>
           <div id="chartActions"></div>
         </div>
+        <div class="card chart-card">
+          <h2>Отзывы</h2>
+          <p class="hint">Сколько посетителей открывали отзывы. Учитываются кнопка на главной и ссылка внизу сайта.</p>
+          <div id="chartReviews"></div>
+        </div>
       </div>
       <div class="card wide-chart">
         <h2>Клики «Купить» по неделям</h2>
@@ -650,6 +655,20 @@ const ADMIN_HTML = `<!doctype html>
       var match = text.match(/(?:к оплате|оплате|цена)?\\D*(\\d{1,7})\\s*(?:р|₽)/i);
       return match ? Number(match[1]) : 0;
     }
+    function eventVisitorKey(event) {
+      return event.visitorId || event.sessionId || event.ipHash || event.ipAddress || '';
+    }
+    function isReviewsEvent(event) {
+      return event.type === 'reviews_click' || event.type === 'telegram_reviews';
+    }
+    function renderReviewsChart(events) {
+      var reviewEvents = events.filter(isReviewsEvent);
+      var uniqueVisitors = new Set(reviewEvents.map(eventVisitorKey).filter(Boolean)).size;
+      var repeatClicks = Math.max(0, reviewEvents.length - uniqueVisitors);
+      var rows = [['Посмотрели отзывы', uniqueVisitors]];
+      if (repeatClicks) rows.push(['Повторные открытия', repeatClicks]);
+      renderPie('chartReviews', rows);
+    }
     function weekRanges(events) {
       var dates = events.map(function(event) { return event.time ? new Date(event.time) : null; }).filter(function(date) { return date && !Number.isNaN(date.getTime()); });
       if (!dates.length) return [];
@@ -830,6 +849,7 @@ const ADMIN_HTML = `<!doctype html>
       renderPie('chartRegions', topEntries(regions, 6));
       renderPie('chartConversion', conversionRows);
       renderPie('chartActions', topEntries(actions, 10));
+      renderReviewsChart(chartEvents);
       renderWeekBars('chartWeeklyBuys', chartEvents, 'buy_click', 'кликов');
       renderWeekBars('chartWeeklyProductViews', chartEvents, 'product_open', 'открытий');
       renderReturnVisitors('chartReturnVisitors', chartEvents);
