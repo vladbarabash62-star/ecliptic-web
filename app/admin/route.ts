@@ -107,6 +107,13 @@ const STYLE = `
   .week-tip-row { display:flex; justify-content:space-between; gap:10px; color:rgba(255,255,255,.72); font-size:12px; line-height:1.55; }
   .week-tip-total { margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,.08); color:#e0f2fe; font-size:12px; font-weight:900; line-height:1.45; }
   .return-list { display:grid; gap:10px; margin-top:14px; }
+  .reviews-total { margin-top:16px; padding:16px; border:1px solid rgba(56,189,248,.18); border-radius:16px; background:rgba(14,165,233,.08); }
+  .reviews-total span { display:block; color:var(--muted); font-size:13px; font-weight:800; }
+  .reviews-total strong { display:block; margin-top:4px; color:#fff; font-size:38px; line-height:1; }
+  .reviews-list { display:grid; gap:8px; max-height:230px; margin-top:14px; overflow:auto; padding-right:4px; }
+  .reviews-row { display:grid; grid-template-columns:minmax(145px,.8fr) minmax(120px,.7fr) minmax(160px,1fr); gap:10px; align-items:start; padding:10px; border:1px solid rgba(255,255,255,.08); border-radius:12px; background:rgba(255,255,255,.035); font-size:12px; }
+  .reviews-row strong { display:block; color:#e0f2fe; font-size:12px; overflow-wrap:anywhere; }
+  .reviews-row span { display:block; margin-bottom:3px; color:rgba(255,255,255,.48); font-weight:800; }
   .insight-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:14px; }
   .insight { padding:14px; }
   .insight strong { display:block; margin-top:8px; font-size:22px; }
@@ -281,7 +288,7 @@ const ADMIN_HTML = `<!doctype html>
         </div>
         <div class="card chart-card">
           <h2>Отзывы</h2>
-          <p class="hint">Сколько посетителей открывали отзывы. Учитываются кнопка на главной и ссылка внизу сайта.</p>
+          <p class="hint">Общее число открытий отзывов и список посетителей: время, IP и ID устройства.</p>
           <div id="chartReviews"></div>
         </div>
       </div>
@@ -663,11 +670,20 @@ const ADMIN_HTML = `<!doctype html>
     }
     function renderReviewsChart(events) {
       var reviewEvents = events.filter(isReviewsEvent);
-      var uniqueVisitors = new Set(reviewEvents.map(eventVisitorKey).filter(Boolean)).size;
-      var repeatClicks = Math.max(0, reviewEvents.length - uniqueVisitors);
-      var rows = [['Посмотрели отзывы', uniqueVisitors]];
-      if (repeatClicks) rows.push(['Повторные открытия', repeatClicks]);
-      renderPie('chartReviews', rows);
+      if (!reviewEvents.length) {
+        $('chartReviews').innerHTML = '<div class="chart-empty">Отзывы пока никто не открывал.</div>';
+        return;
+      }
+      var sorted = reviewEvents.slice().sort(function(a, b) {
+        return new Date(b.time || 0).getTime() - new Date(a.time || 0).getTime();
+      });
+      var rows = sorted.map(function(event) {
+        var time = event.time ? new Date(event.time).toLocaleString('ru-RU') : 'время неизвестно';
+        var ip = event.ipAddress || event.ipHash || 'IP не определён';
+        var visitor = eventVisitorKey(event) || 'ID не определён';
+        return '<div class="reviews-row"><div><span>Дата и время</span><strong>' + esc(time) + '</strong></div><div><span>IP-адрес</span><strong>' + esc(ip) + '</strong></div><div><span>ID / MAC устройства</span><strong>' + esc(visitor) + '</strong></div></div>';
+      }).join('');
+      $('chartReviews').innerHTML = '<div class="reviews-total"><span>Всего открытий отзывов</span><strong>' + reviewEvents.length + '</strong></div><div class="reviews-list">' + rows + '</div>';
     }
     function weekRanges(events) {
       var dates = events.map(function(event) { return event.time ? new Date(event.time) : null; }).filter(function(date) { return date && !Number.isNaN(date.getTime()); });
