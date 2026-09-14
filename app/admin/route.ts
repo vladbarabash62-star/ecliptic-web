@@ -356,7 +356,7 @@ const ADMIN_HTML = `<!doctype html>
     var settings = { reviewsCountLabel: '400+' };
     var analyticsEvents = [];
     var analyticsSummary = { total: 0, views: 0, buys: 0, telegram: 0, actions: {}, products: {} };
-    var analyticsPagination = { offset: 0, limit: 1000, loaded: 0, totalStored: 0, hasMore: false, nextOffset: 0 };
+    var analyticsPagination = { offset: 0, limit: 5000, loaded: 0, totalStored: 0, hasMore: false, nextOffset: 0 };
     var selectedSlug = '';
     var uploadTarget = null;
     var dirtyProducts = false;
@@ -706,6 +706,10 @@ const ADMIN_HTML = `<!doctype html>
       }
       return ranges;
     }
+    function matchesWeeklyEvent(event, type) {
+      if (type === 'product_page_view') return event.type === 'page_view' && Boolean(eventProductSlug(event));
+      return event.type === type;
+    }
     function renderWeekBars(id, events, type, unit) {
       var ranges = weekRanges(events);
       if (!ranges.length) {
@@ -722,7 +726,7 @@ const ADMIN_HTML = `<!doctype html>
         return { label: range.label, start: range.start, end: range.end, value: 0, sum: 0, days: days };
       });
       events.forEach(function(event) {
-        if (event.type !== type || !event.time) return;
+        if (!matchesWeeklyEvent(event, type) || !event.time) return;
         var date = new Date(event.time);
         if (Number.isNaN(date.getTime())) return;
         var row = rows.find(function(item) { return date >= item.start && date <= item.end; });
@@ -850,7 +854,7 @@ const ADMIN_HTML = `<!doctype html>
       var chartEvents = analyticsEvents.filter(function(e) { return !(e.type === 'page_view' && e.path === '/'); });
       var buyEvents = chartEvents.filter(function(e) { return e.type === 'buy_click'; });
       var pageViews = chartEvents.filter(function(e) { return e.type === 'page_view'; });
-      var productOpens = chartEvents.filter(function(e) { return e.type === 'product_open'; });
+      var productOpens = chartEvents.filter(function(e) { return matchesWeeklyEvent(e, 'product_page_view'); });
       var regions = countBy(chartEvents, eventRegion);
       var fallbackProductCounts = countBy(chartEvents.filter(function(e) { return e.product; }), eventProductName);
       var productCounts = Object.keys(analyticsSummary.products || {}).length ? productSummaryNames(analyticsSummary.products) : fallbackProductCounts;
@@ -867,7 +871,7 @@ const ADMIN_HTML = `<!doctype html>
       renderPie('chartActions', topEntries(actions, 10));
       renderReviewsChart(chartEvents);
       renderWeekBars('chartWeeklyBuys', chartEvents, 'buy_click', 'кликов');
-      renderWeekBars('chartWeeklyProductViews', chartEvents, 'product_open', 'открытий');
+      renderWeekBars('chartWeeklyProductViews', chartEvents, 'product_page_view', 'открытий');
       renderReturnVisitors('chartReturnVisitors', chartEvents);
 
       $('insightConversion').textContent = percent(buyEvents.length, Math.max(1, pageViews.length)) + '%';
@@ -1314,11 +1318,42 @@ const ADMIN_HTML = `<!doctype html>
       } catch (error) {
         analyticsEvents = [];
         analyticsSummary = { total: 0, views: 0, buys: 0, telegram: 0, actions: {}, products: {} };
-        analyticsPagination = { offset: 0, limit: 1000, loaded: 0, totalStored: 0, hasMore: false, nextOffset: 0 };
+        analyticsPagination = { offset: 0, limit: 5000, loaded: 0, totalStored: 0, hasMore: false, nextOffset: 0 };
         renderAnalytics();
         $('analyticsUpdatedAt').textContent = 'Статистика временно не обновилась';
         showNotice('Товары загружены. Аналитика временно недоступна.', true);
       } finally {
+        $('loadMoreEventsBtn').disabled = false;
+      }
+    }
+    async function loadFullAnalyticsForCharts() {
+      $('reloadChartsBtn').disabled = true;
+      $('loadMoreEventsBtn').disabled = true;
+      showNotice('Догружаю всю историю для диаграмм...', false);
+      try {
+        var allEvents = [];
+        var nextOffset = 0;
+        var pagination = null;
+        var summary = analyticsSummary;
+        do {
+          var data = await postJson('/api/admin/analytics', { offset: nextOffset, limit: analyticsPagination.limit });
+          allEvents = allEvents.concat(data.events || []);
+          summary = data.summary || summary;
+          pagination = data.pagination || { hasMore: false, nextOffset: allEvents.length, totalStored: allEvents.length };
+          nextOffset = pagination.nextOffset || allEvents.length;
+        } while (pagination.hasMore && allEvents.length < 50000);
+
+        analyticsEvents = allEvents;
+        analyticsSummary = summary;
+        analyticsPagination = pagination || { offset: 0, limit: 5000, loaded: allEvents.length, totalStored: allEvents.length, hasMore: false, nextOffset: allEvents.length };
+        renderAnalytics();
+        updateAnalyticsTimestamp();
+        showNotice('Диаграммы обновлены по всей истории.', false);
+        hideNoticeSoon();
+      } catch (error) {
+        showNotice(error.message || 'Не удалось обновить диаграммы.', true);
+      } finally {
+        $('reloadChartsBtn').disabled = false;
         $('loadMoreEventsBtn').disabled = false;
       }
     }
@@ -1330,7 +1365,7 @@ const ADMIN_HTML = `<!doctype html>
         var data = await postJson('/api/admin/analytics', { reset: true });
         analyticsEvents = data.events || [];
         analyticsSummary = data.summary || { total: 0, views: 0, buys: 0, telegram: 0, actions: {}, products: {} };
-        analyticsPagination = data.pagination || { offset: 0, limit: 1000, loaded: 0, totalStored: 0, hasMore: false, nextOffset: 0 };
+        analyticsPagination = data.pagination || { offset: 0, limit: 5000, loaded: 0, totalStored: 0, hasMore: false, nextOffset: 0 };
         renderAnalytics();
         updateAnalyticsTimestamp();
         showNotice('Статистика сброшена.', false);
@@ -1388,12 +1423,15 @@ const ADMIN_HTML = `<!doctype html>
         document.querySelectorAll('.section').forEach(function(section) { section.classList.remove('active'); });
         button.classList.add('active');
         $(button.dataset.tab).classList.add('active');
+        if (button.dataset.tab === 'charts' && analyticsPagination.hasMore) {
+          loadFullAnalyticsForCharts();
+        }
       });
     });
     $('reloadBtn').addEventListener('click', loadAll);
     $('reloadAnalyticsBtn').addEventListener('click', function() { loadAnalytics(0); });
     $('loadMoreEventsBtn').addEventListener('click', function() { loadAnalytics(analyticsPagination.nextOffset || analyticsEvents.length); });
-    $('reloadChartsBtn').addEventListener('click', function() { loadAnalytics(0); });
+    $('reloadChartsBtn').addEventListener('click', loadFullAnalyticsForCharts);
     document.addEventListener('mouseover', function(event) {
       var bar = event.target.closest && event.target.closest('.week-bar[data-week-tip]');
       if (!bar) return;
