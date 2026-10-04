@@ -366,6 +366,7 @@ const ADMIN_HTML = `<!doctype html>
     var dragScrollTarget = null;
     var dragScrollSpeed = 0;
     var KEEP_IMAGE = '__ECLIPTIC_KEEP_IMAGE__';
+    var LOCAL_ANALYTICS_KEY = 'ecliptic_analytics_events';
 
     function $(id) { return document.getElementById(id); }
     function esc(value) {
@@ -568,6 +569,54 @@ const ADMIN_HTML = `<!doctype html>
         acc[key] = (acc[key] || 0) + 1;
         return acc;
       }, {});
+    }
+    function readLocalAnalyticsEvents() {
+      try {
+        var parsed = JSON.parse(localStorage.getItem(LOCAL_ANALYTICS_KEY) || '[]');
+        return Array.isArray(parsed) ? parsed.filter(function(event) { return event && event.time && event.type; }) : [];
+      } catch (error) {
+        return [];
+      }
+    }
+    function eventIdentity(event) {
+      return [
+        event.time || '',
+        event.type || '',
+        event.path || '',
+        event.product || '',
+        event.offer || '',
+        event.price == null ? '' : event.price,
+        event.visitorId || ''
+      ].join('|');
+    }
+    function mergeAnalyticsSources(serverEvents) {
+      var merged = [];
+      var seen = {};
+      (serverEvents || []).concat(readLocalAnalyticsEvents()).forEach(function(event) {
+        var key = eventIdentity(event);
+        if (seen[key]) return;
+        seen[key] = true;
+        merged.push(event);
+      });
+      return merged.sort(function(a, b) {
+        return new Date(b.time || 0).getTime() - new Date(a.time || 0).getTime();
+      });
+    }
+    function summarizeEvents(events) {
+      var rows = events || [];
+      return {
+        total: rows.length,
+        views: rows.filter(function(event) { return event.type === 'page_view'; }).length,
+        buys: rows.filter(function(event) { return event.type === 'buy_click'; }).length,
+        telegram: rows.filter(function(event) { return String(event.type || '').indexOf('telegram') !== -1; }).length,
+        actions: countBy(rows, function(event) { return event.type; }),
+        products: countBy(rows.filter(function(event) { return eventProductSlug(event); }), function(event) { return eventProductSlug(event); })
+      };
+    }
+    function mergeSummary(serverSummary, events) {
+      var localSummary = summarizeEvents(events);
+      if (!serverSummary || !serverSummary.total || localSummary.total > serverSummary.total) return localSummary;
+      return serverSummary;
     }
     function topEntries(data, limit) {
       return Object.entries(data).sort(function(a,b) { return b[1] - a[1]; }).slice(0, limit || 8);
@@ -1314,8 +1363,8 @@ const ADMIN_HTML = `<!doctype html>
       $('loadMoreEventsBtn').disabled = true;
       try {
         var data = await postJson('/api/admin/analytics', { offset: loadOffset, limit: analyticsPagination.limit });
-        analyticsEvents = shouldAppend ? analyticsEvents.concat(data.events || []) : data.events || [];
-        analyticsSummary = data.summary || analyticsSummary;
+        analyticsEvents = mergeAnalyticsSources(shouldAppend ? analyticsEvents.concat(data.events || []) : data.events || []);
+        analyticsSummary = mergeSummary(data.summary || analyticsSummary, analyticsEvents);
         analyticsPagination = data.pagination || {
           offset: loadOffset,
           limit: analyticsPagination.limit,
@@ -1324,14 +1373,15 @@ const ADMIN_HTML = `<!doctype html>
           hasMore: false,
           nextOffset: analyticsEvents.length,
         };
+        analyticsPagination.totalStored = Math.max(analyticsPagination.totalStored || 0, analyticsEvents.length);
         renderAnalytics();
         updateAnalyticsTimestamp();
         showNotice('Готово.', false);
         hideNoticeSoon();
       } catch (error) {
-        analyticsEvents = [];
-        analyticsSummary = { total: 0, views: 0, buys: 0, telegram: 0, actions: {}, products: {} };
-        analyticsPagination = { offset: 0, limit: 5000, loaded: 0, totalStored: 0, hasMore: false, nextOffset: 0 };
+        analyticsEvents = mergeAnalyticsSources([]);
+        analyticsSummary = summarizeEvents(analyticsEvents);
+        analyticsPagination = { offset: 0, limit: 5000, loaded: analyticsEvents.length, totalStored: analyticsEvents.length, hasMore: false, nextOffset: analyticsEvents.length };
         renderAnalytics();
         $('analyticsUpdatedAt').textContent = 'Статистика временно не обновилась';
         showNotice('Товары загружены. Аналитика временно недоступна.', true);
@@ -1356,9 +1406,10 @@ const ADMIN_HTML = `<!doctype html>
           nextOffset = pagination.nextOffset || allEvents.length;
         } while (pagination.hasMore && allEvents.length < 50000);
 
-        analyticsEvents = allEvents;
-        analyticsSummary = summary;
+        analyticsEvents = mergeAnalyticsSources(allEvents);
+        analyticsSummary = mergeSummary(summary, analyticsEvents);
         analyticsPagination = pagination || { offset: 0, limit: 5000, loaded: allEvents.length, totalStored: allEvents.length, hasMore: false, nextOffset: allEvents.length };
+        analyticsPagination.totalStored = Math.max(analyticsPagination.totalStored || 0, analyticsEvents.length);
         renderAnalytics();
         updateAnalyticsTimestamp();
         showNotice('Диаграммы обновлены по всей истории.', false);
@@ -1376,6 +1427,7 @@ const ADMIN_HTML = `<!doctype html>
       showNotice('Сбрасываю статистику...', false);
       try {
         var data = await postJson('/api/admin/analytics', { reset: true });
+        try { localStorage.removeItem(LOCAL_ANALYTICS_KEY); } catch (storageError) {}
         analyticsEvents = data.events || [];
         analyticsSummary = data.summary || { total: 0, views: 0, buys: 0, telegram: 0, actions: {}, products: {} };
         analyticsPagination = data.pagination || { offset: 0, limit: 5000, loaded: 0, totalStored: 0, hasMore: false, nextOffset: 0 };

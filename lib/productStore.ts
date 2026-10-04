@@ -4,7 +4,7 @@ import { redisPipeline } from "./security";
 const PRODUCTS_KEY = "ecliptic:products:overrides";
 export const PRODUCTS_CACHE_TAG = "ecliptic-products";
 const PRODUCT_STORAGE_VERSION = 3;
-const CODE_AUTHORED_OFFER_SLUGS = new Set(["mobile-legends", "pubg-mobile"]);
+const CODE_AUTHORED_OFFER_SLUGS = new Set(["mobile-legends", "pubg-mobile", "telegram-stars"]);
 const FALLBACK_ICON =
   "https://static.vecteezy.com/system/resources/previews/023/986/562/non_2x/telegram-logo-telegram-logo-transparent-telegram-icon-transparent-free-free-png.png";
 const PRODUCT_SLUG_ALIASES: Record<string, string> = {

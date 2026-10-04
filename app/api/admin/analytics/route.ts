@@ -1,4 +1,9 @@
 import { NextResponse } from "next/server";
+import {
+  clearFallbackAnalyticsEvents,
+  readFallbackAnalyticsEvents,
+  summarizeAnalyticsEvents,
+} from "../../../../lib/analyticsFallbackStore";
 import { getRedisConfig, redisPipeline, validateAdminRequest } from "../../../../lib/security";
 
 export const runtime = "nodejs";
@@ -42,6 +47,7 @@ export async function POST(request: Request) {
   try {
     if (body.reset) {
       await redisPipeline([["DEL", ANALYTICS_KEY, ANALYTICS_TOTALS_KEY, ANALYTICS_ACTIONS_KEY, ANALYTICS_PRODUCTS_KEY]], { timeoutMs: 2500 });
+      await clearFallbackAnalyticsEvents();
       return NextResponse.json({
         ok: true,
         configured: Boolean(getRedisConfig()),
@@ -66,11 +72,26 @@ export async function POST(request: Request) {
       ["HGETALL", ANALYTICS_PRODUCTS_KEY],
     ], { timeoutMs: 5000 });
   } catch {
+    result = null;
+  }
+
+  if (!result) {
+    const allEvents = await readFallbackAnalyticsEvents();
+    const events = allEvents.slice(offset, offset + limit);
     return NextResponse.json({
       ok: true,
       configured: Boolean(getRedisConfig()),
-      events: [],
-      error: "Redis unavailable",
+      fallback: true,
+      events,
+      pagination: {
+        offset,
+        limit,
+        loaded: events.length,
+        totalStored: allEvents.length,
+        hasMore: offset + events.length < allEvents.length,
+        nextOffset: offset + events.length,
+      },
+      summary: summarizeAnalyticsEvents(allEvents),
     });
   }
   const rawEvents = result?.[0]?.result || [];

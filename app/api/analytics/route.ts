@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { createHash } from "node:crypto";
+import { addFallbackAnalyticsEvent } from "../../../lib/analyticsFallbackStore";
 import { checkRateLimit, getRedisConfig, redisPipeline } from "../../../lib/security";
 
 export const runtime = "nodejs";
@@ -79,22 +80,24 @@ export async function POST(request: Request) {
     userAgent,
   };
 
+  const commands: unknown[][] = [
+    ["LPUSH", ANALYTICS_KEY, JSON.stringify(event)],
+    ["HINCRBY", ANALYTICS_TOTALS_KEY, "total", "1"],
+    ["HINCRBY", ANALYTICS_ACTIONS_KEY, type, "1"],
+  ];
+
+  if (type === "page_view") commands.push(["HINCRBY", ANALYTICS_TOTALS_KEY, "views", "1"]);
+  if (type === "buy_click") commands.push(["HINCRBY", ANALYTICS_TOTALS_KEY, "buys", "1"]);
+  if (type.includes("telegram")) commands.push(["HINCRBY", ANALYTICS_TOTALS_KEY, "telegram", "1"]);
+  if (product) commands.push(["HINCRBY", ANALYTICS_PRODUCTS_KEY, product, "1"]);
+
   try {
-    const commands: unknown[][] = [
-      ["LPUSH", ANALYTICS_KEY, JSON.stringify(event)],
-      ["HINCRBY", ANALYTICS_TOTALS_KEY, "total", "1"],
-      ["HINCRBY", ANALYTICS_ACTIONS_KEY, type, "1"],
-    ];
-
-    if (type === "page_view") commands.push(["HINCRBY", ANALYTICS_TOTALS_KEY, "views", "1"]);
-    if (type === "buy_click") commands.push(["HINCRBY", ANALYTICS_TOTALS_KEY, "buys", "1"]);
-    if (type.includes("telegram")) commands.push(["HINCRBY", ANALYTICS_TOTALS_KEY, "telegram", "1"]);
-    if (product) commands.push(["HINCRBY", ANALYTICS_PRODUCTS_KEY, product, "1"]);
-
-    await redisPipeline(commands);
+    const result = await redisPipeline(commands);
+    if (result) return NextResponse.json({ ok: true, stored: true, storage: "redis" });
   } catch {
-    return NextResponse.json({ ok: true, stored: false });
+    // Fall back below so analytics keeps working even while Redis/env is broken.
   }
 
-  return NextResponse.json({ ok: true, stored: Boolean(getRedisConfig()) });
+  await addFallbackAnalyticsEvent(event);
+  return NextResponse.json({ ok: true, stored: false, fallbackStored: true, configured: Boolean(getRedisConfig()) });
 }
