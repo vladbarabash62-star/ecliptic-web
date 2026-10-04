@@ -337,6 +337,19 @@ export const products: Product[] = [
     offers: [],
   },
   {
+    name: "Fortnite",
+    icon: "https://cdn2.unrealengine.com/fortnite-logo-black-1200x1200-9991c5e2dc44.png",
+    slug: "fortnite",
+    iconScale: 1.08,
+    offers: [
+      { type: "divider", title: "V-Bucks", description: "Пополнение Fortnite V-Bucks." },
+      { label: "1000 V-Bucks", priceRub: 0 },
+      { label: "2800 V-Bucks", priceRub: 0 },
+      { label: "5000 V-Bucks", priceRub: 0 },
+      { label: "13500 V-Bucks", priceRub: 0 },
+    ],
+  },
+  {
     name: "Minecraft",
     icon: "https://images.icon-icons.com/2699/PNG/512/minecraft_logo_icon_168974.png",
     slug: "minecraft",

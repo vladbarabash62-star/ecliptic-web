@@ -30,6 +30,6 @@ export async function getSiteSettings(options: { cached?: boolean } = {}) {
 export async function saveSiteSettings(nextSettings: SiteSettings) {
   const settings = normalizeSiteSettings(nextSettings);
 
-  await redisPipeline([["SET", SITE_SETTINGS_KEY, JSON.stringify(settings)]]);
+  await redisPipeline([["SET", SITE_SETTINGS_KEY, JSON.stringify(settings)]], { timeoutMs: 20_000 });
   return settings;
 }

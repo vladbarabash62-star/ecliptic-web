@@ -3,7 +3,7 @@ export type SiteSettings = {
 };
 
 export const defaultSiteSettings: SiteSettings = {
-  reviewsCountLabel: "400+",
+  reviewsCountLabel: "1300+",
 };
 
 function trimLimit(value: unknown, fallback: string, limit: number) {

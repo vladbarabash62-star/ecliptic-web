@@ -24,7 +24,7 @@ export async function POST(request: Request) {
       revalidatePath("/", "page");
       return NextResponse.json({ ok: true, saved: true, settings });
     } catch {
-      return NextResponse.json({ ok: false, saved: false, settings: body.settings, error: "Settings storage unavailable" }, { status: 503 });
+      return NextResponse.json({ ok: true, saved: false, settings: body.settings, warning: "Settings storage unavailable" });
     }
   }
 
