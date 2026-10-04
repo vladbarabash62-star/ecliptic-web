@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { getSiteSettings, saveSiteSettings, SITE_SETTINGS_CACHE_TAG } from "../../../../lib/siteSettings";
-import type { SiteSettings } from "../../../../lib/siteSettingsDefaults";
+import { defaultSiteSettings, type SiteSettings } from "../../../../lib/siteSettingsDefaults";
 import { validateAdminRequest } from "../../../../lib/security";
 
 export const runtime = "nodejs";
@@ -18,12 +18,16 @@ export async function POST(request: Request) {
   if (authError) return authError;
 
   if (body.settings) {
-    const settings = await saveSiteSettings(body.settings);
-    revalidateTag(SITE_SETTINGS_CACHE_TAG, "max");
-    revalidatePath("/", "page");
-    return NextResponse.json({ ok: true, saved: true, settings });
+    try {
+      const settings = await saveSiteSettings(body.settings);
+      revalidateTag(SITE_SETTINGS_CACHE_TAG, "max");
+      revalidatePath("/", "page");
+      return NextResponse.json({ ok: true, saved: true, settings });
+    } catch {
+      return NextResponse.json({ ok: false, saved: false, settings: body.settings, error: "Settings storage unavailable" }, { status: 503 });
+    }
   }
 
-  const settings = await getSiteSettings();
+  const settings = await getSiteSettings().catch(() => defaultSiteSettings);
   return NextResponse.json({ ok: true, saved: false, settings });
 }
