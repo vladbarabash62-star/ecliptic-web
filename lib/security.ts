@@ -170,11 +170,6 @@ export async function validateAdminRequest(request: Request, pin?: string) {
     return jsonError("Payload too large", 413);
   }
 
-  const rateLimit = await checkRateLimit("admin", 25, 60);
-  if (!rateLimit.allowed) {
-    return jsonError("Too many requests", 429);
-  }
-
   const secret = getAdminPathSecret();
   const cookieStore = await cookies();
   const headerList = await headers();
@@ -182,6 +177,11 @@ export async function validateAdminRequest(request: Request, pin?: string) {
   const expectedSession = getAdminSessionValue(getAdminSessionSecret(), headerList.get("user-agent") || "");
   if (safeEqual(adminSession, expectedSession)) {
     return null;
+  }
+
+  const rateLimit = await checkRateLimit("admin", 120, 60);
+  if (!rateLimit.allowed) {
+    return jsonError("Too many requests", 429);
   }
 
   const adminGate = cookieStore.get("ecliptic_admin_gate")?.value || "";
