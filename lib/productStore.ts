@@ -266,7 +266,33 @@ export async function getProducts(options: ProductReadOptions = {}) {
   const usedSlugs = new Set<string>();
   const usedBaseSlugs = new Set<string>();
   const baseBySlug = new Map(products.map((product) => [product.slug, product]));
-  const orderedProducts = getCanonicalOverrideEntries(overrides)
+  const overrideEntries = getCanonicalOverrideEntries(overrides);
+  const overrideByCanonicalSlug = new Map(
+    overrideEntries.map(([rawSlug, override]) => [canonicalProductSlug(rawSlug), override])
+  );
+  const orderedBaseProducts = products
+    .filter((product) => !hiddenBaseSlugs.has(product.slug))
+    .map((baseProduct) => {
+      const override = overrideByCanonicalSlug.get(baseProduct.slug);
+      usedSlugs.add(baseProduct.slug);
+      usedBaseSlugs.add(baseProduct.slug);
+
+      if (!override) return { ...baseProduct, baseSlug: baseProduct.slug };
+
+      const offers = shouldPreferCodeAuthoredOffers(storage, baseProduct.slug)
+        ? baseProduct.offers
+        : mergeOffersWithBaseDividers(baseProduct.offers, override.offers);
+
+      return {
+        ...baseProduct,
+        ...override,
+        baseSlug: baseProduct.slug,
+        offers,
+        slug: baseProduct.slug,
+      };
+    });
+
+  const customProducts = overrideEntries
     .map(([rawSlug, override]) => {
       const slug = canonicalProductSlug(rawSlug);
       if (!slug || usedSlugs.has(slug)) return null;
@@ -296,11 +322,8 @@ export async function getProducts(options: ProductReadOptions = {}) {
       };
     })
     .filter((product): product is Product => Boolean(product));
-  const missingBaseProducts = products
-    .filter((product) => !usedBaseSlugs.has(product.slug) && !hiddenBaseSlugs.has(product.slug))
-    .map((product) => ({ ...product, baseSlug: product.slug }));
 
-  return [...orderedProducts, ...missingBaseProducts];
+  return [...orderedBaseProducts, ...customProducts];
 }
 
 export async function getProductBySlug(slug: string, options: ProductReadOptions = {}) {

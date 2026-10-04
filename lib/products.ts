@@ -87,6 +87,138 @@ export const products: Product[] = [
     ]
   },
   {
+    "name": "Telegram Stars",
+    "icon": "https://lztcdn.com/files/6514f1e6-dab4-4d49-806a-3ff22d7793e5.webp",
+    "slug": "telegram-stars",
+    "iconScale": 1.1,
+    "offers": [
+      {
+        "label": "50 Telegram Stars",
+        "priceRub": 20
+      },
+      {
+        "label": "100 Telegram Stars",
+        "priceRub": 40
+      },
+      {
+        "label": "150 Telegram Stars",
+        "priceRub": 60
+      },
+      {
+        "label": "200 Telegram Stars",
+        "priceRub": 75
+      },
+      {
+        "label": "250 Telegram Stars",
+        "priceRub": 95
+      },
+      {
+        "label": "350 Telegram Stars",
+        "priceRub": 130
+      },
+      {
+        "label": "500 Telegram Stars",
+        "priceRub": 175
+      },
+      {
+        "label": "750 Telegram Stars",
+        "priceRub": 260
+      },
+      {
+        "label": "1000 Telegram Stars",
+        "priceRub": 345
+      },
+      {
+        "label": "1500 Telegram Stars",
+        "priceRub": 510
+      },
+      {
+        "label": "2500 Telegram Stars",
+        "priceRub": 845
+      }
+    ]
+  },
+  {
+    "name": "Telegram аккаунты",
+    "icon": "https://static.vecteezy.com/system/resources/previews/023/986/562/non_2x/telegram-logo-telegram-logo-transparent-telegram-icon-transparent-free-free-png.png",
+    "slug": "telegram-accounts",
+    "iconScale": 1.12,
+    "offers": [
+      {
+        "label": "Молдова",
+        "priceRub": 50
+      },
+      {
+        "label": "Украина",
+        "priceRub": 55
+      },
+      {
+        "label": "Беларусь",
+        "priceRub": 55
+      },
+      {
+        "label": "США",
+        "priceRub": 35
+      },
+      {
+        "label": "Вьетнам",
+        "priceRub": 30
+      },
+      {
+        "label": "Мьянма",
+        "priceRub": 30
+      },
+      {
+        "label": "Индия",
+        "priceRub": 30
+      },
+      {
+        "label": "Камерун",
+        "priceRub": 30
+      },
+      {
+        "label": "Непал",
+        "priceRub": 30
+      },
+      {
+        "label": "Йемен",
+        "priceRub": 30
+      },
+      {
+        "label": "Сомали",
+        "priceRub": 30
+      },
+      {
+        "label": "Эфиопия",
+        "priceRub": 30
+      },
+      {
+        "label": "Сенегал",
+        "priceRub": 30
+      },
+      {
+        "label": "Нигерия",
+        "priceRub": 30
+      },
+      {
+        "label": "Индонезия",
+        "priceRub": 30
+      },
+      {
+        "label": "Колумбия",
+        "priceRub": 30
+      },
+      {
+        "label": "Бангладеш",
+        "priceRub": 30
+      },
+      {
+        "label": "Великобритания",
+        "priceRub": 30
+      }
+    ]
+  },
+  {
     "name": "World of Tanks",
     "icon": "https://www.google.com/s2/favicons?sz=128&domain_url=https://worldoftanks.eu",
     "slug": "world-of-tanks",
@@ -662,106 +794,6 @@ export const products: Product[] = [
       {
         "label": "100 донат валюты",
         "priceRub": 30
-      }
-    ]
-  },
-  {
-    "name": "Telegram аккаунты",
-    "icon": "https://static.vecteezy.com/system/resources/previews/023/986/562/non_2x/telegram-logo-telegram-logo-transparent-telegram-icon-transparent-free-free-png.png",
-    "slug": "telegram-accounts",
-    "iconScale": 1.12,
-    "offers": [
-      {
-        "label": "Молдова",
-        "priceRub": 50
-      },
-      {
-        "label": "Украина",
-        "priceRub": 55
-      },
-      {
-        "label": "Беларусь",
-        "priceRub": 55
-      },
-      {
-        "label": "США",
-        "priceRub": 35
-      },
-      {
-        "label": "Вьетнам",
-        "priceRub": 30
-      },
-      {
-        "label": "Мьянма",
-        "priceRub": 30
-      },
-      {
-        "label": "Индия",
-        "priceRub": 30
-      },
-      {
-        "label": "Камерун",
-        "priceRub": 30
-      },
-      {
-        "label": "Непал",
-        "priceRub": 30
-      },
-      {
-        "label": "Йемен",
-        "priceRub": 30
-      },
-      {
-        "label": "Сомали",
-        "priceRub": 30
-      },
-      {
-        "label": "Эфиопия",
-        "priceRub": 30
-      },
-      {
-        "label": "Сенегал",
-        "priceRub": 30
-      },
-      {
-        "label": "Нигерия",
-        "priceRub": 30
-      },
-      {
-        "label": "Индонезия",
-        "priceRub": 30
-      },
-      {
-        "label": "Колумбия",
-        "priceRub": 30
-      },
-      {
-        "label": "Бангладеш",
-        "priceRub": 30
-      },
-      {
-        "label": "Великобритания",
-        "priceRub": 30
-      }
-    ]
-  },
-  {
-    "name": "Telegram Stars",
-    "icon": "https://lztcdn.com/files/6514f1e6-dab4-4d49-806a-3ff22d7793e5.webp",
-    "slug": "telegram-stars",
-    "iconScale": 1.1,
-    "offers": [
-      {
-        "label": "200 Telegram Stars",
-        "priceRub": 75
-      },
-      {
-        "label": "500 Telegram Stars",
-        "priceRub": 175
-      },
-      {
-        "label": "1000 Telegram Stars",
-        "priceRub": 345
       }
     ]
   },
