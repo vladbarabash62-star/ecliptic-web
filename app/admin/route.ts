@@ -1276,7 +1276,20 @@ const ADMIN_HTML = `<!doctype html>
       showNotice('Загружаю данные...', false);
       try {
         var result = await Promise.allSettled([postJson('/api/admin/products', {}), postJson('/api/admin/settings', {})]);
-        if (result[0].status === 'fulfilled') products = result[0].value.products || [];
+        var productsLoadedFromPublicFallback = false;
+        if (result[0].status === 'fulfilled') {
+          products = result[0].value.products || [];
+        } else {
+          var publicProductsResponse = await fetch('/api/products?adminFallback=' + Date.now(), {
+            cache: 'no-store',
+            headers: { 'Cache-Control': 'no-store' },
+          });
+          var publicProductsData = await publicProductsResponse.json().catch(function() { return {}; });
+          if (publicProductsResponse.ok && Array.isArray(publicProductsData.products)) {
+            products = publicProductsData.products;
+            productsLoadedFromPublicFallback = true;
+          }
+        }
         savedProductsSnapshot = cloneProducts(products);
         if (result[1].status === 'fulfilled') settings = result[1].value.settings || settings;
         var failed = result.filter(function(item) { return item.status === 'rejected'; }).length;
@@ -1286,7 +1299,7 @@ const ADMIN_HTML = `<!doctype html>
         renderProductEditor();
         markProductsClean();
         if (failed) {
-          showNotice('Товары или настройки не загрузились. Нажмите «Обновить» или войдите заново.', true);
+          showNotice(productsLoadedFromPublicFallback ? 'Товары показаны с сайта. Войдите заново, если сохранение не работает.' : 'Товары или настройки не загрузились. Нажмите «Обновить» или войдите заново.', true);
         } else {
           showNotice('Товары загружены. Загружаю аналитику...', false);
           loadAnalytics();
