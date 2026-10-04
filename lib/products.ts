@@ -28,449 +28,1039 @@ export type Product = {
 
 export const products: Product[] = [
   {
-    name: "Steam",
-    icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Steam_icon_logo.svg/960px-Steam_icon_logo.svg.png",
-    slug: "steam",
-    offers: [
-      { label: "1$", priceRub: 20 },
-      { label: "5$", priceRub: 100 },
-      { label: "10$", priceRub: 200 },
-      { label: "20$", priceRub: 400 },
-      { label: "50$", priceRub: 925 },
-      { label: "100$", priceRub: 1850 },
-    ],
+    "name": "Steam",
+    "icon": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Steam_icon_logo.svg/960px-Steam_icon_logo.svg.png",
+    "slug": "steam",
+    "offers": [
+      {
+        "label": "1$",
+        "priceRub": 20
+      },
+      {
+        "label": "5$",
+        "priceRub": 100
+      },
+      {
+        "label": "10$",
+        "priceRub": 200
+      },
+      {
+        "label": "20$",
+        "priceRub": 400
+      },
+      {
+        "label": "50$",
+        "priceRub": 925
+      },
+      {
+        "label": "100$",
+        "priceRub": 1850
+      }
+    ]
   },
   {
-    name: "Telegram Premium",
-    icon: "https://smmlaboratory.com/image/data/3/telegrammpremium.svg",
-    slug: "telegram-premium",
-    iconScale: 1.14,
-    offers: [
-      { label: "1 месяц (со входом)", priceRub: 75 },
-      { label: "1 месяц (без входа)", priceRub: 115 },
-      { label: "3 месяца (без входа)", priceRub: 220 },
-      { label: "6 месяцев (без входа)", priceRub: 320 },
-      { label: "12 месяцев (без входа)", priceRub: 510 },
-    ],
+    "name": "Telegram Premium",
+    "icon": "https://smmlaboratory.com/image/data/3/telegrammpremium.svg",
+    "slug": "telegram-premium",
+    "iconScale": 1.14,
+    "offers": [
+      {
+        "label": "1 месяц (со входом)",
+        "priceRub": 75
+      },
+      {
+        "label": "1 месяц (без входа)",
+        "priceRub": 115
+      },
+      {
+        "label": "3 месяца (без входа)",
+        "priceRub": 220
+      },
+      {
+        "label": "6 месяцев (без входа)",
+        "priceRub": 320
+      },
+      {
+        "label": "12 месяцев (без входа)",
+        "priceRub": 510
+      }
+    ]
   },
   {
-    name: "World of Tanks",
-    icon: "https://www.google.com/s2/favicons?sz=128&domain_url=https://worldoftanks.eu",
-    slug: "world-of-tanks",
-    iconScale: 1.24,
-    offers: [
-      { type: "divider", title: "Золото", description: "Пополнение золота World of Tanks." },
-      { label: "1000 золота", priceRub: 55 },
-      { label: "3000 золота", priceRub: 160 },
-      { label: "5000 золота", priceRub: 265 },
-      { label: "12500 золота", priceRub: 665 },
-      { type: "divider", title: "Подписка", description: "Отдельные варианты подписки." },
-      { label: "Подписка", priceRub: 125 },
-    ],
+    "name": "World of Tanks",
+    "icon": "https://www.google.com/s2/favicons?sz=128&domain_url=https://worldoftanks.eu",
+    "slug": "world-of-tanks",
+    "iconScale": 1.24,
+    "offers": [
+      {
+        "type": "divider",
+        "title": "Золото",
+        "description": "Пополнение золота World of Tanks."
+      },
+      {
+        "label": "1000 золота",
+        "priceRub": 55
+      },
+      {
+        "label": "3000 золота",
+        "priceRub": 160
+      },
+      {
+        "label": "5000 золота",
+        "priceRub": 265
+      },
+      {
+        "label": "12500 золота",
+        "priceRub": 665
+      },
+      {
+        "type": "divider",
+        "title": "Подписка",
+        "description": "Отдельные варианты подписки."
+      },
+      {
+        "label": "Подписка",
+        "priceRub": 125
+      }
+    ]
   },
   {
-    name: "ChatGPT Plus",
-    icon: "https://www.google.com/s2/favicons?sz=128&domain_url=https://chatgpt.com",
-    slug: "chatgpt-plus",
-    iconScale: 1.24,
-    offers: [{ label: "1 месяц", priceRub: 55 }],
+    "name": "ChatGPT Plus",
+    "icon": "https://www.google.com/s2/favicons?sz=128&domain_url=https://chatgpt.com",
+    "slug": "chatgpt-plus",
+    "iconScale": 1.24,
+    "offers": [
+      {
+        "label": "1 месяц",
+        "priceRub": 55
+      }
+    ]
   },
   {
-    name: "Brawl Stars",
-    icon: "https://static.vecteezy.com/system/resources/thumbnails/027/127/558/small_2x/brawl-stars-logo-brawl-stars-icon-transparent-free-png.png",
-    slug: "brawl-stars",
-    iconScale: 1.1,
-    offers: [
-      { type: "divider", title: "Пассы", description: "Brawl Pass, Brawl Pass Plus и Pro Pass." },
-      { label: "Brawl Pass", priceRub: 195 },
-      { label: "Brawl Pass Plus", priceRub: 285 },
-      { label: "Pro Pass", priceRub: 545 },
-      { type: "divider", title: "Гемы", description: "Пакеты гемов Brawl Stars." },
-      { label: "30 гемов", priceRub: 45 },
-      { label: "80 гемов", priceRub: 105 },
-      { label: "170 гемов", priceRub: 185 },
-    ],
+    "name": "Brawl Stars",
+    "icon": "https://static.vecteezy.com/system/resources/thumbnails/027/127/558/small_2x/brawl-stars-logo-brawl-stars-icon-transparent-free-png.png",
+    "slug": "brawl-stars",
+    "iconScale": 1.1,
+    "offers": [
+      {
+        "type": "divider",
+        "title": "Пассы",
+        "description": "Brawl Pass, Brawl Pass Plus и Pro Pass."
+      },
+      {
+        "label": "Brawl Pass",
+        "priceRub": 195
+      },
+      {
+        "label": "Brawl Pass Plus",
+        "priceRub": 285
+      },
+      {
+        "label": "Pro Pass",
+        "priceRub": 545
+      },
+      {
+        "type": "divider",
+        "title": "Гемы",
+        "description": "Пакеты гемов Brawl Stars."
+      },
+      {
+        "label": "30 гемов",
+        "priceRub": 45
+      },
+      {
+        "label": "80 гемов",
+        "priceRub": 105
+      },
+      {
+        "label": "170 гемов",
+        "priceRub": 185
+      }
+    ]
   },
   {
-    name: "Roblox",
-    icon: "https://media.tenor.com/HO1YAH0_iMcAAAAj/roblox-logo.gif",
-    slug: "roblox",
-    iconScale: 1.12,
-    offers: [
-      { type: "divider", title: "Robux", description: "Пополнение Robux." },
-      { label: "40 Robux", priceRub: 20 },
-      { label: "80 Robux", priceRub: 40 },
-      { label: "120 Robux", priceRub: 50 },
-      { label: "200 Robux", priceRub: 80 },
-      { label: "400 Robux", priceRub: 125 },
-      { label: "800 Robux", priceRub: 210 },
-      { label: "1200 Robux", priceRub: 295 },
-      { label: "1700 Robux", priceRub: 410 },
-      { label: "4500 Robux", priceRub: 1055 },
-      { type: "divider", title: "Roblox Premium", description: "Премиум-подписка Roblox отдельно от Robux." },
-      { label: "Roblox Premium 1 месяц + 1000 Robux", priceRub: 245 },
-    ],
+    "name": "Roblox",
+    "icon": "https://media.tenor.com/HO1YAH0_iMcAAAAj/roblox-logo.gif",
+    "slug": "roblox",
+    "iconScale": 1.12,
+    "offers": [
+      {
+        "type": "divider",
+        "title": "Robux",
+        "description": "Пополнение Robux."
+      },
+      {
+        "label": "40 Robux",
+        "priceRub": 20
+      },
+      {
+        "label": "80 Robux",
+        "priceRub": 40
+      },
+      {
+        "label": "120 Robux",
+        "priceRub": 50
+      },
+      {
+        "label": "200 Robux",
+        "priceRub": 80
+      },
+      {
+        "label": "400 Robux",
+        "priceRub": 125
+      },
+      {
+        "label": "800 Robux",
+        "priceRub": 210
+      },
+      {
+        "label": "1200 Robux",
+        "priceRub": 295
+      },
+      {
+        "label": "1700 Robux",
+        "priceRub": 410
+      },
+      {
+        "label": "4500 Robux",
+        "priceRub": 1055
+      },
+      {
+        "type": "divider",
+        "title": "Roblox Premium",
+        "description": "Премиум-подписка Roblox отдельно от Robux."
+      },
+      {
+        "label": "Roblox Premium 1 месяц + 1000 Robux",
+        "priceRub": 245
+      }
+    ]
   },
   {
-    name: "Standoff 2",
-    icon: "https://standof.ru/wp-content/uploads/2023/07/favicon.png",
-    slug: "standoff-2",
-    iconScale: 1.18,
-    offers: [
-      { label: "100 голды", priceRub: 35 },
-      { label: "500 голды", priceRub: 120 },
-      { label: "1000 голды", priceRub: 215 },
-      { label: "1500 голды", priceRub: 320 },
-      { label: "2000 голды", priceRub: 355 },
-      { label: "3000 голды", priceRub: 455 },
-    ],
+    "name": "Standoff 2",
+    "icon": "https://standof.ru/wp-content/uploads/2023/07/favicon.png",
+    "slug": "standoff-2",
+    "iconScale": 1.18,
+    "offers": [
+      {
+        "label": "100 голды",
+        "priceRub": 35
+      },
+      {
+        "label": "500 голды",
+        "priceRub": 120
+      },
+      {
+        "label": "1000 голды",
+        "priceRub": 215
+      },
+      {
+        "label": "1500 голды",
+        "priceRub": 320
+      },
+      {
+        "label": "2000 голды",
+        "priceRub": 355
+      },
+      {
+        "label": "3000 голды",
+        "priceRub": 455
+      }
+    ]
   },
   {
-    name: "Тик ток",
-    icon: "https://cdn-icons-png.freepik.com/256/3621/3621450.png?semt=ais_white_label",
-    slug: "tiktok",
-    iconScale: 1.1,
-    offers: [
-      { label: "30 coins", priceRub: 20 },
-      { label: "100 coins", priceRub: 50 },
-      { label: "200 coins", priceRub: 85 },
-      { label: "300 coins", priceRub: 105 },
-    ],
+    "name": "Тик ток",
+    "icon": "https://cdn-icons-png.freepik.com/256/3621/3621450.png?semt=ais_white_label",
+    "slug": "tiktok",
+    "iconScale": 1.1,
+    "offers": [
+      {
+        "label": "30 coins",
+        "priceRub": 20
+      },
+      {
+        "label": "100 coins",
+        "priceRub": 50
+      },
+      {
+        "label": "200 coins",
+        "priceRub": 85
+      },
+      {
+        "label": "300 coins",
+        "priceRub": 105
+      }
+    ]
   },
   {
-    name: "YouTube Premium",
-    icon: "https://upload.wikimedia.org/wikipedia/commons/e/ef/Youtube_logo.png",
-    slug: "youtube-premium",
-    offers: [{ label: "1 месяц", priceRub: 75 }],
+    "name": "YouTube Premium",
+    "icon": "https://upload.wikimedia.org/wikipedia/commons/e/ef/Youtube_logo.png",
+    "slug": "youtube-premium",
+    "offers": [
+      {
+        "label": "1 месяц",
+        "priceRub": 75
+      }
+    ]
   },
   {
-    name: "Spotify Premium",
-    icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Spotify_logo_without_text.svg/3840px-Spotify_logo_without_text.svg.png",
-    slug: "spotify-premium",
-    offers: [
-      { type: "divider", title: "Individual Premium", description: "Индивидуальная подписка Spotify Premium." },
-      { label: "1 месяц", priceRub: 65 },
-      { label: "3 месяца", priceRub: 180 },
-      { label: "6 месяцев", priceRub: 295 },
-      { label: "12 месяцев", priceRub: 475 },
-      { type: "divider", title: "Duo Premium", description: "Семейный Duo-тариф можно добавить отдельными вариантами в админке." },
-    ],
+    "name": "Spotify Premium",
+    "icon": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Spotify_logo_without_text.svg/3840px-Spotify_logo_without_text.svg.png",
+    "slug": "spotify-premium",
+    "offers": [
+      {
+        "type": "divider",
+        "title": "Individual Premium",
+        "description": "Индивидуальная подписка Spotify Premium."
+      },
+      {
+        "label": "1 месяц",
+        "priceRub": 65
+      },
+      {
+        "label": "3 месяца",
+        "priceRub": 180
+      },
+      {
+        "label": "6 месяцев",
+        "priceRub": 295
+      },
+      {
+        "label": "12 месяцев",
+        "priceRub": 475
+      },
+      {
+        "type": "divider",
+        "title": "Duo Premium",
+        "description": "Семейный Duo-тариф можно добавить отдельными вариантами в админке."
+      }
+    ]
   },
   {
-    name: "PUBG Mobile",
-    icon: "https://pnghdpro.com/wp-content/themes/pnghdpro/download/social-media-and-brands/pubg-mobile-logo.png",
-    slug: "pubg-mobile",
-    iconScale: 1.12,
-    offers: [
-      { type: "divider", title: "UC", description: "Пополнение UC для PUBG Mobile." },
-      { label: "60 UC", priceRub: 30 },
-      { label: "325 UC", priceRub: 100 },
-      { label: "660 UC", priceRub: 190 },
-      { label: "1320 UC", priceRub: 365 },
-      { label: "1800 UC", priceRub: 450 },
-      { type: "divider", title: "Premium", description: "Premium и Premium+ отдельно от UC." },
-      { label: "Premium 1 месяц", priceRub: 35 },
-      { label: "Premium 3 месяца", priceRub: 75 },
-      { label: "Premium+ 1 месяц", priceRub: 235 },
-      { label: "Premium+ 3 месяца", priceRub: 615 },
-      { type: "divider", title: "PASS", description: "Elite PASS и Elite PASS PLUS." },
-      { label: "Elite PASS (LV1-50)", priceRub: 115 },
-      { label: "Elite PASS (LV1-100)", priceRub: 225 },
-      { label: "Elite PASS PLUS (LV1-100)", priceRub: 535 },
-    ],
+    "name": "PUBG Mobile",
+    "icon": "https://pnghdpro.com/wp-content/themes/pnghdpro/download/social-media-and-brands/pubg-mobile-logo.png",
+    "slug": "pubg-mobile",
+    "iconScale": 1.12,
+    "offers": [
+      {
+        "type": "divider",
+        "title": "UC",
+        "description": "Пополнение UC для PUBG Mobile."
+      },
+      {
+        "label": "60 UC",
+        "priceRub": 30
+      },
+      {
+        "label": "325 UC",
+        "priceRub": 100
+      },
+      {
+        "label": "660 UC",
+        "priceRub": 190
+      },
+      {
+        "label": "1320 UC",
+        "priceRub": 365
+      },
+      {
+        "label": "1800 UC",
+        "priceRub": 450
+      },
+      {
+        "type": "divider",
+        "title": "Premium",
+        "description": "Premium и Premium+ отдельно от UC."
+      },
+      {
+        "label": "Premium 1 месяц",
+        "priceRub": 35
+      },
+      {
+        "label": "Premium 3 месяца",
+        "priceRub": 75
+      },
+      {
+        "label": "Premium+ 1 месяц",
+        "priceRub": 235
+      },
+      {
+        "label": "Premium+ 3 месяца",
+        "priceRub": 615
+      },
+      {
+        "type": "divider",
+        "title": "PASS",
+        "description": "Elite PASS и Elite PASS PLUS."
+      },
+      {
+        "label": "Elite PASS (LV1-50)",
+        "priceRub": 115
+      },
+      {
+        "label": "Elite PASS (LV1-100)",
+        "priceRub": 225
+      },
+      {
+        "label": "Elite PASS PLUS (LV1-100)",
+        "priceRub": 535
+      }
+    ]
   },
   {
-    name: "Discord Nitro",
-    icon: "https://www.google.com/s2/favicons?sz=128&domain_url=https://discord.com",
-    slug: "discord-nitro",
-    iconScale: 1.24,
-    offers: [
-      { label: "Nitro Basic 1 месяц", priceRub: 85 },
-      { label: "Nitro Full 1 месяц", priceRub: 145 },
-    ],
+    "name": "Discord Nitro",
+    "icon": "https://www.google.com/s2/favicons?sz=128&domain_url=https://discord.com",
+    "slug": "discord-nitro",
+    "iconScale": 1.24,
+    "offers": [
+      {
+        "label": "Nitro Basic 1 месяц",
+        "priceRub": 85
+      },
+      {
+        "label": "Nitro Full 1 месяц",
+        "priceRub": 145
+      }
+    ]
   },
   {
-    name: "Mobile Legends",
-    icon: "https://www.freepnglogos.com/uploads/logo-mobile-legend-png/logo-mobile-legend-nasce-team-psg-rrq-paris-saint-germain-sbarca-20.png",
-    slug: "mobile-legends",
-    offers: [
-      { type: "divider", title: "Алмазы", description: "Пакеты алмазов Mobile Legends." },
-      { label: "50 + 50 алмазов", priceRub: 25 },
-      { label: "150 + 150 алмазов", priceRub: 70 },
-      { label: "250 + 250 алмазов", priceRub: 95 },
-      { label: "500 + 500 алмазов", priceRub: 180 },
-      { label: "33 алмаза", priceRub: 15 },
-      { label: "86 алмазов", priceRub: 25 },
-      { label: "172 алмаза", priceRub: 65 },
-      { label: "275 алмазов", priceRub: 95 },
-      { label: "565 алмазов", priceRub: 175 },
-      { type: "divider", title: "Пропуски", description: "Пропуски Mobile Legends отдельно от алмазов." },
-      { label: "Алмазный пропуск 7 дней", priceRub: 55 },
-      { label: "Элитный пропуск 7 дней", priceRub: 30 },
-      { label: "Эпический пропуск 30 дней", priceRub: 115 },
-    ],
+    "name": "Mobile Legends",
+    "icon": "https://www.freepnglogos.com/uploads/logo-mobile-legend-png/logo-mobile-legend-nasce-team-psg-rrq-paris-saint-germain-sbarca-20.png",
+    "slug": "mobile-legends",
+    "offers": [
+      {
+        "type": "divider",
+        "title": "Алмазы",
+        "description": "Пакеты алмазов Mobile Legends."
+      },
+      {
+        "label": "50 + 50 алмазов",
+        "priceRub": 25
+      },
+      {
+        "label": "150 + 150 алмазов",
+        "priceRub": 70
+      },
+      {
+        "label": "250 + 250 алмазов",
+        "priceRub": 95
+      },
+      {
+        "label": "500 + 500 алмазов",
+        "priceRub": 180
+      },
+      {
+        "label": "33 алмаза",
+        "priceRub": 15
+      },
+      {
+        "label": "86 алмазов",
+        "priceRub": 25
+      },
+      {
+        "label": "172 алмаза",
+        "priceRub": 65
+      },
+      {
+        "label": "275 алмазов",
+        "priceRub": 95
+      },
+      {
+        "label": "565 алмазов",
+        "priceRub": 175
+      },
+      {
+        "type": "divider",
+        "title": "Пропуски",
+        "description": "Пропуски Mobile Legends отдельно от алмазов."
+      },
+      {
+        "label": "Алмазный пропуск 7 дней",
+        "priceRub": 55
+      },
+      {
+        "label": "Элитный пропуск 7 дней",
+        "priceRub": 30
+      },
+      {
+        "label": "Эпический пропуск 30 дней",
+        "priceRub": 115
+      }
+    ]
   },
   {
-    name: "Clash of Clans",
-    icon: "https://www.google.com/s2/favicons?sz=128&domain_url=https://supercell.com",
-    slug: "clash-of-clans",
-    iconScale: 1.24,
-    offers: [
-      { type: "divider", title: "Гемы", description: "Пакеты гемов Clash of Clans." },
-      { label: "80 гемов", priceRub: 35 },
-      { label: "160 гемов", priceRub: 55 },
-      { label: "240 гемов", priceRub: 75 },
-      { type: "divider", title: "Оформление", description: "Оформление отдельно от гемов." },
-      { label: "Оформление", priceRub: 195 },
-    ],
+    "name": "Clash of Clans",
+    "icon": "https://www.google.com/s2/favicons?sz=128&domain_url=https://supercell.com",
+    "slug": "clash-of-clans",
+    "iconScale": 1.24,
+    "offers": [
+      {
+        "type": "divider",
+        "title": "Гемы",
+        "description": "Пакеты гемов Clash of Clans."
+      },
+      {
+        "label": "80 гемов",
+        "priceRub": 35
+      },
+      {
+        "label": "160 гемов",
+        "priceRub": 55
+      },
+      {
+        "label": "240 гемов",
+        "priceRub": 75
+      },
+      {
+        "type": "divider",
+        "title": "Оформление",
+        "description": "Оформление отдельно от гемов."
+      },
+      {
+        "label": "Оформление",
+        "priceRub": 195
+      }
+    ]
   },
   {
-    name: "Clash Royale",
-    icon: "https://www.pngplay.com/wp-content/uploads/10/Clash-Royale-Logo-PNG-HD-Photos.png",
-    slug: "clash-royale",
-    offers: [
-      { type: "divider", title: "Пасс", description: "Pass Royale отдельно от гемов." },
-      { label: "Pass Royale", priceRub: 225 },
-      { type: "divider", title: "Гемы", description: "Пакеты гемов Clash Royale." },
-      { label: "80 гемов", priceRub: 25 },
-      { label: "500 гемов", priceRub: 105 },
-      { label: "1200 гемов", priceRub: 185 },
-    ],
+    "name": "Clash Royale",
+    "icon": "https://www.pngplay.com/wp-content/uploads/10/Clash-Royale-Logo-PNG-HD-Photos.png",
+    "slug": "clash-royale",
+    "offers": [
+      {
+        "type": "divider",
+        "title": "Пасс",
+        "description": "Pass Royale отдельно от гемов."
+      },
+      {
+        "label": "Pass Royale",
+        "priceRub": 225
+      },
+      {
+        "type": "divider",
+        "title": "Гемы",
+        "description": "Пакеты гемов Clash Royale."
+      },
+      {
+        "label": "80 гемов",
+        "priceRub": 25
+      },
+      {
+        "label": "500 гемов",
+        "priceRub": 105
+      },
+      {
+        "label": "1200 гемов",
+        "priceRub": 185
+      }
+    ]
   },
   {
-    name: "Free Fire",
-    icon: "https://images.seeklogo.com/logo-png/50/2/free-fire-logo-png_seeklogo-500424.png",
-    slug: "free-fire",
-    iconScale: 1.12,
-    offers: [
-      { label: "110 алмазов", priceRub: 20 },
-      { label: "341 алмаз", priceRub: 65 },
-      { label: "520 алмазов", priceRub: 95 },
-      { label: "1160 алмазов", priceRub: 185 },
-      { label: "2398 алмазов", priceRub: 355 },
-      { label: "6160 алмазов", priceRub: 865 },
-    ],
+    "name": "Free Fire",
+    "icon": "https://images.seeklogo.com/logo-png/50/2/free-fire-logo-png_seeklogo-500424.png",
+    "slug": "free-fire",
+    "iconScale": 1.12,
+    "offers": [
+      {
+        "label": "110 алмазов",
+        "priceRub": 20
+      },
+      {
+        "label": "341 алмаз",
+        "priceRub": 65
+      },
+      {
+        "label": "520 алмазов",
+        "priceRub": 95
+      },
+      {
+        "label": "1160 алмазов",
+        "priceRub": 185
+      },
+      {
+        "label": "2398 алмазов",
+        "priceRub": 355
+      },
+      {
+        "label": "6160 алмазов",
+        "priceRub": 865
+      }
+    ]
   },
   {
-    name: "GTA 5 RP / Majestic RP",
-    icon: "https://gta5rp.com/_next/image?url=%2Fimages%2Flogo%2Fmain.png&w=1920&q=100",
-    slug: "gta-5-rp-majestic-rp",
-    offers: [
-      { type: "divider", title: "Донат валюта", description: "Пополнение валюты для RP-проектов." },
-      { label: "10000$", priceRub: 30 },
-      { label: "100 DP", priceRub: 30 },
-      { label: "20000$", priceRub: 30 },
-      { label: "100 MC", priceRub: 30 },
-    ],
+    "name": "GTA 5 RP / Majestic RP",
+    "icon": "https://gta5rp.com/_next/image?url=%2Fimages%2Flogo%2Fmain.png&w=1920&q=100",
+    "slug": "gta-5-rp-majestic-rp",
+    "offers": [
+      {
+        "type": "divider",
+        "title": "Донат валюта",
+        "description": "Пополнение валюты для RP-проектов."
+      },
+      {
+        "label": "10000$",
+        "priceRub": 30
+      },
+      {
+        "label": "100 DP",
+        "priceRub": 30
+      },
+      {
+        "label": "20000$",
+        "priceRub": 30
+      },
+      {
+        "label": "100 MC",
+        "priceRub": 30
+      }
+    ]
   },
   {
-    name: "Radmir RP",
-    icon: "https://www.google.com/s2/favicons?sz=128&domain_url=https://radmir.online",
-    slug: "radmir-rp",
-    iconScale: 1.24,
-    offers: [
-      { type: "divider", title: "Донат валюта", description: "Пополнение донат валюты Radmir RP." },
-      { label: "100 донат валюты", priceRub: 30 },
-    ],
+    "name": "Radmir RP",
+    "icon": "https://www.google.com/s2/favicons?sz=128&domain_url=https://radmir.online",
+    "slug": "radmir-rp",
+    "iconScale": 1.24,
+    "offers": [
+      {
+        "type": "divider",
+        "title": "Донат валюта",
+        "description": "Пополнение донат валюты Radmir RP."
+      },
+      {
+        "label": "100 донат валюты",
+        "priceRub": 30
+      }
+    ]
   },
   {
-    name: "Amazing RP",
-    icon: "https://www.google.com/s2/favicons?sz=128&domain_url=https://amazing-rp.ru",
-    slug: "amazing-rp",
-    iconScale: 1.24,
-    offers: [
-      { type: "divider", title: "Донат валюта", description: "Пополнение донат валюты Amazing RP." },
-      { label: "100 донат валюты", priceRub: 30 },
-    ],
+    "name": "Amazing RP",
+    "icon": "https://www.google.com/s2/favicons?sz=128&domain_url=https://amazing-rp.ru",
+    "slug": "amazing-rp",
+    "iconScale": 1.24,
+    "offers": [
+      {
+        "type": "divider",
+        "title": "Донат валюта",
+        "description": "Пополнение донат валюты Amazing RP."
+      },
+      {
+        "label": "100 донат валюты",
+        "priceRub": 30
+      }
+    ]
   },
   {
-    name: "Black Russia",
-    icon: "https://cdn140.picsart.com/327485001024211.png",
-    slug: "black-russia",
-    offers: [
-      { type: "divider", title: "Донат валюта", description: "Пополнение донат валюты Black Russia." },
-      { label: "100 донат валюты", priceRub: 30 },
-    ],
+    "name": "Black Russia",
+    "icon": "https://cdn140.picsart.com/327485001024211.png",
+    "slug": "black-russia",
+    "offers": [
+      {
+        "type": "divider",
+        "title": "Донат валюта",
+        "description": "Пополнение донат валюты Black Russia."
+      },
+      {
+        "label": "100 донат валюты",
+        "priceRub": 30
+      }
+    ]
   },
   {
-    name: "Telegram аккаунты",
-    icon: "https://static.vecteezy.com/system/resources/previews/023/986/562/non_2x/telegram-logo-telegram-logo-transparent-telegram-icon-transparent-free-free-png.png",
-    slug: "telegram-accounts",
-    iconScale: 1.12,
-    offers: [
-      { label: "Молдова", priceRub: 50 },
-      { label: "Украина", priceRub: 55 },
-      { label: "Беларусь", priceRub: 55 },
-      { label: "США", priceRub: 35 },
-      { label: "Вьетнам", priceRub: 30 },
-      { label: "Мьянма", priceRub: 30 },
-      { label: "Индия", priceRub: 30 },
-      { label: "Камерун", priceRub: 30 },
-      { label: "Непал", priceRub: 30 },
-      { label: "Йемен", priceRub: 30 },
-      { label: "Сомали", priceRub: 30 },
-      { label: "Эфиопия", priceRub: 30 },
-      { label: "Сенегал", priceRub: 30 },
-      { label: "Нигерия", priceRub: 30 },
-      { label: "Индонезия", priceRub: 30 },
-      { label: "Колумбия", priceRub: 30 },
-      { label: "Бангладеш", priceRub: 30 },
-      { label: "Великобритания", priceRub: 30 },
-    ],
+    "name": "Telegram аккаунты",
+    "icon": "https://static.vecteezy.com/system/resources/previews/023/986/562/non_2x/telegram-logo-telegram-logo-transparent-telegram-icon-transparent-free-free-png.png",
+    "slug": "telegram-accounts",
+    "iconScale": 1.12,
+    "offers": [
+      {
+        "label": "Молдова",
+        "priceRub": 50
+      },
+      {
+        "label": "Украина",
+        "priceRub": 55
+      },
+      {
+        "label": "Беларусь",
+        "priceRub": 55
+      },
+      {
+        "label": "США",
+        "priceRub": 35
+      },
+      {
+        "label": "Вьетнам",
+        "priceRub": 30
+      },
+      {
+        "label": "Мьянма",
+        "priceRub": 30
+      },
+      {
+        "label": "Индия",
+        "priceRub": 30
+      },
+      {
+        "label": "Камерун",
+        "priceRub": 30
+      },
+      {
+        "label": "Непал",
+        "priceRub": 30
+      },
+      {
+        "label": "Йемен",
+        "priceRub": 30
+      },
+      {
+        "label": "Сомали",
+        "priceRub": 30
+      },
+      {
+        "label": "Эфиопия",
+        "priceRub": 30
+      },
+      {
+        "label": "Сенегал",
+        "priceRub": 30
+      },
+      {
+        "label": "Нигерия",
+        "priceRub": 30
+      },
+      {
+        "label": "Индонезия",
+        "priceRub": 30
+      },
+      {
+        "label": "Колумбия",
+        "priceRub": 30
+      },
+      {
+        "label": "Бангладеш",
+        "priceRub": 30
+      },
+      {
+        "label": "Великобритания",
+        "priceRub": 30
+      }
+    ]
   },
   {
-    name: "Telegram Stars",
-    icon: "https://lztcdn.com/files/6514f1e6-dab4-4d49-806a-3ff22d7793e5.webp",
-    slug: "telegram-stars",
-    iconScale: 1.1,
-    offers: [
-      { label: "200 Telegram Stars", priceRub: 75 },
-      { label: "500 Telegram Stars", priceRub: 175 },
-      { label: "1000 Telegram Stars", priceRub: 345 },
-    ],
+    "name": "Telegram Stars",
+    "icon": "https://lztcdn.com/files/6514f1e6-dab4-4d49-806a-3ff22d7793e5.webp",
+    "slug": "telegram-stars",
+    "iconScale": 1.1,
+    "offers": [
+      {
+        "label": "200 Telegram Stars",
+        "priceRub": 75
+      },
+      {
+        "label": "500 Telegram Stars",
+        "priceRub": 175
+      },
+      {
+        "label": "1000 Telegram Stars",
+        "priceRub": 345
+      }
+    ]
   },
   {
-    name: "Epic Games пополнение",
-    icon: "https://cms-assets.unrealengine.com/AjTAN1C8SLWRn7fg4wnzlz/cmd6p7ipv3hl707ohjnyhwki2",
-    slug: "epic-games-topup",
-    iconScale: 1.08,
-    offers: [],
+    "name": "Epic Games пополнение",
+    "icon": "https://cms-assets.unrealengine.com/AjTAN1C8SLWRn7fg4wnzlz/cmd6p7ipv3hl707ohjnyhwki2",
+    "slug": "epic-games-topup",
+    "iconScale": 1.08,
+    "offers": []
   },
   {
-    name: "Fortnite",
-    icon: "https://cdn2.unrealengine.com/fortnite-logo-black-1200x1200-9991c5e2dc44.png",
-    slug: "fortnite",
-    iconScale: 1.08,
-    offers: [
-      { type: "divider", title: "V-Bucks", description: "Пополнение Fortnite V-Bucks." },
-      { label: "1000 V-Bucks", priceRub: 0 },
-      { label: "2800 V-Bucks", priceRub: 0 },
-      { label: "5000 V-Bucks", priceRub: 0 },
-      { label: "13500 V-Bucks", priceRub: 0 },
-    ],
+    "name": "Fortnite",
+    "icon": "https://cdn2.unrealengine.com/fortnite-logo-black-1200x1200-9991c5e2dc44.png",
+    "slug": "fortnite",
+    "iconScale": 1.08,
+    "offers": [
+      {
+        "type": "divider",
+        "title": "V-Bucks",
+        "description": "Пополнение Fortnite V-Bucks."
+      },
+      {
+        "label": "1000 V-Bucks",
+        "priceRub": 0
+      },
+      {
+        "label": "2800 V-Bucks",
+        "priceRub": 0
+      },
+      {
+        "label": "5000 V-Bucks",
+        "priceRub": 0
+      },
+      {
+        "label": "13500 V-Bucks",
+        "priceRub": 0
+      }
+    ]
   },
   {
-    name: "Minecraft",
-    icon: "https://images.icon-icons.com/2699/PNG/512/minecraft_logo_icon_168974.png",
-    slug: "minecraft",
-    offers: [],
+    "name": "Minecraft",
+    "icon": "https://images.icon-icons.com/2699/PNG/512/minecraft_logo_icon_168974.png",
+    "slug": "minecraft",
+    "offers": []
   },
   {
-    name: "Oxide",
-    icon: "/offer-icons/oxide-premium.svg",
-    slug: "oxide",
-    iconScale: 1.08,
-    offers: [
-      { type: "divider", title: "Боевой пропуск", description: "Боевой пропуск и Elite-наборы Oxide Survival Island." },
-      { label: "Боевой пропуск", priceRub: 120 },
-      { label: "Elite + Боевой пропуск", priceRub: 270 },
-      { label: "Премиум подписка 30 дней", priceRub: 85 },
-      { type: "divider", title: "Монеты", description: "Пополнение монет Oxide Survival Island." },
-      { label: "50 монет", priceRub: 30 },
-      { label: "135 монет", priceRub: 85 },
-      { label: "290 монет", priceRub: 190 },
-      { label: "630 монет", priceRub: 370 },
-      { label: "1675 монет", priceRub: 930 },
-      { label: "3550 монет", priceRub: 1780 },
-      { type: "divider", title: "Билеты", description: "Пакеты билетов Oxide Survival Island." },
-      { label: "5 билетов", priceRub: 85 },
-      { label: "11 билетов", priceRub: 190 },
-      { label: "28 билетов", priceRub: 385 },
-      { label: "75 билетов", priceRub: 990 },
-      { label: "160 билетов", priceRub: 1880 },
-    ],
+    "name": "Oxide",
+    "icon": "/offer-icons/oxide-premium.svg",
+    "slug": "oxide",
+    "iconScale": 1.08,
+    "offers": [
+      {
+        "type": "divider",
+        "title": "Боевой пропуск",
+        "description": "Боевой пропуск и Elite-наборы Oxide Survival Island."
+      },
+      {
+        "label": "Боевой пропуск",
+        "priceRub": 120
+      },
+      {
+        "label": "Elite + Боевой пропуск",
+        "priceRub": 270
+      },
+      {
+        "label": "Премиум подписка 30 дней",
+        "priceRub": 85
+      },
+      {
+        "type": "divider",
+        "title": "Монеты",
+        "description": "Пополнение монет Oxide Survival Island."
+      },
+      {
+        "label": "50 монет",
+        "priceRub": 30
+      },
+      {
+        "label": "135 монет",
+        "priceRub": 85
+      },
+      {
+        "label": "290 монет",
+        "priceRub": 190
+      },
+      {
+        "label": "630 монет",
+        "priceRub": 370
+      },
+      {
+        "label": "1675 монет",
+        "priceRub": 930
+      },
+      {
+        "label": "3550 монет",
+        "priceRub": 1780
+      },
+      {
+        "type": "divider",
+        "title": "Билеты",
+        "description": "Пакеты билетов Oxide Survival Island."
+      },
+      {
+        "label": "5 билетов",
+        "priceRub": 85
+      },
+      {
+        "label": "11 билетов",
+        "priceRub": 190
+      },
+      {
+        "label": "28 билетов",
+        "priceRub": 385
+      },
+      {
+        "label": "75 билетов",
+        "priceRub": 990
+      },
+      {
+        "label": "160 билетов",
+        "priceRub": 1880
+      }
+    ]
   },
   {
-    name: "Пополнение сайтов",
-    icon: "/loading-icon.png",
-    slug: "site-topups",
-    iconScale: 1.08,
-    offers: [],
+    "name": "Пополнение сайтов",
+    "icon": "/loading-icon.png",
+    "slug": "site-topups",
+    "iconScale": 1.08,
+    "offers": []
   },
   {
-    name: "Оплата по СБП",
-    icon: "/loading-icon.png",
-    slug: "sbp-payment",
-    iconScale: 1.08,
-    offers: [
-      { label: "РФ", priceRub: 100 },
-    ],
+    "name": "Оплата по СБП",
+    "icon": "/loading-icon.png",
+    "slug": "sbp-payment",
+    "iconScale": 1.08,
+    "offers": [
+      {
+        "label": "РФ",
+        "priceRub": 100
+      }
+    ]
   },
   {
-    name: "Вывод с карты РФ",
-    icon: "/loading-icon.png",
-    slug: "card-withdrawal-rf",
-    iconScale: 1.08,
-    offers: [],
+    "name": "Вывод с карты РФ",
+    "icon": "/loading-icon.png",
+    "slug": "card-withdrawal-rf",
+    "iconScale": 1.08,
+    "offers": []
   },
   {
-    name: "Вывод с карты MD",
-    icon: "/loading-icon.png",
-    slug: "card-withdrawal-md",
-    iconScale: 1.08,
-    offers: [],
+    "name": "Вывод с карты MD",
+    "icon": "/loading-icon.png",
+    "slug": "card-withdrawal-md",
+    "iconScale": 1.08,
+    "offers": []
   },
   {
-    name: "Переводы",
-    icon: "/loading-icon.png",
-    slug: "transfers",
-    iconScale: 1.08,
-    offers: [],
+    "name": "Переводы",
+    "icon": "/loading-icon.png",
+    "slug": "transfers",
+    "iconScale": 1.08,
+    "offers": []
   },
   {
-    name: "NFT",
-    icon: "/loading-icon.png",
-    slug: "nft",
-    iconScale: 1.08,
-    offers: [],
+    "name": "NFT",
+    "icon": "/loading-icon.png",
+    "slug": "nft",
+    "iconScale": 1.08,
+    "offers": []
   },
   {
-    name: "PlayStation",
-    icon: "https://www.pngkey.com/png/full/7-74293_la-siguiente-playstation-playstation-4-logo-png.png",
-    slug: "playstation",
-    iconScale: 1.08,
-    offers: [
-      { type: "divider", title: "PSN Турция", description: "Карты пополнения турецкого PS Store." },
-      { label: "100 TRY (Турция)", priceRub: 60 },
-      { label: "200 TRY (Турция)", priceRub: 140 },
-      { label: "300 TRY (Турция)", priceRub: 280 },
-      { label: "400 TRY (Турция)", priceRub: 350 },
-      { label: "500 TRY (Турция)", priceRub: 520 },
-      { label: "750 TRY (Турция)", priceRub: 550 },
-      { label: "1000 TRY (Турция)", priceRub: 670 },
-      { label: "1500 TRY (Турция)", priceRub: 1000 },
-      { label: "2000 TRY (Турция)", priceRub: 1280 },
-      { label: "2500 TRY (Турция)", priceRub: 1680 },
-      { label: "3000 TRY (Турция)", priceRub: 2015 },
-      { label: "3500 TRY (Турция)", priceRub: 2360 },
-      { label: "5000 TRY (Турция)", priceRub: 3380 },
-      { type: "divider", title: "PS Plus Турция", description: "Подписки PlayStation Plus для турецкого региона." },
-      { label: "PS Plus Essential 1 месяц (Турция)", priceRub: 300 },
-      { label: "PS Plus Essential 3 месяца (Турция)", priceRub: 780 },
-      { label: "PS Plus Essential 12 месяцев (Турция)", priceRub: 1580 },
-      { label: "PS Plus Extra 1 месяц (Турция)", priceRub: 380 },
-      { label: "PS Plus Extra 3 месяца (Турция)", priceRub: 1005 },
-      { label: "PS Plus Extra 12 месяцев (Турция)", priceRub: 2030 },
-      { label: "PS Plus Deluxe 1 месяц (Турция)", priceRub: 410 },
-      { label: "PS Plus Deluxe 3 месяца (Турция)", priceRub: 1005 },
-      { label: "PS Plus Deluxe 12 месяцев (Турция)", priceRub: 2030 },
-      { type: "divider", title: "Аккаунты", description: "Готовый аккаунт PSN для нужного региона." },
-      { label: "Аккаунт PSN - Турция", priceRub: 25 },
-    ],
+    "name": "PlayStation",
+    "icon": "https://www.pngkey.com/png/full/7-74293_la-siguiente-playstation-playstation-4-logo-png.png",
+    "slug": "playstation",
+    "iconScale": 1.08,
+    "offers": [
+      {
+        "type": "divider",
+        "title": "PSN Турция",
+        "description": "Карты пополнения турецкого PS Store."
+      },
+      {
+        "label": "100 TRY (Турция)",
+        "priceRub": 60
+      },
+      {
+        "label": "200 TRY (Турция)",
+        "priceRub": 140
+      },
+      {
+        "label": "300 TRY (Турция)",
+        "priceRub": 280
+      },
+      {
+        "label": "400 TRY (Турция)",
+        "priceRub": 350
+      },
+      {
+        "label": "500 TRY (Турция)",
+        "priceRub": 520
+      },
+      {
+        "label": "750 TRY (Турция)",
+        "priceRub": 550
+      },
+      {
+        "label": "1000 TRY (Турция)",
+        "priceRub": 670
+      },
+      {
+        "label": "1500 TRY (Турция)",
+        "priceRub": 1000
+      },
+      {
+        "label": "2000 TRY (Турция)",
+        "priceRub": 1280
+      },
+      {
+        "label": "2500 TRY (Турция)",
+        "priceRub": 1680
+      },
+      {
+        "label": "3000 TRY (Турция)",
+        "priceRub": 2015
+      },
+      {
+        "label": "3500 TRY (Турция)",
+        "priceRub": 2360
+      },
+      {
+        "label": "5000 TRY (Турция)",
+        "priceRub": 3380
+      },
+      {
+        "type": "divider",
+        "title": "PS Plus Турция",
+        "description": "Подписки PlayStation Plus для турецкого региона."
+      },
+      {
+        "label": "PS Plus Essential 1 месяц (Турция)",
+        "priceRub": 300
+      },
+      {
+        "label": "PS Plus Essential 3 месяца (Турция)",
+        "priceRub": 780
+      },
+      {
+        "label": "PS Plus Essential 12 месяцев (Турция)",
+        "priceRub": 1580
+      },
+      {
+        "label": "PS Plus Extra 1 месяц (Турция)",
+        "priceRub": 380
+      },
+      {
+        "label": "PS Plus Extra 3 месяца (Турция)",
+        "priceRub": 1005
+      },
+      {
+        "label": "PS Plus Extra 12 месяцев (Турция)",
+        "priceRub": 2030
+      },
+      {
+        "label": "PS Plus Deluxe 1 месяц (Турция)",
+        "priceRub": 410
+      },
+      {
+        "label": "PS Plus Deluxe 3 месяца (Турция)",
+        "priceRub": 1005
+      },
+      {
+        "label": "PS Plus Deluxe 12 месяцев (Турция)",
+        "priceRub": 2030
+      },
+      {
+        "type": "divider",
+        "title": "Аккаунты",
+        "description": "Готовый аккаунт PSN для нужного региона."
+      },
+      {
+        "label": "Аккаунт PSN - Турция",
+        "priceRub": 25
+      }
+    ]
   },
   {
-    name: "Boosty",
-    icon: "https://images.live.vkvideo.ru/image/31715c5a-91c0-455b-994f-31650954caee?change_time=1729181151&mw=640",
-    slug: "boosty",
-    iconScale: 1.12,
-    offers: [],
+    "name": "Boosty",
+    "icon": "https://images.live.vkvideo.ru/image/31715c5a-91c0-455b-994f-31650954caee?change_time=1729181151&mw=640",
+    "slug": "boosty",
+    "iconScale": 1.12,
+    "offers": []
   },
   {
-    name: "Twitch",
-    icon: "https://cdn-icons-png.flaticon.com/512/3938/3938117.png",
-    slug: "twitch",
-    offers: [],
-  },
+    "name": "Twitch",
+    "icon": "https://cdn-icons-png.flaticon.com/512/3938/3938117.png",
+    "slug": "twitch",
+    "offers": []
+  }
 ];
 
 export function getProductBySlug(slug: string) {
