@@ -10,6 +10,7 @@ const ANALYTICS_KEY = "ecliptic:analytics:v2:events";
 const ANALYTICS_TOTALS_KEY = "ecliptic:analytics:v2:totals";
 const ANALYTICS_ACTIONS_KEY = "ecliptic:analytics:v2:actions";
 const ANALYTICS_PRODUCTS_KEY = "ecliptic:analytics:v2:products";
+const MAX_STORED_EVENTS = 5000;
 
 type IncomingEvent = {
   type?: string;
@@ -37,6 +38,7 @@ function productSlugFromPath(path: string | undefined) {
 }
 
 export async function POST(request: Request) {
+  const debugStorage = request.headers.get("x-ecliptic-debug") === "1";
   const contentLength = Number(request.headers.get("content-length") || 0);
   if (contentLength > 32_000) {
     return NextResponse.json({ ok: false, error: "Payload too large" }, { status: 413 });
@@ -83,6 +85,7 @@ export async function POST(request: Request) {
 
   const commands: unknown[][] = [
     ["LPUSH", ANALYTICS_KEY, JSON.stringify(event)],
+    ["LTRIM", ANALYTICS_KEY, "0", String(MAX_STORED_EVENTS - 1)],
     ["HINCRBY", ANALYTICS_TOTALS_KEY, "total", "1"],
     ["HINCRBY", ANALYTICS_ACTIONS_KEY, type, "1"],
   ];
@@ -92,13 +95,22 @@ export async function POST(request: Request) {
   if (type.includes("telegram")) commands.push(["HINCRBY", ANALYTICS_TOTALS_KEY, "telegram", "1"]);
   if (product) commands.push(["HINCRBY", ANALYTICS_PRODUCTS_KEY, product, "1"]);
 
+  let redisError = "";
+
   try {
-    const result = await redisPipeline(commands, { timeoutMs: 300 });
+    const result = await redisPipeline(commands, { timeoutMs: 2500 });
     if (result) return NextResponse.json({ ok: true, stored: true, storage: "redis" });
-  } catch {
+  } catch (error) {
+    redisError = error instanceof Error ? error.message : "Redis request failed";
     // Fall back below so analytics keeps working even while Redis/env is broken.
   }
 
   await addFallbackAnalyticsEvent(event);
-  return NextResponse.json({ ok: true, stored: false, fallbackStored: true, configured: Boolean(getRedisConfig()) });
+  return NextResponse.json({
+    ok: true,
+    stored: false,
+    fallbackStored: true,
+    configured: Boolean(getRedisConfig()),
+    ...(debugStorage && redisError ? { redisError } : {}),
+  });
 }

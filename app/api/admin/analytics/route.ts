@@ -12,6 +12,12 @@ const ANALYTICS_KEY = "ecliptic:analytics:v2:events";
 const ANALYTICS_TOTALS_KEY = "ecliptic:analytics:v2:totals";
 const ANALYTICS_ACTIONS_KEY = "ecliptic:analytics:v2:actions";
 const ANALYTICS_PRODUCTS_KEY = "ecliptic:analytics:v2:products";
+const LEGACY_ANALYTICS_KEYS = [
+  "ecliptic:analytics:events",
+  "ecliptic:analytics:totals",
+  "ecliptic:analytics:actions",
+  "ecliptic:analytics:products",
+];
 const DEFAULT_EVENTS_LIMIT = 1000;
 const MAX_EVENTS_LIMIT = 5000;
 
@@ -40,13 +46,17 @@ export async function POST(request: Request) {
   if (authError) return authError;
 
   let result = null;
+  let redisError = "";
   const offset = Math.max(0, Math.floor(Number(body.offset || 0)));
   const limit = Math.min(MAX_EVENTS_LIMIT, Math.max(1, Math.floor(Number(body.limit || DEFAULT_EVENTS_LIMIT))));
   const end = offset + limit - 1;
 
   try {
     if (body.reset) {
-      await redisPipeline([["DEL", ANALYTICS_KEY, ANALYTICS_TOTALS_KEY, ANALYTICS_ACTIONS_KEY, ANALYTICS_PRODUCTS_KEY]], { timeoutMs: 600 }).catch(() => null);
+      await redisPipeline(
+        [["DEL", ANALYTICS_KEY, ANALYTICS_TOTALS_KEY, ANALYTICS_ACTIONS_KEY, ANALYTICS_PRODUCTS_KEY, ...LEGACY_ANALYTICS_KEYS]],
+        { timeoutMs: 3000 }
+      ).catch(() => null);
       await clearFallbackAnalyticsEvents();
       return NextResponse.json({
         ok: true,
@@ -70,8 +80,9 @@ export async function POST(request: Request) {
       ["HGETALL", ANALYTICS_TOTALS_KEY],
       ["HGETALL", ANALYTICS_ACTIONS_KEY],
       ["HGETALL", ANALYTICS_PRODUCTS_KEY],
-    ], { timeoutMs: 700 });
-  } catch {
+    ], { timeoutMs: 3000 });
+  } catch (error) {
+    redisError = error instanceof Error ? error.message : "Redis request failed";
     result = null;
   }
 
@@ -82,6 +93,7 @@ export async function POST(request: Request) {
       ok: true,
       configured: Boolean(getRedisConfig()),
       fallback: true,
+      ...(redisError ? { redisError } : {}),
       events,
       pagination: {
         offset,
