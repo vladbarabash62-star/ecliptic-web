@@ -90,15 +90,16 @@ export function summarizeAnalyticsEvents(events: AnalyticsEvent[]) {
 
   for (const event of events) {
     const type = String(event.type || "unknown");
+    if (type === "page_view") continue;
     actions[type] = (actions[type] || 0) + 1;
-    if (type === "page_view") views += 1;
+    if (type === "product_open") views += 1;
     if (type === "buy_click") buys += 1;
     if (type.includes("telegram")) telegram += 1;
     if (event.product) products[event.product] = (products[event.product] || 0) + 1;
   }
 
   return {
-    total: events.length,
+    total: Object.values(actions).reduce((sum, count) => sum + count, 0),
     views,
     buys,
     telegram,

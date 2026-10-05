@@ -59,12 +59,21 @@ export async function POST(request: Request) {
   const city = headerList.get("x-vercel-ip-city") || undefined;
   const ipAddress = forwardedFor || realIp || undefined;
   const ipHash = hashIp(forwardedFor || realIp || null);
-  const type = String(body.type || "unknown").slice(0, 64);
   const product = body.product ? String(body.product).slice(0, 120) : productSlugFromPath(body.path);
+  let type = String(body.type || "unknown").slice(0, 64);
+  const path = body.path || "/";
+
+  if (type === "page_view") {
+    if (!product) {
+      return NextResponse.json({ ok: true, stored: false, ignored: true, reason: "main-page-view" });
+    }
+
+    type = "product_open";
+  }
 
   const event = {
     type,
-    path: body.path || "/",
+    path,
     product,
     offer: body.offer,
     price: Number.isFinite(Number(body.price)) ? Number(body.price) : undefined,
@@ -90,7 +99,7 @@ export async function POST(request: Request) {
     ["HINCRBY", ANALYTICS_ACTIONS_KEY, type, "1"],
   ];
 
-  if (type === "page_view") commands.push(["HINCRBY", ANALYTICS_TOTALS_KEY, "views", "1"]);
+  if (type === "product_open") commands.push(["HINCRBY", ANALYTICS_TOTALS_KEY, "views", "1"]);
   if (type === "buy_click") commands.push(["HINCRBY", ANALYTICS_TOTALS_KEY, "buys", "1"]);
   if (type.includes("telegram")) commands.push(["HINCRBY", ANALYTICS_TOTALS_KEY, "telegram", "1"]);
   if (product) commands.push(["HINCRBY", ANALYTICS_PRODUCTS_KEY, product, "1"]);

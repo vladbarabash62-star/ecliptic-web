@@ -227,7 +227,7 @@ const ADMIN_HTML = `<!doctype html>
       <p class="muted" id="analyticsUpdatedAt" style="margin:-4px 0 14px;text-align:right">Статистика загружается...</p>
       <div class="stats">
         <div class="card stat"><p class="muted">Всего событий</p><div id="statTotal" class="value">0</div></div>
-        <div class="card stat"><p class="muted">Просмотры</p><div id="statViews" class="value">0</div></div>
+        <div class="card stat"><p class="muted">Открытия товаров</p><div id="statViews" class="value">0</div></div>
         <div class="card stat"><p class="muted">Клики купить</p><div id="statBuys" class="value">0</div></div>
         <div class="card stat"><p class="muted">Telegram</p><div id="statTelegram" class="value">0</div></div>
       </div>
@@ -593,6 +593,7 @@ const ADMIN_HTML = `<!doctype html>
       var merged = [];
       var seen = {};
       (serverEvents || []).concat(readLocalAnalyticsEvents()).forEach(function(event) {
+        if (!isCountedEvent(event)) return;
         var key = eventIdentity(event);
         if (seen[key]) return;
         seen[key] = true;
@@ -602,11 +603,14 @@ const ADMIN_HTML = `<!doctype html>
         return new Date(b.time || 0).getTime() - new Date(a.time || 0).getTime();
       });
     }
+    function isCountedEvent(event) {
+      return event && event.type && event.type !== 'page_view';
+    }
     function summarizeEvents(events) {
-      var rows = events || [];
+      var rows = (events || []).filter(isCountedEvent);
       return {
         total: rows.length,
-        views: rows.filter(function(event) { return event.type === 'page_view'; }).length,
+        views: rows.filter(function(event) { return event.type === 'product_open'; }).length,
         buys: rows.filter(function(event) { return event.type === 'buy_click'; }).length,
         telegram: rows.filter(function(event) { return String(event.type || '').indexOf('telegram') !== -1; }).length,
         actions: countBy(rows, function(event) { return event.type; }),
@@ -614,9 +618,7 @@ const ADMIN_HTML = `<!doctype html>
       };
     }
     function mergeSummary(serverSummary, events) {
-      var localSummary = summarizeEvents(events);
-      if (!serverSummary || !serverSummary.total || localSummary.total > serverSummary.total) return localSummary;
-      return serverSummary;
+      return summarizeEvents(events);
     }
     function topEntries(data, limit) {
       return Object.entries(data).sort(function(a,b) { return b[1] - a[1]; }).slice(0, limit || 8);
@@ -756,7 +758,7 @@ const ADMIN_HTML = `<!doctype html>
       return ranges;
     }
     function matchesWeeklyEvent(event, type) {
-      if (type === 'product_page_view') return event.type === 'page_view' && Boolean(eventProductSlug(event));
+      if (type === 'product_page_view') return event.type === 'product_open' && Boolean(eventProductSlug(event));
       return event.type === type;
     }
     function renderWeekBars(id, events, type, unit) {
@@ -884,7 +886,7 @@ const ADMIN_HTML = `<!doctype html>
       var fallbackProducts = countBy(analyticsEvents.filter(function(e) { return eventProductSlug(e); }), function(e) { return eventProductSlug(e); });
       var fallbackActions = countBy(analyticsEvents, function(e) { return e.type; });
       $('statTotal').textContent = analyticsSummary.total || analyticsEvents.length;
-      $('statViews').textContent = analyticsSummary.views || analyticsEvents.filter(function(e) { return e.type === 'page_view'; }).length;
+      $('statViews').textContent = analyticsSummary.views || analyticsEvents.filter(function(e) { return e.type === 'product_open'; }).length;
       $('statBuys').textContent = analyticsSummary.buys || analyticsEvents.filter(function(e) { return e.type === 'buy_click'; }).length;
       $('statTelegram').textContent = analyticsSummary.telegram || analyticsEvents.filter(function(e) { return String(e.type || '').indexOf('telegram') !== -1; }).length;
       renderBars('productStats', Object.keys(analyticsSummary.products || {}).length ? analyticsSummary.products : fallbackProducts);
@@ -900,16 +902,15 @@ const ADMIN_HTML = `<!doctype html>
       renderCharts();
     }
     function renderCharts() {
-      var chartEvents = analyticsEvents.filter(function(e) { return !(e.type === 'page_view' && e.path === '/'); });
+      var chartEvents = analyticsEvents.filter(isCountedEvent);
       var buyEvents = chartEvents.filter(function(e) { return e.type === 'buy_click'; });
-      var pageViews = chartEvents.filter(function(e) { return e.type === 'page_view'; });
-      var productOpens = chartEvents.filter(function(e) { return matchesWeeklyEvent(e, 'product_page_view'); });
+      var productOpens = chartEvents.filter(function(e) { return e.type === 'product_open'; });
       var regions = countBy(chartEvents, eventRegion);
       var fallbackProductCounts = countBy(chartEvents.filter(function(e) { return e.product; }), eventProductName);
       var productCounts = Object.keys(analyticsSummary.products || {}).length ? productSummaryNames(analyticsSummary.products) : fallbackProductCounts;
       var fallbackActions = countBy(chartEvents, function(e) { return actionLabel(e.type); });
       var actions = fallbackActions;
-      var conversionRows = [['Просто просмотрели страницу', pageViews.length], ['Нажали «Купить»', buyEvents.length]];
+      var conversionRows = [['Открыли товар', productOpens.length], ['Нажали «Купить»', buyEvents.length]];
       var topProduct = topEntries(productCounts, 1)[0];
       var topRegion = topEntries(regions, 1)[0];
       var returnCount = returningVisitors(analyticsEvents).length;
@@ -923,7 +924,7 @@ const ADMIN_HTML = `<!doctype html>
       renderWeekBars('chartWeeklyProductViews', chartEvents, 'product_page_view', 'открытий');
       renderReturnVisitors('chartReturnVisitors', chartEvents);
 
-      $('insightConversion').textContent = percent(buyEvents.length, Math.max(1, pageViews.length)) + '%';
+      $('insightConversion').textContent = percent(buyEvents.length, Math.max(1, productOpens.length)) + '%';
       $('insightTopProduct').textContent = topProduct ? topProduct[0] : '-';
       $('insightTopRegion').textContent = topRegion ? topRegion[0] : '-';
       $('insightReturnVisitors').textContent = String(returnCount);

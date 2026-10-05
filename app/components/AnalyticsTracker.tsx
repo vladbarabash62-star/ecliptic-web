@@ -284,23 +284,26 @@ export default function AnalyticsTracker() {
   useEffect(() => {
     let timer: number | undefined;
 
-    const sendPageView = () => {
+    const sendProductOpen = () => {
       try {
+        const product = productSlugFromPath(pathname);
+        if (!product) return;
+
         trackEvent(enrichEvent({
-          type: "page_view",
+          type: "product_open",
           path: pathname,
-          product: productSlugFromPath(pathname),
+          product,
           time: new Date().toISOString(),
         }));
       } catch {
-        // Page view tracking is best-effort.
+        // Product open tracking is best-effort.
       }
     };
 
     try {
-      timer = window.setTimeout(sendPageView, shouldLoadTelegramScript() ? 300 : 0);
+      timer = window.setTimeout(sendProductOpen, shouldLoadTelegramScript() ? 300 : 0);
     } catch {
-      sendPageView();
+      sendProductOpen();
     }
 
     return () => {
@@ -315,6 +318,8 @@ export default function AnalyticsTracker() {
       if (!element) return;
 
       try {
+        if (element.dataset.analytics === "product_open") return;
+
         const href = element instanceof HTMLAnchorElement ? element.getAttribute("href") || "" : "";
         const path = href.startsWith("/") ? href.split("?")[0] : window.location.pathname;
         trackEvent(enrichEvent({

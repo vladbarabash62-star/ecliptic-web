@@ -87,7 +87,7 @@ export async function POST(request: Request) {
   }
 
   if (!result) {
-    const allEvents = await readFallbackAnalyticsEvents();
+    const allEvents = (await readFallbackAnalyticsEvents()).filter((event) => event.type !== "page_view");
     const events = allEvents.slice(offset, offset + limit);
     return NextResponse.json({
       ok: true,
@@ -120,7 +120,7 @@ export async function POST(request: Request) {
             return null;
           }
         })
-        .filter(Boolean)
+        .filter((event) => event && event.type !== "page_view")
     : [];
 
   return NextResponse.json({
@@ -136,12 +136,12 @@ export async function POST(request: Request) {
       nextOffset: offset + events.length,
     },
     summary: {
-      total: totals.total || events.length,
-      views: totals.views || events.filter((event) => event.type === "page_view").length,
+      total: events.length,
+      views: events.filter((event) => event.type === "product_open").length,
       buys: totals.buys || events.filter((event) => event.type === "buy_click").length,
       telegram: totals.telegram || events.filter((event) => String(event.type || "").includes("telegram")).length,
-      actions: Object.keys(actions).length ? actions : undefined,
-      products: Object.keys(products).length ? products : undefined,
+      actions: undefined,
+      products: undefined,
     },
   });
 }
