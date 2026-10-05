@@ -366,7 +366,7 @@ const ADMIN_HTML = `<!doctype html>
     var dragScrollTarget = null;
     var dragScrollSpeed = 0;
     var KEEP_IMAGE = '__ECLIPTIC_KEEP_IMAGE__';
-    var LOCAL_ANALYTICS_KEY = 'ecliptic_analytics_events';
+    var LOCAL_ANALYTICS_KEY = 'ecliptic_analytics_events_v2';
 
     function $(id) { return document.getElementById(id); }
     function esc(value) {
@@ -1445,7 +1445,7 @@ const ADMIN_HTML = `<!doctype html>
       $('saveProductsBtn').disabled = true;
       showNotice('Сохраняю товары...', false);
       try {
-        var data = await postJson('/api/admin/products', compactDirtyProductsForSave(), 120000);
+        var data = await postJson('/api/admin/products', compactDirtyProductsForSave(), 12000);
         if (data.products) {
           products = data.products;
           if (!products.some(function(product) { return product.slug === selectedSlug; })) selectedSlug = products[0] ? products[0].slug : '';
@@ -1467,7 +1467,7 @@ const ADMIN_HTML = `<!doctype html>
       showNotice('Сохраняю настройки...', false);
       try {
         settings.reviewsCountLabel = $('reviewsCount').value.trim() || '400+';
-        var data = await postJson('/api/admin/settings', { settings: settings }, 60000);
+        var data = await postJson('/api/admin/settings', { settings: settings }, 12000);
         settings = data.settings || settings;
         $('reviewsCount').value = settings.reviewsCountLabel || '400+';
         showNotice('Настройки главной сохранены.', false);

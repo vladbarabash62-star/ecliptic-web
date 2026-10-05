@@ -19,7 +19,7 @@ type AnalyticsEvent = {
   screen?: string;
 };
 
-const STORAGE_KEY = "ecliptic_analytics_events";
+const STORAGE_KEY = "ecliptic_analytics_events_v2";
 const VISITOR_KEY = "ecliptic_visitor_id";
 const SESSION_KEY = "ecliptic_session_id";
 const RECOVERY_KEY = "ecliptic_recovered_runtime_error";

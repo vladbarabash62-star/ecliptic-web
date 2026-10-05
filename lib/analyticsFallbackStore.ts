@@ -7,6 +7,7 @@ export type AnalyticsEvent = {
   path?: string;
   product?: string;
   offer?: string;
+  price?: number;
   time?: string;
   visitorId?: string;
   sessionId?: string;
@@ -24,7 +25,7 @@ export type AnalyticsEvent = {
 
 const MAX_FALLBACK_EVENTS = 5000;
 const FALLBACK_DIR = join(tmpdir(), "ecliptic-store");
-const FALLBACK_FILE = join(FALLBACK_DIR, "analytics-events.json");
+const FALLBACK_FILE = join(FALLBACK_DIR, "analytics-events-v2.json");
 
 declare global {
   // eslint-disable-next-line no-var

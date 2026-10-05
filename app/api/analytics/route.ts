@@ -6,10 +6,10 @@ import { checkRateLimit, getRedisConfig, redisPipeline } from "../../../lib/secu
 
 export const runtime = "nodejs";
 
-const ANALYTICS_KEY = "ecliptic:analytics:events";
-const ANALYTICS_TOTALS_KEY = "ecliptic:analytics:totals";
-const ANALYTICS_ACTIONS_KEY = "ecliptic:analytics:actions";
-const ANALYTICS_PRODUCTS_KEY = "ecliptic:analytics:products";
+const ANALYTICS_KEY = "ecliptic:analytics:v2:events";
+const ANALYTICS_TOTALS_KEY = "ecliptic:analytics:v2:totals";
+const ANALYTICS_ACTIONS_KEY = "ecliptic:analytics:v2:actions";
+const ANALYTICS_PRODUCTS_KEY = "ecliptic:analytics:v2:products";
 
 type IncomingEvent = {
   type?: string;
@@ -65,6 +65,7 @@ export async function POST(request: Request) {
     path: body.path || "/",
     product,
     offer: body.offer,
+    price: Number.isFinite(Number(body.price)) ? Number(body.price) : undefined,
     time: body.time || new Date().toISOString(),
     visitorId: body.visitorId,
     sessionId: body.sessionId,
@@ -92,7 +93,7 @@ export async function POST(request: Request) {
   if (product) commands.push(["HINCRBY", ANALYTICS_PRODUCTS_KEY, product, "1"]);
 
   try {
-    const result = await redisPipeline(commands);
+    const result = await redisPipeline(commands, { timeoutMs: 300 });
     if (result) return NextResponse.json({ ok: true, stored: true, storage: "redis" });
   } catch {
     // Fall back below so analytics keeps working even while Redis/env is broken.

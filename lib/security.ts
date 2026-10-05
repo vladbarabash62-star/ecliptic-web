@@ -150,7 +150,7 @@ export async function checkRateLimit(scope: string, limit: number, windowSeconds
   const result = await redisPipeline([
     ["INCR", key],
     ["EXPIRE", key, String(windowSeconds)],
-  ], { timeoutMs: 1500 }).catch(() => null);
+  ], { timeoutMs: 250 }).catch(() => null);
   const current = Number(result?.[0]?.result || 0);
 
   return {

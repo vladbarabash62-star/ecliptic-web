@@ -8,10 +8,10 @@ import { getRedisConfig, redisPipeline, validateAdminRequest } from "../../../..
 
 export const runtime = "nodejs";
 
-const ANALYTICS_KEY = "ecliptic:analytics:events";
-const ANALYTICS_TOTALS_KEY = "ecliptic:analytics:totals";
-const ANALYTICS_ACTIONS_KEY = "ecliptic:analytics:actions";
-const ANALYTICS_PRODUCTS_KEY = "ecliptic:analytics:products";
+const ANALYTICS_KEY = "ecliptic:analytics:v2:events";
+const ANALYTICS_TOTALS_KEY = "ecliptic:analytics:v2:totals";
+const ANALYTICS_ACTIONS_KEY = "ecliptic:analytics:v2:actions";
+const ANALYTICS_PRODUCTS_KEY = "ecliptic:analytics:v2:products";
 const DEFAULT_EVENTS_LIMIT = 1000;
 const MAX_EVENTS_LIMIT = 5000;
 
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
 
   try {
     if (body.reset) {
-      await redisPipeline([["DEL", ANALYTICS_KEY, ANALYTICS_TOTALS_KEY, ANALYTICS_ACTIONS_KEY, ANALYTICS_PRODUCTS_KEY]], { timeoutMs: 2500 });
+      await redisPipeline([["DEL", ANALYTICS_KEY, ANALYTICS_TOTALS_KEY, ANALYTICS_ACTIONS_KEY, ANALYTICS_PRODUCTS_KEY]], { timeoutMs: 600 }).catch(() => null);
       await clearFallbackAnalyticsEvents();
       return NextResponse.json({
         ok: true,
@@ -70,7 +70,7 @@ export async function POST(request: Request) {
       ["HGETALL", ANALYTICS_TOTALS_KEY],
       ["HGETALL", ANALYTICS_ACTIONS_KEY],
       ["HGETALL", ANALYTICS_PRODUCTS_KEY],
-    ], { timeoutMs: 5000 });
+    ], { timeoutMs: 700 });
   } catch {
     result = null;
   }

@@ -1,7 +1,9 @@
 import { products, type Product, type ProductOffer } from "./products";
 import { redisPipeline } from "./security";
+import { readAdminFallback, writeAdminFallback } from "./adminFallbackStore";
 
 const PRODUCTS_KEY = "ecliptic:products:overrides";
+const PRODUCTS_FALLBACK_KEY = "products-storage";
 export const PRODUCTS_CACHE_TAG = "ecliptic-products";
 const PRODUCT_STORAGE_VERSION = 3;
 const CODE_AUTHORED_OFFER_SLUGS = new Set(["mobile-legends", "pubg-mobile", "telegram-stars"]);
@@ -229,6 +231,9 @@ type ProductReadOptions = {
 };
 
 async function readProductStorage(options: ProductReadOptions = {}): Promise<ProductStorage> {
+  const fallback = await readAdminFallback<ProductStorage>(PRODUCTS_FALLBACK_KEY);
+  if (fallback) return normalizeProductStorage(fallback);
+
   const result = await redisPipeline(
     [["GET", PRODUCTS_KEY]],
     options.cached
@@ -238,9 +243,10 @@ async function readProductStorage(options: ProductReadOptions = {}): Promise<Pro
             tags: [PRODUCTS_CACHE_TAG],
             revalidate: 3600,
           },
+        timeoutMs: 500,
         }
-      : undefined
-  );
+      : { timeoutMs: 500 }
+  ).catch(() => null);
   const raw = result?.[0]?.result;
   if (!raw || typeof raw !== "string") return { hiddenBaseSlugs: [], overrides: {}, version: PRODUCT_STORAGE_VERSION };
 
@@ -364,7 +370,9 @@ export async function saveProducts(nextProducts: Product[]) {
 
   const hiddenBaseSlugs = products.filter((product) => !usedBaseSlugs.has(product.slug)).map((product) => product.slug);
 
-  await redisPipeline([["SET", PRODUCTS_KEY, JSON.stringify({ hiddenBaseSlugs, overrides, version: PRODUCT_STORAGE_VERSION })]], {
-    timeoutMs: 20000,
-  });
+  const storage = { hiddenBaseSlugs, overrides, version: PRODUCT_STORAGE_VERSION };
+  await writeAdminFallback(PRODUCTS_FALLBACK_KEY, storage);
+  void redisPipeline([["SET", PRODUCTS_KEY, JSON.stringify(storage)]], {
+    timeoutMs: 300,
+  }).catch(() => null);
 }
