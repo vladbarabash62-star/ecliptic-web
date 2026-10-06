@@ -206,6 +206,8 @@ const ADMIN_HTML = `<!doctype html>
       <div class="toolbar">
         <a class="btn secondary" href="/" target="_blank" rel="noreferrer">Открыть сайт</a>
         <button class="btn secondary" id="reloadBtn" type="button">Обновить</button>
+        <button class="btn secondary" id="downloadAdminBackupBtn" type="button">Скачать настройки</button>
+        <button class="btn secondary" id="downloadSiteBackupBtn" type="button">Скачать бэкап сайта</button>
         <button class="btn red" id="logoutBtn" type="button">Выйти</button>
       </div>
     </header>
@@ -1484,6 +1486,20 @@ const ADMIN_HTML = `<!doctype html>
       await fetch('/api/admin/logout', { method: 'POST', credentials: 'same-origin' }).catch(function() {});
       window.location.replace('/admin');
     }
+    function downloadBackup(type) {
+      var label = type === 'site' ? 'бэкап сайта' : 'настройки сайта';
+      showNotice('Готовлю ' + label + '...', false);
+      var link = document.createElement('a');
+      link.href = '/api/admin/backup?type=' + encodeURIComponent(type) + '&ts=' + Date.now();
+      link.download = '';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(function() {
+        showNotice('Скачивание запущено.', false);
+        hideNoticeSoon();
+      }, 600);
+    }
     document.querySelectorAll('.tab').forEach(function(button) {
       button.addEventListener('click', function() {
         document.querySelectorAll('.tab').forEach(function(tab) { tab.classList.remove('active'); });
@@ -1496,6 +1512,8 @@ const ADMIN_HTML = `<!doctype html>
       });
     });
     $('reloadBtn').addEventListener('click', loadAll);
+    $('downloadAdminBackupBtn').addEventListener('click', function() { downloadBackup('admin'); });
+    $('downloadSiteBackupBtn').addEventListener('click', function() { downloadBackup('site'); });
     $('reloadAnalyticsBtn').addEventListener('click', function() { loadAnalytics(0); });
     $('loadMoreEventsBtn').addEventListener('click', function() { loadAnalytics(analyticsPagination.nextOffset || analyticsEvents.length); });
     $('reloadChartsBtn').addEventListener('click', loadFullAnalyticsForCharts);
