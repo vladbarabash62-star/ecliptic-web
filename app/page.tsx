@@ -39,7 +39,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   const [allProducts, settings] = await Promise.all([
     getProducts({ cached: true }),
-    getSiteSettings({ cached: true }).catch(() => defaultSiteSettings),
+    getSiteSettings().catch(() => defaultSiteSettings),
   ]);
   const products = withOptimizedProductsImages(allProducts).map((product) => ({
     name: product.name,

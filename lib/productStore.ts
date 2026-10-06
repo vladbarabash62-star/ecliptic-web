@@ -1,9 +1,11 @@
 import { products, type Product, type ProductOffer } from "./products";
 import { redisPipeline } from "./security";
 import { readAdminFallback, writeAdminFallback } from "./adminFallbackStore";
+import { readBlobJson, writeBlobJson } from "./blobJsonStore";
 
 const PRODUCTS_KEY = "ecliptic:products:overrides";
 const PRODUCTS_FALLBACK_KEY = "products-storage";
+const PRODUCTS_BLOB = "admin/products-storage.json";
 export const PRODUCTS_CACHE_TAG = "ecliptic-products";
 const PRODUCT_STORAGE_VERSION = 3;
 const CODE_AUTHORED_OFFER_SLUGS = new Set(["mobile-legends", "pubg-mobile", "telegram-stars"]);
@@ -231,6 +233,9 @@ type ProductReadOptions = {
 };
 
 async function readProductStorage(options: ProductReadOptions = {}): Promise<ProductStorage> {
+  const blobStorage = await readBlobJson<ProductStorage>(PRODUCTS_BLOB).catch(() => null);
+  if (blobStorage) return normalizeProductStorage(blobStorage);
+
   const fallback = await readAdminFallback<ProductStorage>(PRODUCTS_FALLBACK_KEY);
   if (fallback) return normalizeProductStorage(fallback);
 
@@ -371,6 +376,7 @@ export async function saveProducts(nextProducts: Product[]) {
   const hiddenBaseSlugs = products.filter((product) => !usedBaseSlugs.has(product.slug)).map((product) => product.slug);
 
   const storage = { hiddenBaseSlugs, overrides, version: PRODUCT_STORAGE_VERSION };
+  await writeBlobJson(PRODUCTS_BLOB, storage);
   await writeAdminFallback(PRODUCTS_FALLBACK_KEY, storage);
   void redisPipeline([["SET", PRODUCTS_KEY, JSON.stringify(storage)]], {
     timeoutMs: 300,

@@ -73,7 +73,11 @@ export async function POST(request: Request) {
     const remainingProducts = Array.from(currentBySlug.values()).filter((product) => !usedSlugs.has(product.slug));
     const products = [...orderedProducts, ...remainingProducts];
 
-    await saveProducts(products);
+    try {
+      await saveProducts(products);
+    } catch {
+      return NextResponse.json({ ok: false, saved: false, error: "Products storage unavailable" }, { status: 503 });
+    }
     revalidateTag(PRODUCTS_CACHE_TAG, "max");
     revalidatePath("/", "page");
     revalidatePath("/shop", "page");
@@ -86,7 +90,11 @@ export async function POST(request: Request) {
 
   if (Array.isArray(body.products)) {
     const products = hydrateKeptImages(body.products, await getProducts());
-    await saveProducts(products);
+    try {
+      await saveProducts(products);
+    } catch {
+      return NextResponse.json({ ok: false, saved: false, error: "Products storage unavailable" }, { status: 503 });
+    }
     revalidateTag(PRODUCTS_CACHE_TAG, "max");
     revalidatePath("/", "page");
     revalidatePath("/shop", "page");

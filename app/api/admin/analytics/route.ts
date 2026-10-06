@@ -74,6 +74,9 @@ export async function POST(request: Request) {
       });
     }
 
+    if (process.env.BLOB_STORE_ID || process.env.BLOB_READ_WRITE_TOKEN) {
+      result = null;
+    } else {
     result = await redisPipeline([
       ["LRANGE", ANALYTICS_KEY, String(offset), String(end)],
       ["LLEN", ANALYTICS_KEY],
@@ -81,19 +84,20 @@ export async function POST(request: Request) {
       ["HGETALL", ANALYTICS_ACTIONS_KEY],
       ["HGETALL", ANALYTICS_PRODUCTS_KEY],
     ], { timeoutMs: 3000 });
+    }
   } catch (error) {
     redisError = error instanceof Error ? error.message : "Redis request failed";
     result = null;
   }
 
-  if (!result) {
+  if (!result || process.env.BLOB_STORE_ID || process.env.BLOB_READ_WRITE_TOKEN) {
     const allEvents = (await readFallbackAnalyticsEvents()).filter((event) => event.type !== "page_view");
     const events = allEvents.slice(offset, offset + limit);
     return NextResponse.json({
       ok: true,
       configured: Boolean(getRedisConfig()),
       fallback: true,
-      ...(redisError ? { redisError } : {}),
+      ...(!process.env.BLOB_STORE_ID && redisError ? { redisError } : {}),
       events,
       pagination: {
         offset,

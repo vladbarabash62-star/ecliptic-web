@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { readBlobJson, writeBlobJson } from "./blobJsonStore";
 
 export type AnalyticsEvent = {
   type?: string;
@@ -26,6 +27,7 @@ export type AnalyticsEvent = {
 const MAX_FALLBACK_EVENTS = 5000;
 const FALLBACK_DIR = join(tmpdir(), "ecliptic-store");
 const FALLBACK_FILE = join(FALLBACK_DIR, "analytics-events-v2.json");
+const ANALYTICS_BLOB = "admin/analytics-events-v2.json";
 
 declare global {
   // eslint-disable-next-line no-var
@@ -61,12 +63,26 @@ async function writeDiskEvents(events: AnalyticsEvent[]) {
 
 export async function addFallbackAnalyticsEvent(event: AnalyticsEvent) {
   const memory = fallbackMemory();
+  if (!memory.length) {
+    const blobEvents = await readBlobJson<AnalyticsEvent[]>(ANALYTICS_BLOB).catch(() => null);
+    if (Array.isArray(blobEvents)) memory.push(...blobEvents.slice(0, MAX_FALLBACK_EVENTS));
+  }
+
   memory.unshift(event);
   if (memory.length > MAX_FALLBACK_EVENTS) memory.length = MAX_FALLBACK_EVENTS;
+  await writeBlobJson(ANALYTICS_BLOB, memory).catch(() => null);
   await writeDiskEvents(memory);
 }
 
 export async function readFallbackAnalyticsEvents() {
+  const blobEvents = await readBlobJson<AnalyticsEvent[]>(ANALYTICS_BLOB).catch(() => null);
+  if (Array.isArray(blobEvents)) {
+    const memory = fallbackMemory();
+    memory.length = 0;
+    memory.push(...blobEvents.slice(0, MAX_FALLBACK_EVENTS));
+    return memory;
+  }
+
   const memory = fallbackMemory();
   if (memory.length) return memory;
 
@@ -78,6 +94,7 @@ export async function readFallbackAnalyticsEvents() {
 export async function clearFallbackAnalyticsEvents() {
   const memory = fallbackMemory();
   memory.length = 0;
+  await writeBlobJson(ANALYTICS_BLOB, []).catch(() => null);
   await writeDiskEvents([]);
 }
 

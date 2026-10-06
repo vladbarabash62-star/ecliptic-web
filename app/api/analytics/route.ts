@@ -104,6 +104,11 @@ export async function POST(request: Request) {
   if (type.includes("telegram")) commands.push(["HINCRBY", ANALYTICS_TOTALS_KEY, "telegram", "1"]);
   if (product) commands.push(["HINCRBY", ANALYTICS_PRODUCTS_KEY, product, "1"]);
 
+  if (process.env.BLOB_STORE_ID || process.env.BLOB_READ_WRITE_TOKEN) {
+    await addFallbackAnalyticsEvent(event);
+    return NextResponse.json({ ok: true, stored: true, storage: "blob" });
+  }
+
   let redisError = "";
 
   try {

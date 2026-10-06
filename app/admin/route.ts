@@ -1469,6 +1469,7 @@ const ADMIN_HTML = `<!doctype html>
       try {
         settings.reviewsCountLabel = $('reviewsCount').value.trim() || '400+';
         var data = await postJson('/api/admin/settings', { settings: settings }, 12000);
+        if (!data.saved) throw new Error(data.warning || 'Настройки не записались.');
         settings = data.settings || settings;
         $('reviewsCount').value = settings.reviewsCountLabel || '400+';
         showNotice('Настройки главной сохранены.', false);
