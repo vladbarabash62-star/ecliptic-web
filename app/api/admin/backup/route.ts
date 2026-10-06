@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import JSZip from "jszip";
+import { createHash } from "node:crypto";
 import { readFallbackAnalyticsEvents, summarizeAnalyticsEvents } from "../../../../lib/analyticsFallbackStore";
 import { buildProductStorage, getProducts } from "../../../../lib/productStore";
+import type { Product, ProductOffer } from "../../../../lib/products";
 import { getSiteSettings } from "../../../../lib/siteSettings";
 import { defaultSiteSettings } from "../../../../lib/siteSettingsDefaults";
 import { validateAdminRequest } from "../../../../lib/security";
@@ -95,6 +97,84 @@ pause
 `;
 }
 
+function extensionFromContentType(contentType: string | null) {
+  const type = String(contentType || "").toLowerCase();
+  if (type.includes("svg")) return "svg";
+  if (type.includes("webp")) return "webp";
+  if (type.includes("png")) return "png";
+  if (type.includes("jpeg") || type.includes("jpg")) return "jpg";
+  return "bin";
+}
+
+function extensionFromDataUrl(value: string) {
+  const match = value.match(/^data:image\/([a-z0-9.+-]+);base64,/i);
+  if (!match) return "bin";
+  if (match[1] === "jpeg") return "jpg";
+  if (match[1] === "svg+xml") return "svg";
+  return match[1];
+}
+
+function hashBuffer(buffer: Buffer) {
+  return createHash("sha1").update(buffer).digest("hex").slice(0, 16);
+}
+
+async function addBackupAsset(zip: JSZip, root: string, value: string, cache: Map<string, string>) {
+  if (!value || value.startsWith("/backup-assets/")) return value;
+  if (cache.has(value)) return cache.get(value) || value;
+
+  try {
+    let buffer: Buffer;
+    let extension = "bin";
+
+    if (/^data:image\//i.test(value)) {
+      const base64 = value.replace(/^data:image\/[a-z0-9.+-]+;base64,/i, "");
+      buffer = Buffer.from(base64, "base64");
+      extension = extensionFromDataUrl(value);
+    } else if (/^https?:\/\//i.test(value)) {
+      const response = await fetch(value, { cache: "no-store" });
+      if (!response.ok) return value;
+      buffer = Buffer.from(await response.arrayBuffer());
+      extension = extensionFromContentType(response.headers.get("content-type"));
+    } else {
+      return value;
+    }
+
+    if (!buffer.length || buffer.length > 2_500_000) return value;
+
+    const filename = `${hashBuffer(buffer)}.${extension}`;
+    const zipPath = `${root}public/backup-assets/${filename}`;
+    const publicPath = `/backup-assets/${filename}`;
+    zip.file(zipPath, buffer);
+    cache.set(value, publicPath);
+    return publicPath;
+  } catch {
+    return value;
+  }
+}
+
+async function localizeProductAssets(zip: JSZip, root: string, products: Product[]) {
+  const cache = new Map<string, string>();
+  const localized = JSON.parse(JSON.stringify(products)) as Product[];
+
+  for (const product of localized) {
+    product.icon = await addBackupAsset(zip, root, product.icon, cache);
+    if (product.offerIcon) {
+      product.offerIcon = await addBackupAsset(zip, root, product.offerIcon, cache);
+    }
+
+    for (const offer of product.offers) {
+      if (offer.type === "divider") continue;
+      const item = offer as ProductOffer;
+      if (item.icon) item.icon = await addBackupAsset(zip, root, item.icon, cache);
+    }
+  }
+
+  return {
+    products: localized,
+    assetCount: cache.size,
+  };
+}
+
 async function fullSiteBackupZip(backup: Awaited<ReturnType<typeof adminDataBackup>>) {
   const source = await fetch(SOURCE_ARCHIVE_URL, { cache: "no-store" });
   if (!source.ok) throw new Error("Source archive unavailable");
@@ -104,13 +184,33 @@ async function fullSiteBackupZip(backup: Awaited<ReturnType<typeof adminDataBack
   const firstFile = Object.keys(zip.files).find((name) => name.includes("/"));
   const root = firstFile ? firstFile.slice(0, firstFile.indexOf("/") + 1) : "";
   const dataRoot = `${root}backup-data/admin/`;
+  const localized = await localizeProductAssets(zip, root, backup.products);
+  const localProductStorage = buildProductStorage(localized.products);
+  const localBackup = {
+    ...backup,
+    products: localized.products,
+    productStorage: localProductStorage,
+    bundledAssets: localized.assetCount,
+  };
 
-  zip.file(`${root}ecliptic-admin-data.json`, JSON.stringify(backup, null, 2));
+  zip.file(`${root}ecliptic-admin-data.json`, JSON.stringify(localBackup, null, 2));
   zip.file(`${root}RESTORE-RUN-LOCAL.txt`, restoreReadme());
   zip.file(`${root}START-LOCAL-WINDOWS.bat`, windowsStartScript());
-  zip.file(`${dataRoot}products-storage.json`, JSON.stringify(backup.productStorage, null, 2));
+  zip.file(`${dataRoot}products-storage.json`, JSON.stringify(localProductStorage, null, 2));
   zip.file(`${dataRoot}site-settings.json`, JSON.stringify(backup.settings, null, 2));
   zip.file(`${dataRoot}analytics-events-v2.json`, JSON.stringify(backup.analytics.events, null, 2));
+  zip.file(`${root}BACKUP-MANIFEST.txt`, [
+    "Ecliptic Store backup manifest",
+    `Generated at: ${backup.generatedAt}`,
+    `Products: ${backup.products.length}`,
+    `Analytics events: ${backup.analytics.events.length}`,
+    `Bundled product images: ${localized.assetCount}`,
+    "",
+    "This archive intentionally does not include node_modules or .next.",
+    "START-LOCAL-WINDOWS.bat installs dependencies and starts the local site.",
+    "Product data in backup-data points to bundled /backup-assets files when the image could be downloaded.",
+    "",
+  ].join("\n"));
   zip.file(`${root}.env.local.example`, [
     "# Локально можно оставить пустым: сайт возьмет данные из backup-data.",
     "# Для продакшена подключите Vercel Blob или задайте BLOB_READ_WRITE_TOKEN.",
