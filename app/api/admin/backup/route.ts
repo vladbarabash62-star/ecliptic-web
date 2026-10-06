@@ -66,10 +66,32 @@ function restoreReadme() {
 4. Выполните: pnpm dev
 5. Откройте http://localhost:3000
 
+На Windows можно просто запустить START-LOCAL-WINDOWS.bat.
+
 Важно:
 - Если запускать локально без Vercel Blob, сайт автоматически читает данные из папки backup-data.
 - Поэтому товары и настройки должны открыться такими, какими они были на сайте в момент скачивания бэкапа.
 - Для продакшена лучше использовать Vercel и подключенное Blob-хранилище.
+`;
+}
+
+function windowsStartScript() {
+  return `@echo off
+cd /d "%~dp0"
+echo Starting Ecliptic Store locally...
+where pnpm >nul 2>nul
+if errorlevel 1 (
+  echo pnpm not found, trying corepack...
+  corepack enable
+)
+pnpm install
+if errorlevel 1 (
+  echo Failed to install dependencies.
+  pause
+  exit /b 1
+)
+pnpm dev
+pause
 `;
 }
 
@@ -85,6 +107,7 @@ async function fullSiteBackupZip(backup: Awaited<ReturnType<typeof adminDataBack
 
   zip.file(`${root}ecliptic-admin-data.json`, JSON.stringify(backup, null, 2));
   zip.file(`${root}RESTORE-RUN-LOCAL.txt`, restoreReadme());
+  zip.file(`${root}START-LOCAL-WINDOWS.bat`, windowsStartScript());
   zip.file(`${dataRoot}products-storage.json`, JSON.stringify(backup.productStorage, null, 2));
   zip.file(`${dataRoot}site-settings.json`, JSON.stringify(backup.settings, null, 2));
   zip.file(`${dataRoot}analytics-events-v2.json`, JSON.stringify(backup.analytics.events, null, 2));
