@@ -2,6 +2,7 @@ import { products, type Product, type ProductOffer } from "./products";
 import { redisPipeline } from "./security";
 import { readAdminFallback, writeAdminFallback } from "./adminFallbackStore";
 import { readBlobJson, writeBlobJson } from "./blobJsonStore";
+import { LOCAL_PRODUCTS_SEED, readLocalBackupSeed } from "./localBackupSeed";
 
 const PRODUCTS_KEY = "ecliptic:products:overrides";
 const PRODUCTS_FALLBACK_KEY = "products-storage";
@@ -236,6 +237,9 @@ async function readProductStorage(options: ProductReadOptions = {}): Promise<Pro
   const blobStorage = await readBlobJson<ProductStorage>(PRODUCTS_BLOB).catch(() => null);
   if (blobStorage) return normalizeProductStorage(blobStorage);
 
+  const localSeed = await readLocalBackupSeed<ProductStorage>(LOCAL_PRODUCTS_SEED);
+  if (localSeed) return normalizeProductStorage(localSeed);
+
   const fallback = await readAdminFallback<ProductStorage>(PRODUCTS_FALLBACK_KEY);
   if (fallback) return normalizeProductStorage(fallback);
 
@@ -343,7 +347,7 @@ export async function getProductBySlug(slug: string, options: ProductReadOptions
   return currentProducts.find((product) => product.slug === normalizedSlug);
 }
 
-export async function saveProducts(nextProducts: Product[]) {
+export function buildProductStorage(nextProducts: Product[]): ProductStorage {
   const overrides: ProductOverrides = {};
   const usedSlugs = new Set<string>();
   const usedBaseSlugs = new Set<string>();
@@ -375,7 +379,11 @@ export async function saveProducts(nextProducts: Product[]) {
 
   const hiddenBaseSlugs = products.filter((product) => !usedBaseSlugs.has(product.slug)).map((product) => product.slug);
 
-  const storage = { hiddenBaseSlugs, overrides, version: PRODUCT_STORAGE_VERSION };
+  return { hiddenBaseSlugs, overrides, version: PRODUCT_STORAGE_VERSION };
+}
+
+export async function saveProducts(nextProducts: Product[]) {
+  const storage = buildProductStorage(nextProducts);
   await writeBlobJson(PRODUCTS_BLOB, storage);
   await writeAdminFallback(PRODUCTS_FALLBACK_KEY, storage);
   void redisPipeline([["SET", PRODUCTS_KEY, JSON.stringify(storage)]], {

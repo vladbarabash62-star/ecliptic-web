@@ -2,6 +2,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { readBlobJson, writeBlobJson } from "./blobJsonStore";
+import { LOCAL_ANALYTICS_SEED, readLocalBackupSeed } from "./localBackupSeed";
 
 export type AnalyticsEvent = {
   type?: string;
@@ -80,6 +81,14 @@ export async function readFallbackAnalyticsEvents() {
     const memory = fallbackMemory();
     memory.length = 0;
     memory.push(...blobEvents.slice(0, MAX_FALLBACK_EVENTS));
+    return memory;
+  }
+
+  const localSeed = await readLocalBackupSeed<AnalyticsEvent[]>(LOCAL_ANALYTICS_SEED);
+  if (Array.isArray(localSeed)) {
+    const memory = fallbackMemory();
+    memory.length = 0;
+    memory.push(...localSeed.slice(0, MAX_FALLBACK_EVENTS));
     return memory;
   }
 

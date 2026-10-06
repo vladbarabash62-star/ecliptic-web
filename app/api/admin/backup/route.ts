@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
+import JSZip from "jszip";
 import { readFallbackAnalyticsEvents, summarizeAnalyticsEvents } from "../../../../lib/analyticsFallbackStore";
-import { getProducts } from "../../../../lib/productStore";
+import { buildProductStorage, getProducts } from "../../../../lib/productStore";
 import { getSiteSettings } from "../../../../lib/siteSettings";
 import { defaultSiteSettings } from "../../../../lib/siteSettingsDefaults";
 import { validateAdminRequest } from "../../../../lib/security";
@@ -40,11 +41,67 @@ async function adminDataBackup() {
     },
     settings,
     products,
+    productStorage: buildProductStorage(products),
     analytics: {
       summary: summarizeAnalyticsEvents(analyticsEvents),
       events: analyticsEvents,
     },
   };
+}
+
+function restoreReadme() {
+  return `Ecliptic Store full backup
+
+Что внутри:
+- исходный код сайта;
+- backup-data/admin/products-storage.json — текущие товары, варианты, цены, иконки;
+- backup-data/admin/site-settings.json — настройки главной страницы;
+- backup-data/admin/analytics-events-v2.json — текущая аналитика;
+- ecliptic-admin-data.json — полный читаемый экспорт админки.
+
+Как запустить локально:
+1. Распакуйте архив.
+2. Откройте папку сайта в терминале.
+3. Выполните: pnpm install
+4. Выполните: pnpm dev
+5. Откройте http://localhost:3000
+
+Важно:
+- Если запускать локально без Vercel Blob, сайт автоматически читает данные из папки backup-data.
+- Поэтому товары и настройки должны открыться такими, какими они были на сайте в момент скачивания бэкапа.
+- Для продакшена лучше использовать Vercel и подключенное Blob-хранилище.
+`;
+}
+
+async function fullSiteBackupZip(backup: Awaited<ReturnType<typeof adminDataBackup>>) {
+  const source = await fetch(SOURCE_ARCHIVE_URL, { cache: "no-store" });
+  if (!source.ok) throw new Error("Source archive unavailable");
+
+  const sourceBuffer = Buffer.from(await source.arrayBuffer());
+  const zip = await JSZip.loadAsync(sourceBuffer);
+  const firstFile = Object.keys(zip.files).find((name) => name.includes("/"));
+  const root = firstFile ? firstFile.slice(0, firstFile.indexOf("/") + 1) : "";
+  const dataRoot = `${root}backup-data/admin/`;
+
+  zip.file(`${root}ecliptic-admin-data.json`, JSON.stringify(backup, null, 2));
+  zip.file(`${root}RESTORE-RUN-LOCAL.txt`, restoreReadme());
+  zip.file(`${dataRoot}products-storage.json`, JSON.stringify(backup.productStorage, null, 2));
+  zip.file(`${dataRoot}site-settings.json`, JSON.stringify(backup.settings, null, 2));
+  zip.file(`${dataRoot}analytics-events-v2.json`, JSON.stringify(backup.analytics.events, null, 2));
+  zip.file(`${root}.env.local.example`, [
+    "# Локально можно оставить пустым: сайт возьмет данные из backup-data.",
+    "# Для продакшена подключите Vercel Blob или задайте BLOB_READ_WRITE_TOKEN.",
+    "ADMIN_SECRET_PATH=",
+    "ADMIN_PIN=Ecliptic-2706",
+    "BLOB_READ_WRITE_TOKEN=",
+    "",
+  ].join("\n"));
+
+  return await zip.generateAsync({
+    type: "uint8array",
+    compression: "DEFLATE",
+    compressionOptions: { level: 6 },
+  });
 }
 
 export async function GET(request: Request) {
@@ -56,32 +113,18 @@ export async function GET(request: Request) {
   const stamp = timestampForFile();
 
   if (type === "site") {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15_000);
-
     try {
-      const archive = await fetch(SOURCE_ARCHIVE_URL, {
-        cache: "no-store",
-        signal: controller.signal,
-      });
+      const backup = await adminDataBackup();
+      const archive = await fullSiteBackupZip(backup);
 
-      if (!archive.ok || !archive.body) {
-        return NextResponse.json(
-          { ok: false, error: "Site archive unavailable" },
-          { status: 502 }
-        );
-      }
-
-      return new Response(archive.body, {
-        headers: attachmentHeaders(`ecliptic-site-source-${stamp}.zip`, "application/zip"),
+      return new Response(Buffer.from(archive), {
+        headers: attachmentHeaders(`ecliptic-full-site-backup-${stamp}.zip`, "application/zip"),
       });
     } catch {
       return NextResponse.json(
-        { ok: false, error: "Site archive unavailable" },
+        { ok: false, error: "Full site backup unavailable" },
         { status: 502 }
       );
-    } finally {
-      clearTimeout(timeout);
     }
   }
 
