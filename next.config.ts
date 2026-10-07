@@ -42,7 +42,7 @@ const nextConfig: NextConfig = {
           {
             key: "Content-Security-Policy",
             value:
-              "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' https://t.me https://telegram.me; connect-src 'self' https://t.me https://telegram.me https://accounts.google.com https://oauth2.googleapis.com; img-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' https://telegram.org https://accounts.google.com; frame-src https://accounts.google.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; manifest-src 'self'; media-src 'self' https:; worker-src 'self' blob:; upgrade-insecure-requests",
+              "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' https://t.me https://telegram.me https://oauth.telegram.org; connect-src 'self' https://t.me https://telegram.me https://accounts.google.com https://oauth2.googleapis.com https://oauth.telegram.org; img-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' https://telegram.org https://oauth.telegram.org https://accounts.google.com; frame-src https://accounts.google.com https://oauth.telegram.org; style-src 'self' 'unsafe-inline'; font-src 'self' data:; manifest-src 'self'; media-src 'self' https:; worker-src 'self' blob:; upgrade-insecure-requests",
           },
         ],
       },

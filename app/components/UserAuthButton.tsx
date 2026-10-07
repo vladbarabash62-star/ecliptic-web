@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type CustomerUser = {
   id: string;
@@ -45,6 +45,10 @@ declare global {
 }
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
+const TELEGRAM_LOGIN_BOT =
+  process.env.NEXT_PUBLIC_TELEGRAM_LOGIN_BOT_USERNAME ||
+  process.env.NEXT_PUBLIC_TELEGRAM_WEBAPP_BOT_USERNAME ||
+  "Ecliptic_Store_BOT";
 
 function initials(name: string) {
   return name
@@ -84,6 +88,7 @@ export default function UserAuthButton() {
   const [isOpen, setIsOpen] = useState(false);
   const [status, setStatus] = useState("");
   const [isBusy, setIsBusy] = useState(false);
+  const telegramWidgetRef = useRef<HTMLDivElement | null>(null);
 
   const displayName = useMemo(() => {
     if (!user) return "";
@@ -104,6 +109,33 @@ export default function UserAuthButton() {
     window.addEventListener("ecliptic-auth-changed", handleAuthChange);
     return () => window.removeEventListener("ecliptic-auth-changed", handleAuthChange);
   }, []);
+
+  useEffect(() => {
+    if (!isOpen || !telegramWidgetRef.current || user) return;
+
+    const container = telegramWidgetRef.current;
+    container.innerHTML = "";
+    const bot = TELEGRAM_LOGIN_BOT.replace(/^@/, "").trim();
+    if (!/^[a-zA-Z0-9_]{5,32}$/.test(bot)) {
+      setStatus("Telegram бот для входа не настроен.");
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.async = true;
+    script.src = "https://telegram.org/js/telegram-widget.js?22";
+    script.setAttribute("data-telegram-login", bot);
+    script.setAttribute("data-size", "large");
+    script.setAttribute("data-radius", "14");
+    script.setAttribute("data-userpic", "true");
+    script.setAttribute("data-request-access", "write");
+    script.setAttribute("data-auth-url", `${window.location.origin}/api/auth/telegram/callback?returnTo=/account`);
+    container.appendChild(script);
+
+    return () => {
+      container.innerHTML = "";
+    };
+  }, [isOpen, user]);
 
   async function authorizeGoogle() {
     if (!GOOGLE_CLIENT_ID) {
@@ -150,10 +182,7 @@ export default function UserAuthButton() {
     const webApp = (window as Window & { Telegram?: { WebApp?: AuthTelegramWebApp } }).Telegram?.WebApp;
     const telegramUser = webApp?.initDataUnsafe?.user;
     if (!telegramUser?.id) {
-      setStatus("Для Telegram входа откройте сайт через Telegram Mini App.");
-      window.setTimeout(() => {
-        window.location.href = "/shop";
-      }, 900);
+      setStatus("Нажмите синюю кнопку Telegram ниже. Если она не появилась, проверьте блокировку скриптов.");
       return;
     }
 
@@ -246,14 +275,17 @@ export default function UserAuthButton() {
               >
                 Войти через Google
               </button>
-              <button
-                type="button"
-                onClick={authorizeTelegram}
-                disabled={isBusy}
-                className="flex min-h-12 items-center justify-center gap-3 rounded-2xl border border-sky-300/28 bg-sky-500/16 text-sm font-black text-sky-50 transition hover:bg-sky-500/22 disabled:opacity-60"
-              >
-                Войти через Telegram
-              </button>
+              <div className="grid min-h-12 place-items-center rounded-2xl border border-sky-300/28 bg-sky-500/10 px-3 py-2">
+                <div ref={telegramWidgetRef} className="telegram-login-widget min-h-10" />
+                <button
+                  type="button"
+                  onClick={authorizeTelegram}
+                  disabled={isBusy}
+                  className="mt-2 text-xs font-bold text-sky-100/72 transition hover:text-sky-50 disabled:opacity-60"
+                >
+                  Войти через Telegram Mini App
+                </button>
+              </div>
             </div>
 
             {status ? (

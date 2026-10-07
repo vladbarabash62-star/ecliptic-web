@@ -244,6 +244,39 @@ export function verifyTelegramInitData(initData: string) {
   return JSON.parse(userRaw) as { id?: number; username?: string; first_name?: string; last_name?: string; photo_url?: string };
 }
 
+export function verifyTelegramLoginData(params: URLSearchParams) {
+  const hash = params.get("hash") || "";
+  const id = params.get("id") || "";
+  const firstName = params.get("first_name") || "";
+  const lastName = params.get("last_name") || "";
+  const username = params.get("username") || "";
+  const photoUrl = params.get("photo_url") || "";
+  const authDate = Number(params.get("auth_date") || 0);
+  if (!id || !authDate || Date.now() / 1000 - authDate > 60 * 60 * 24) return null;
+
+  const botToken = process.env.TELEGRAM_BOT_TOKEN || process.env.TELEGRAM_WEBAPP_BOT_TOKEN || "";
+  if (botToken) {
+    const checkString = Array.from(params.entries())
+      .filter(([key]) => key !== "hash")
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, value]) => `${key}=${value}`)
+      .join("\n");
+    const secret = createHash("sha256").update(botToken).digest();
+    const expected = createHmac("sha256", secret).update(checkString).digest("hex");
+    const left = Buffer.from(hash);
+    const right = Buffer.from(expected);
+    if (!hash || left.length !== right.length || !timingSafeEqual(left, right)) return null;
+  }
+
+  return {
+    id: Number(id),
+    username,
+    first_name: firstName,
+    last_name: lastName,
+    photo_url: photoUrl,
+  };
+}
+
 export async function telegramUserToCustomer(user: { id?: number; username?: string; first_name?: string; last_name?: string; photo_url?: string }) {
   if (!user.id) throw new Error("Telegram user is missing");
 
