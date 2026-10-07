@@ -16,6 +16,7 @@ type DetailField = {
   label: string;
   placeholder?: string;
   numeric?: boolean;
+  options?: string[];
 };
 
 function sellerChatHref(message?: string) {
@@ -220,6 +221,11 @@ function appendDetails(message: string, details: string[]) {
   return details.length ? `${message}\n${details.join("\n")}` : message;
 }
 
+function codeValue(value: string) {
+  const normalized = value.trim().replace(/`/g, "'");
+  return normalized ? `\`${normalized}\`` : "`не указан`";
+}
+
 function spotifyPlanAndPeriod(offerLabel: string) {
   const offer = offerLabel.trim();
   const planMatch = offer.match(/^(duo|individual)\s+/i);
@@ -274,7 +280,7 @@ function formatPurchaseMessage(
   const filledDetails = details
     ? Object.entries(details)
         .filter(([, value]) => value.trim())
-        .map(([label, value]) => `${label}: ${value.trim()}`)
+        .map(([label, value]) => `${label}: ${codeValue(value)}`)
     : [];
 
   const knownMessage = formatKnownPurchaseMessage(productName, offerLabel, priceRub);
@@ -399,7 +405,7 @@ export function SteamTopupForm({ productName, productSlug }: { productName: stri
     () => {
       const serviceName = topupServiceName(productName);
       return normalizeOrderMessage(
-        `🛍 Новый заказ\n📦 Сервис: ${serviceName}\n💵 Сумма: ${hasAmount ? `${numericAmount}$` : "не указана"}\n🆔 Steam логин: ${login.trim() || "не указан"}\n💰 К оплате: ${hasAmount ? `${priceRub}р` : "уточнить"}`
+        `🛍 Новый заказ\n📦 Сервис: ${serviceName}\n💵 Сумма: ${hasAmount ? codeValue(`${numericAmount}$`) : "`не указана`"}\n🆔 Steam логин: ${codeValue(login)}\n💰 К оплате: ${hasAmount ? `${priceRub}р` : "уточнить"}`
       );
     },
     [hasAmount, login, numericAmount, priceRub, productName]
@@ -588,17 +594,32 @@ export function ProductOffersWithDetails({
           {fields.map((field) => (
             <label key={field.id} className="grid gap-2">
               <span className="text-sm font-bold text-white/78">{field.label}</span>
-              <input
-                value={values[field.id] || ""}
-                onChange={(event) => {
-                  const value = field.numeric ? event.target.value.replace(/\D/g, "") : event.target.value;
-                  setValues((current) => ({ ...current, [field.id]: value }));
-                }}
-                inputMode={field.numeric ? "numeric" : undefined}
-                pattern={field.numeric ? "[0-9]*" : undefined}
-                placeholder={field.placeholder || `Введите ${field.label.toLowerCase()}`}
-                className="w-full rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-sky-300/45"
-              />
+              {field.options?.length ? (
+                <select
+                  value={values[field.id] || ""}
+                  onChange={(event) => setValues((current) => ({ ...current, [field.id]: event.target.value }))}
+                  className="w-full rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-sky-300/45"
+                >
+                  <option value="">{field.placeholder || `Выберите ${field.label.toLowerCase()}`}</option>
+                  {field.options.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  value={values[field.id] || ""}
+                  onChange={(event) => {
+                    const value = field.numeric ? event.target.value.replace(/\D/g, "") : event.target.value;
+                    setValues((current) => ({ ...current, [field.id]: value }));
+                  }}
+                  inputMode={field.numeric ? "numeric" : undefined}
+                  pattern={field.numeric ? "[0-9]*" : undefined}
+                  placeholder={field.placeholder || `Введите ${field.label.toLowerCase()}`}
+                  className="w-full rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-sky-300/45"
+                />
+              )}
             </label>
           ))}
         </div>
@@ -613,8 +634,13 @@ export function ProductOffersWithDetails({
               style={{ animationDelay: `${140 + index * 55}ms` }}
             >
               <div className="category-divider__line" />
-              <div className="category-divider__content">
+              <div className="category-divider__content group relative">
                 <h3>{compactDividerTitle(offer.title)}</h3>
+                {offer.description ? (
+                  <span className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 hidden w-[min(82vw,360px)] -translate-x-1/2 rounded-2xl border border-sky-300/25 bg-[#07101d]/98 p-3 text-left text-xs font-semibold leading-relaxed text-white/82 shadow-[0_18px_46px_rgba(0,0,0,0.42)] group-hover:block group-focus-within:block">
+                    {offer.description}
+                  </span>
+                ) : null}
               </div>
             </div>
           );
@@ -674,7 +700,7 @@ export function MinecraftOrderForm({ productName, productSlug }: { productName: 
   }
 
   const message = normalizeOrderMessage(
-    `🛍 Новый заказ\n🎮 Игра: ${productName}\n🆔 Ник: ${values.nick.trim() || "не указан"}\n🌐 Сервер: ${values.server.trim() || "не указан"}`
+    `🛍 Новый заказ\n🎮 Игра: ${productName}\n🆔 Ник: ${codeValue(values.nick)}\n🌐 Сервер: ${codeValue(values.server)}`
   );
 
   return (
@@ -720,7 +746,7 @@ export function ManagerLinkForm({ productName, productSlug }: { productName: str
   const [link, setLink] = useState("");
   const { notice, isVisible, showNotice } = useOrderNotice();
   const message = normalizeOrderMessage(
-    `🛍 Новый заказ\n🎁 Сервис: ${productName}\n🔗 Ссылка: ${link.trim() || "не указана"}`
+    `🛍 Новый заказ\n🎁 Сервис: ${productName}\n🔗 Ссылка: ${codeValue(link)}`
   );
 
   function validateOrder() {
@@ -794,7 +820,7 @@ export function SiteTopupForm({ productName, productSlug }: { productName: strin
 
   const message = normalizeOrderMessage(
     `🛍 Новый заказ\n📦 Сервис: ${productName}\n🔗 Ссылка: ${link.trim() || "не указана"}\n💵 Сумма пополнения: ${
-      hasAmount ? `${amount.trim()} ${currency}` : "не указана"
+      hasAmount ? codeValue(`${amount.trim()} ${currency}`) : "`не указана`"
     }`
   );
 

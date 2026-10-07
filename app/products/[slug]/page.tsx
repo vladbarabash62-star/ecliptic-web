@@ -43,6 +43,15 @@ function isManagerButtonOnlyProduct(product: { name: string; slug: string }) {
   );
 }
 
+function numberedServers(count: number) {
+  return Array.from({ length: count }, (_, index) => `Сервер ${index + 1}`);
+}
+
+const RADMIR_SERVERS = numberedServers(14);
+const AMAZING_SERVERS = numberedServers(10);
+const BLACK_RUSSIA_SERVERS = numberedServers(91);
+const MAJESTIC_SERVERS = numberedServers(22);
+
 export function generateStaticParams() {
   return products.map((product) => ({
     slug: product.slug,
@@ -90,8 +99,30 @@ export default async function ProductPage({ params }: PageProps) {
           { id: "accountId", label: "ID аккаунта", placeholder: "Введите ID аккаунта", numeric: true },
           { id: "serverId", label: "ID сервера", placeholder: "Введите ID сервера", numeric: true },
         ]
+      : product.slug === "brawl-stars" || product.slug === "clash-of-clans" || product.slug === "clash-royale"
+        ? [{ id: "email", label: "Почта аккаунта", placeholder: "Введите почту аккаунта" }]
+      : product.slug === "radmir-rp"
+        ? [
+            { id: "nick", label: "Ник", placeholder: "Введите ваш ник" },
+            { id: "server", label: "Сервер", placeholder: "Выберите сервер", options: RADMIR_SERVERS },
+          ]
+      : product.slug === "amazing-rp"
+        ? [
+            { id: "nick", label: "Ник", placeholder: "Введите ваш ник" },
+            { id: "server", label: "Сервер", placeholder: "Выберите сервер", options: AMAZING_SERVERS },
+          ]
+      : product.slug === "black-russia"
+        ? [
+            { id: "nick", label: "Ник", placeholder: "Введите ваш ник" },
+            { id: "server", label: "Сервер", placeholder: "Выберите сервер", options: BLACK_RUSSIA_SERVERS },
+          ]
+      : product.slug === "gta-5-rp-majestic-rp"
+        ? [
+            { id: "nick", label: "Ник", placeholder: "Введите ваш ник" },
+            { id: "server", label: "Сервер", placeholder: "Выберите сервер", options: MAJESTIC_SERVERS },
+          ]
       : product.slug === "pubg-mobile" || product.slug === "free-fire" || product.slug === "standoff-2"
-        ? [{ id: "playerId", label: "Игровой ID", placeholder: "Введите ваш ID", numeric: true }]
+        ? [{ id: "playerId", label: "ID аккаунта", placeholder: "Введите ID аккаунта", numeric: true }]
         : [];
   const iconStyle = {
     "--icon-scale": product.iconScale ?? 1,
