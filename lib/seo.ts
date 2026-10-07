@@ -132,7 +132,7 @@ const seoServiceWords = [
   "Standoff 2",
   "Стандофф 2",
   "Standoff донат",
-  "Тик ток",
+  "TikTok",
   "TikTok",
   "PUBG Mobile",
   "Пабг мобайл",

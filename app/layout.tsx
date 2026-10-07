@@ -50,7 +50,7 @@ const seoProducts = [
   "Epic Games",
   "PlayStation",
   "Standoff 2",
-  "Тик ток",
+  "TikTok",
   "PUBG Mobile",
   "Brawl Stars",
   "Clash of Clans",

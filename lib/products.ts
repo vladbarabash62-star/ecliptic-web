@@ -401,7 +401,7 @@ export const products: Product[] = [
     ]
   },
   {
-    "name": "Тик ток",
+    "name": "TikTok",
     "icon": "https://cdn-icons-png.freepik.com/256/3621/3621450.png?semt=ais_white_label",
     "slug": "tiktok",
     "iconScale": 1.1,

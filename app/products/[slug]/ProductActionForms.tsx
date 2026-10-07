@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import type { CSSProperties, MouseEvent, ReactNode } from "react";
+import type { CSSProperties, FocusEvent, MouseEvent, ReactNode } from "react";
 import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import type { ProductItem } from "../../../lib/products";
@@ -349,7 +349,7 @@ function priceTagStyle(priceRub: number) {
 }
 
 const CURRENCY_RUB = "\u20BD";
-const CURRENCY_PMR = "Р ПМР";
+const CURRENCY_PMR = "р ПМР";
 const CURRENCY_USD = "$";
 const CURRENCY_EUR = "\u20AC";
 
@@ -370,6 +370,48 @@ function compactDividerTitle(title: string) {
   };
 
   return compactTitles[normalizedTitle] || normalizedTitle;
+}
+
+function RegionInfoBadge({ title, description }: { title: string; description?: string }) {
+  const [tooltip, setTooltip] = useState<{ text: string; x: number; y: number } | null>(null);
+  const label = title.replace(/\s*[—-]\s*/g, ": ").replace(/^Регион/i, "Регион");
+
+  function showTooltip(event: MouseEvent<HTMLElement> | FocusEvent<HTMLElement>) {
+    if (!description) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    setTooltip({
+      text: description,
+      x: rect.left + rect.width / 2,
+      y: rect.top - 8,
+    });
+  }
+
+  return (
+    <div className="flex justify-center">
+      <button
+        type="button"
+        onMouseEnter={showTooltip}
+        onMouseMove={showTooltip}
+        onMouseLeave={() => setTooltip(null)}
+        onFocus={showTooltip}
+        onBlur={() => setTooltip(null)}
+        className="rounded-full border border-sky-300/24 bg-sky-400/10 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.08em] text-sky-100 shadow-[0_10px_28px_rgba(14,165,233,0.12)]"
+      >
+        {label}
+      </button>
+      {tooltip && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              className="pointer-events-none fixed z-[99999] w-[min(82vw,320px)] -translate-x-1/2 -translate-y-full rounded-2xl border border-sky-300/30 bg-[#07101d]/98 p-3 text-left text-xs font-semibold leading-relaxed text-white/84 shadow-[0_22px_60px_rgba(0,0,0,0.55)] backdrop-blur"
+              style={{ left: tooltip.x, top: Math.max(14, tooltip.y) }}
+            >
+              {tooltip.text}
+            </div>,
+            document.body
+          )
+        : null}
+    </div>
+  );
 }
 
 function OfferIcon({ icon, scale = 1 }: { icon?: string; scale?: number }) {
@@ -467,7 +509,7 @@ export function EpicTopupForm({ productName, productSlug }: { productName: strin
     () => {
       const serviceName = topupServiceName(productName);
       return normalizeOrderMessage(
-        `🛍 Новый заказ\n📦 Сервис: ${serviceName}\n💵 Сумма: ${hasAmount ? `${numericAmount}$` : "не указана"}\n💰 К оплате: ${hasAmount ? `${priceRub}р` : "уточнить"}`
+        `🛍 Новый заказ\n📦 Сервис: ${serviceName}\n💵 Сумма: ${hasAmount ? codeValue(`${numericAmount}$`) : "`не указана`"}\n💰 К оплате: ${hasAmount ? `${priceRub}р` : "уточнить"}`
       );
     },
     [hasAmount, numericAmount, priceRub, productName]
@@ -519,7 +561,7 @@ export function SbpPaymentForm({ productName, productSlug }: { productName: stri
   const message = useMemo(
     () =>
       normalizeOrderMessage(
-        `🛍 Новый заказ\n📦 Сервис: ${productName}\n💵 Сумма: ${hasAmount ? `${numericAmount}₽ РФ` : "не указана"}\n💰 К оплате: ${hasAmount ? `${pricePmr}р ПМР` : "уточнить"}`
+        `🛍 Новый заказ\n📦 Сервис: ${productName}\n💵 Сумма: ${hasAmount ? codeValue(`${numericAmount}₽ РФ`) : "`не указана`"}\n💰 К оплате: ${hasAmount ? `${pricePmr}р ПМР` : "уточнить"}`
       ),
     [hasAmount, numericAmount, pricePmr, productName]
   );
@@ -627,6 +669,10 @@ export function ProductOffersWithDetails({
 
       {offers.map((offer, index) => {
         if (offer.type === "divider") {
+          if (/^Регион\b/i.test(offer.title)) {
+            return <RegionInfoBadge key={`${offer.title}-${index}`} title={offer.title} description={offer.description} />;
+          }
+
           return (
             <div
               key={`${offer.title}-${index}`}
@@ -634,13 +680,8 @@ export function ProductOffersWithDetails({
               style={{ animationDelay: `${140 + index * 55}ms` }}
             >
               <div className="category-divider__line" />
-              <div className="category-divider__content group relative">
+              <div className="category-divider__content">
                 <h3>{compactDividerTitle(offer.title)}</h3>
-                {offer.description ? (
-                  <span className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 hidden w-[min(82vw,360px)] -translate-x-1/2 rounded-2xl border border-sky-300/25 bg-[#07101d]/98 p-3 text-left text-xs font-semibold leading-relaxed text-white/82 shadow-[0_18px_46px_rgba(0,0,0,0.42)] group-hover:block group-focus-within:block">
-                    {offer.description}
-                  </span>
-                ) : null}
               </div>
             </div>
           );
@@ -819,7 +860,7 @@ export function SiteTopupForm({ productName, productSlug }: { productName: strin
   }
 
   const message = normalizeOrderMessage(
-    `🛍 Новый заказ\n📦 Сервис: ${productName}\n🔗 Ссылка: ${link.trim() || "не указана"}\n💵 Сумма пополнения: ${
+    `🛍 Новый заказ\n📦 Сервис: ${productName}\n🔗 Ссылка: ${codeValue(link)}\n💵 Сумма пополнения: ${
       hasAmount ? codeValue(`${amount.trim()} ${currency}`) : "`не указана`"
     }`
   );
