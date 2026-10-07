@@ -6,6 +6,7 @@ import PageLoader from "./components/PageLoader";
 import SiteFooter from "./components/SiteFooter";
 import SwipeHomeGesture from "./components/SwipeHomeGesture";
 import TelegramStartRouter from "./components/TelegramStartRouter";
+import UserAuthButton from "./components/UserAuthButton";
 import SpaceScene from "../components/space-scene";
 import {
   buildSeoKeywords,
@@ -161,6 +162,7 @@ export default function RootLayout({
         {/* КНОПКА */}
         <PageLoader />
         <HomeButton />
+        <UserAuthButton />
         <ContactButton />
         <SwipeHomeGesture />
         <TelegramStartRouter />

@@ -106,6 +106,33 @@ function handleTelegramOrderClick(event: MouseEvent<HTMLAnchorElement>, message:
   openSellerChat(href, deepHref);
 }
 
+function saveCustomerOrder(input: {
+  productSlug: string;
+  offer: string;
+  priceRub?: number;
+  message: string;
+}) {
+  const payload = JSON.stringify(input);
+
+  try {
+    if (typeof navigator.sendBeacon === "function") {
+      const blob = new Blob([payload], { type: "application/json" });
+      if (navigator.sendBeacon("/api/orders", blob)) return;
+    }
+  } catch {
+    // If the user is not logged in or Beacon is blocked, the Telegram order still opens.
+  }
+
+  fetch("/api/orders", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: payload,
+    keepalive: true,
+  }).catch(() => {
+    // Order history is a convenience layer; it must not block buying.
+  });
+}
+
 function useOrderNotice() {
   const [notice, setNotice] = useState("");
   const [isVisible, setIsVisible] = useState(false);
@@ -173,6 +200,7 @@ function TelegramOrderLink({
           return;
         }
 
+        saveCustomerOrder({ productSlug, offer, priceRub, message });
         handleTelegramOrderClick(event, message);
       }}
       className={className}
