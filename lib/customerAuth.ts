@@ -255,18 +255,19 @@ export function verifyTelegramLoginData(params: URLSearchParams) {
   if (!id || !authDate || Date.now() / 1000 - authDate > 60 * 60 * 24) return null;
 
   const botToken = process.env.TELEGRAM_BOT_TOKEN || process.env.TELEGRAM_WEBAPP_BOT_TOKEN || "";
-  if (botToken) {
-    const checkString = Array.from(params.entries())
-      .filter(([key]) => key !== "hash")
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([key, value]) => `${key}=${value}`)
-      .join("\n");
-    const secret = createHash("sha256").update(botToken).digest();
-    const expected = createHmac("sha256", secret).update(checkString).digest("hex");
-    const left = Buffer.from(hash);
-    const right = Buffer.from(expected);
-    if (!hash || left.length !== right.length || !timingSafeEqual(left, right)) return null;
-  }
+  if (!botToken && useSecureCookie()) return null;
+  if (!botToken) return { id: Number(id), username, first_name: firstName, last_name: lastName, photo_url: photoUrl };
+
+  const checkString = Array.from(params.entries())
+    .filter(([key]) => key !== "hash")
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, value]) => `${key}=${value}`)
+    .join("\n");
+  const secret = createHash("sha256").update(botToken).digest();
+  const expected = createHmac("sha256", secret).update(checkString).digest("hex");
+  const left = Buffer.from(hash);
+  const right = Buffer.from(expected);
+  if (!hash || left.length !== right.length || !timingSafeEqual(left, right)) return null;
 
   return {
     id: Number(id),
