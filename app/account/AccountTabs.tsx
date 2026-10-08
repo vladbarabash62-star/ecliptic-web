@@ -23,6 +23,11 @@ type ReferralInfo = {
   link: string;
   invited: InvitedFriend[];
   invitedCount: number;
+  lastClaim?: {
+    id: string;
+    createdAt: string;
+    status: "sent" | "pending_manager";
+  } | null;
 };
 
 function formatDate(value: string) {
@@ -38,12 +43,31 @@ function formatDate(value: string) {
 export default function AccountTabs({ orders, referral }: { orders: AccountOrder[]; referral: ReferralInfo | null }) {
   const [tab, setTab] = useState<"orders" | "referral">("orders");
   const [copyText, setCopyText] = useState("Скопировать");
+  const [claimText, setClaimText] = useState(referral?.lastClaim ? "Заявка уже отправлена" : "");
+  const [isClaiming, setIsClaiming] = useState(false);
+  const invitedCount = referral?.invitedCount || 0;
+  const canClaimGift = invitedCount >= 5;
 
   async function copyReferralLink() {
     if (!referral?.link) return;
     await navigator.clipboard?.writeText(referral.link).catch(() => undefined);
     setCopyText("Скопировано");
     window.setTimeout(() => setCopyText("Скопировать"), 1400);
+  }
+
+  async function claimGift() {
+    setIsClaiming(true);
+    setClaimText("Отправляю заявку...");
+    try {
+      const response = await fetch("/api/referrals/claim", { method: "POST" });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.ok) throw new Error(data.error || "Не удалось отправить заявку.");
+      setClaimText(data.message || "Заявка отправлена менеджеру.");
+    } catch (error) {
+      setClaimText(error instanceof Error ? error.message : "Не удалось отправить заявку.");
+    } finally {
+      setIsClaiming(false);
+    }
   }
 
   return (
@@ -104,7 +128,7 @@ export default function AccountTabs({ orders, referral }: { orders: AccountOrder
             <h2 className="mt-2 text-2xl font-black text-white">Пригласи 5 друзей и получи подарок</h2>
             <p className="mt-2 max-w-[720px] text-sm font-semibold leading-relaxed text-white/62">
               За 5 приглашённых друзей можно получить любой подарок стоимостью до 25 Telegram Stars. Когда условия выполнены,
-              напишите нам, и мы проверим приглашения.
+              здесь появится кнопка для заявки менеджеру.
             </p>
             <div className="mt-5 grid gap-2 sm:grid-cols-[1fr_auto]">
               <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/24 px-4 py-3 text-sm font-black text-sky-50">
@@ -121,8 +145,25 @@ export default function AccountTabs({ orders, referral }: { orders: AccountOrder
             </div>
             <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.055] p-4">
               <div className="text-sm font-bold text-white/58">Приглашено друзей</div>
-              <div className="mt-1 text-4xl font-black text-white">{referral?.invitedCount || 0} / 5</div>
+              <div className="mt-1 text-4xl font-black text-white">{invitedCount} / 5</div>
             </div>
+            {canClaimGift ? (
+              <div className="mt-4 grid gap-3">
+                <button
+                  type="button"
+                  onClick={claimGift}
+                  disabled={isClaiming || Boolean(referral?.lastClaim)}
+                  className="rounded-2xl border border-emerald-300/26 bg-emerald-500/14 px-5 py-4 text-center text-sm font-black text-emerald-100 transition hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-65"
+                >
+                  {isClaiming ? "Отправляю..." : referral?.lastClaim ? "Заявка уже отправлена" : "Я выполнил все условия"}
+                </button>
+                {claimText ? (
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.055] p-4 text-sm font-semibold leading-relaxed text-white/68">
+                    {claimText}
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
           </div>
 
           <div className="rounded-3xl border border-white/10 bg-white/[0.035] p-5">
@@ -145,14 +186,11 @@ export default function AccountTabs({ orders, referral }: { orders: AccountOrder
             </div>
           </div>
 
-          <a
-            href="https://t.me/Ecliptic_Store"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-2xl border border-emerald-300/26 bg-emerald-500/14 px-5 py-4 text-center text-sm font-black text-emerald-100 transition hover:bg-emerald-500/20"
-          >
-            Выполнил все условия — написать нам
-          </a>
+          {!canClaimGift ? (
+            <div className="rounded-2xl border border-white/10 bg-white/[0.035] px-5 py-4 text-center text-sm font-bold text-white/48">
+              Кнопка заявки появится после 5 приглашённых друзей.
+            </div>
+          ) : null}
         </section>
       )}
 

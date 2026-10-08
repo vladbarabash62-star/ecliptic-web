@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { rememberManagerChat } from "../../../../lib/telegramManagerStore";
 import { savePendingTelegramLogin } from "../../../../lib/telegramLoginStore";
 
 export const runtime = "nodejs";
@@ -60,6 +61,8 @@ export async function POST(request: Request) {
   const message = update.message;
   const text = message?.text || "";
   const loginToken = text.match(/^\/start\s+login_([a-f0-9-]{20,80})/i)?.[1];
+
+  await rememberManagerChat(message?.from?.username, message?.chat?.id);
 
   if (!loginToken || !message?.from?.id || !message.chat?.id) {
     return NextResponse.json({ ok: true, ignored: true });

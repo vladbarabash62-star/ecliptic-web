@@ -31,6 +31,14 @@ export type CustomerOrder = {
   message?: string;
 };
 
+export type CustomerReferralClaim = {
+  id: string;
+  userId: string;
+  createdAt: string;
+  invitedCount: number;
+  status: "sent" | "pending_manager";
+};
+
 type CustomerSession = {
   user: CustomerUser;
   exp: number;
@@ -39,6 +47,7 @@ type CustomerSession = {
 type CustomerStore = {
   users: Record<string, CustomerUser>;
   orders: CustomerOrder[];
+  referralClaims: CustomerReferralClaim[];
   version: 1;
 };
 
@@ -87,13 +96,14 @@ function verifySessionCookie(value: string): CustomerSession | null {
 }
 
 function normalizeStore(value: unknown): CustomerStore {
-  const fallback: CustomerStore = { users: {}, orders: [], version: 1 };
+  const fallback: CustomerStore = { users: {}, orders: [], referralClaims: [], version: 1 };
   if (!value || typeof value !== "object" || Array.isArray(value)) return fallback;
 
   const raw = value as Partial<CustomerStore>;
   return {
     users: raw.users && typeof raw.users === "object" && !Array.isArray(raw.users) ? raw.users : {},
     orders: Array.isArray(raw.orders) ? raw.orders.slice(-5000) : [],
+    referralClaims: Array.isArray(raw.referralClaims) ? raw.referralClaims.slice(-1000) : [],
     version: 1,
   };
 }
@@ -261,7 +271,38 @@ export async function getCustomerReferralInfo(userIdValue: string, siteUrl = "ht
     link: `${siteUrl.replace(/\/$/, "")}/?use=${encodeURIComponent(referralCode)}`,
     invited,
     invitedCount: invited.length,
+    lastClaim: store.referralClaims
+      .filter((claim) => claim.userId === user.id)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0] || null,
   };
+}
+
+export async function createCustomerReferralClaim(userIdValue: string, status: CustomerReferralClaim["status"]) {
+  const store = await readCustomerStore();
+  const user = store.users[userIdValue];
+  if (!user) throw new Error("Пользователь не найден.");
+
+  const invitedCount = Object.values(store.users).filter((item) => item.referredByUserId === user.id).length;
+  if (invitedCount < 5) throw new Error("Для подарка нужно пригласить минимум 5 друзей.");
+
+  const recentClaim = store.referralClaims
+    .filter((claim) => claim.userId === user.id)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+  if (recentClaim && Date.now() - new Date(recentClaim.createdAt).getTime() < 24 * 60 * 60 * 1000) {
+    return { claim: recentClaim, user, invitedCount, duplicate: true };
+  }
+
+  const claim: CustomerReferralClaim = {
+    id: randomUUID(),
+    userId: user.id,
+    createdAt: new Date().toISOString(),
+    invitedCount,
+    status,
+  };
+
+  store.referralClaims = [...store.referralClaims, claim].slice(-1000);
+  await writeCustomerStore(store);
+  return { claim, user, invitedCount, duplicate: false };
 }
 
 export async function getCustomerAdminReferralReport() {
