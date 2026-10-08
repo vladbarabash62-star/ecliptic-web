@@ -78,6 +78,8 @@ export async function savePendingTelegramLogin(token: string, user: TelegramLogi
 
   const store = await readStore();
   const current = store.pending[token];
+  if (!current) return false;
+
   const now = new Date();
   store.pending[token] = {
     ...current,

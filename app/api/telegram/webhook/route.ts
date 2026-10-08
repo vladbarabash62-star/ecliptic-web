@@ -101,7 +101,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, ignored: true });
   }
 
-  await savePendingTelegramLogin(loginToken, message.from);
+  const loginSaved = await savePendingTelegramLogin(loginToken, message.from);
+  if (!loginSaved) {
+    await sendWelcomeMessage(message.chat.id, token);
+    return NextResponse.json({ ok: true, welcome: true, staleLoginToken: true });
+  }
+
   await sendTelegramMessage(
     message.chat.id,
     "Готово. Нажмите кнопку ниже, чтобы войти в личный кабинет Ecliptic Store.",
