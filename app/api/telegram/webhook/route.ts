@@ -48,6 +48,34 @@ async function sendTelegramMessage(chatId: number, text: string, token: string, 
   return response.ok;
 }
 
+async function sendWelcomeMessage(chatId: number, token: string) {
+  const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text: [
+        "Здравствуйте! Добро пожаловать в Ecliptic Store.",
+        "",
+        "У нас можно посмотреть цифровые товары, игровые пополнения, подписки и Telegram Stars. Ассортимент и актуальные цены доступны на сайте:",
+        "https://ecliptic.website",
+      ].join("\n"),
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: "Открыть сайт",
+              url: "https://ecliptic.website",
+            },
+          ],
+        ],
+      },
+    }),
+  });
+
+  return response.ok;
+}
+
 export async function POST(request: Request) {
   const secret = process.env.TELEGRAM_WEBHOOK_SECRET || "";
   if (secret && request.headers.get("x-telegram-bot-api-secret-token") !== secret) {
@@ -63,6 +91,11 @@ export async function POST(request: Request) {
   const loginToken = text.match(/^\/start\s+login_([a-f0-9-]{20,80})/i)?.[1];
 
   await rememberManagerChat(message?.from?.username, message?.chat?.id);
+
+  if (!loginToken && /^\/start(?:\s|$)/i.test(text) && message?.chat?.id) {
+    await sendWelcomeMessage(message.chat.id, token);
+    return NextResponse.json({ ok: true, welcome: true });
+  }
 
   if (!loginToken || !message?.from?.id || !message.chat?.id) {
     return NextResponse.json({ ok: true, ignored: true });
