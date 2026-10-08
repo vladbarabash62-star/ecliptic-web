@@ -205,7 +205,7 @@ export async function upsertCustomerUser(input: Omit<CustomerUser, "id" | "creat
     createdAt: current?.createdAt || now,
   };
 
-  const referrer = !current?.referredByUserId ? findUserByReferralCode(store, referrerCode || "") : null;
+  const referrer = !current ? findUserByReferralCode(store, referrerCode || "") : null;
   if (referrer && referrer.id !== id) {
     user.referredByUserId = referrer.id;
     user.referredAt = now;
@@ -332,17 +332,25 @@ export async function getCustomerAdminReferralReport() {
 
   return users
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-    .map((user) => ({
-      id: user.id,
-      name: user.name || user.username || "Пользователь",
-      username: user.username || "",
-      provider: user.provider,
-      createdAt: user.createdAt,
-      referralCode: user.referralCode || uniqueReferralCode(store, user.id, user.referralCode),
-      referredByUserId: user.referredByUserId || "",
-      referredAt: user.referredAt || "",
-      orders: (ordersByUser[user.id] || []).sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
-      invited: (invitedByUser[user.id] || [])
+    .map((user) => {
+      const referrer = user.referredByUserId ? store.users[user.referredByUserId] : null;
+      return {
+        id: user.id,
+        name: user.name || user.username || "Пользователь",
+        username: user.username || "",
+        provider: user.provider,
+        createdAt: user.createdAt,
+        referralCode: user.referralCode || uniqueReferralCode(store, user.id, user.referralCode),
+        referredByUserId: user.referredByUserId || "",
+        referredAt: user.referredAt || "",
+        referrer: referrer ? {
+          id: referrer.id,
+          name: referrer.name || referrer.username || "Пользователь",
+          username: referrer.username || "",
+          referralCode: referrer.referralCode || uniqueReferralCode(store, referrer.id, referrer.referralCode),
+        } : null,
+        orders: (ordersByUser[user.id] || []).sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+        invited: (invitedByUser[user.id] || [])
         .sort((a, b) => String(b.referredAt || b.createdAt).localeCompare(String(a.referredAt || a.createdAt)))
         .map((item) => ({
           id: item.id,
@@ -350,7 +358,8 @@ export async function getCustomerAdminReferralReport() {
           username: item.username || "",
           joinedAt: item.referredAt || item.createdAt,
         })),
-    }));
+      };
+    });
 }
 
 export async function verifyGoogleCredential(credential: string) {

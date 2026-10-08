@@ -940,12 +940,17 @@ const ADMIN_HTML = `<!doctype html>
     function referralUserName(user) {
       return user.name || user.username || user.id || 'Пользователь';
     }
+    function referralPersonLabel(person) {
+      if (!person) return '';
+      return [person.name || 'Пользователь', person.username || ''].filter(Boolean).join(' ');
+    }
     function renderReferrals() {
       $('referralUsers').innerHTML = referralUsers.map(function(user) {
         return '<button class="referral-user ' + (user.id === selectedReferralUserId ? 'active' : '') + '" type="button" data-referral-user="' + esc(user.id) + '">' +
           '<strong>' + esc(referralUserName(user)) + '</strong>' +
           '<div class="row-meta">' + esc([user.username, user.provider, formatAdminDate(user.createdAt)].filter(Boolean).join(' · ')) + '</div>' +
           '<div class="row-meta">Код: ' + esc(user.referralCode || '-') + ' · друзья: ' + ((user.invited || []).length) + ' · заказы: ' + ((user.orders || []).length) + '</div>' +
+          (user.referrer ? '<div class="row-meta">Пригласил: ' + esc(referralPersonLabel(user.referrer)) + '</div>' : '') +
         '</button>';
       }).join('') || '<p class="muted">Пока нет зарегистрированных пользователей.</p>';
       renderReferralDetails();
@@ -964,6 +969,9 @@ const ADMIN_HTML = `<!doctype html>
       var invited = (user.invited || []).map(function(friend) {
         return '<div class="row"><div><strong>' + esc(friend.name || 'Пользователь') + '</strong><div class="row-meta">' + esc([friend.username, formatAdminDate(friend.joinedAt)].filter(Boolean).join(' · ')) + '</div></div><strong>друг</strong></div>';
       }).join('') || '<p class="muted">Приглашённых друзей пока нет.</p>';
+      var referrer = user.referrer
+        ? referralPersonLabel(user.referrer) + (user.referredAt ? ' · ' + formatAdminDate(user.referredAt) : '')
+        : 'Никем не приглашён';
       $('referralDetails').className = '';
       $('referralDetails').innerHTML =
         '<div class="toolbar" style="justify-content:space-between;align-items:flex-start">' +
@@ -975,6 +983,7 @@ const ADMIN_HTML = `<!doctype html>
           '<div class="referral-metric"><span>Заказы</span><strong>' + ((user.orders || []).length) + '</strong></div>' +
           '<div class="referral-metric"><span>Приглашённые</span><strong>' + ((user.invited || []).length) + '</strong></div>' +
         '</div>' +
+        '<div class="referral-metric" style="margin-top:10px"><span>Кто пригласил этого пользователя</span><strong>' + esc(referrer) + '</strong></div>' +
         '<div class="referral-columns">' +
           '<div><h3>Заказы пользователя</h3><div class="list">' + orders + '</div></div>' +
           '<div><h3>Приглашённые друзья</h3><div class="list">' + invited + '</div></div>' +
