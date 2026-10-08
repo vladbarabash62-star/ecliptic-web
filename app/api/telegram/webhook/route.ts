@@ -1,4 +1,8 @@
 import { NextResponse } from "next/server";
+import {
+  getPendingCustomerReferralClaims,
+  markCustomerReferralClaimSent,
+} from "../../../../lib/customerAuth";
 import { rememberManagerChat } from "../../../../lib/telegramManagerStore";
 import { savePendingTelegramLogin } from "../../../../lib/telegramLoginStore";
 
@@ -76,6 +80,52 @@ async function sendWelcomeMessage(chatId: number, token: string) {
   return response.ok;
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+async function sendPlainTelegramMessage(chatId: number, text: string, token: string) {
+  const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text,
+      parse_mode: "HTML",
+      disable_web_page_preview: true,
+    }),
+  }).catch(() => null);
+
+  return Boolean(response?.ok);
+}
+
+async function flushPendingReferralClaims(chatId: number, token: string) {
+  const pending = await getPendingCustomerReferralClaims(30);
+  if (!pending.length) return;
+
+  await sendPlainTelegramMessage(chatId, `Подключил уведомления Ecliptic Store. Ожидающих реферальных заявок: ${pending.length}.`, token);
+
+  for (const item of pending) {
+    const text = [
+      "🎁 <b>Реферальная программа</b>",
+      "",
+      "Пользователь выполнил условия и просит подарок до <b>25 Telegram Stars</b>.",
+      `Имя: <b>${escapeHtml(item.user?.name || "не указано")}</b>`,
+      `Telegram: <b>${escapeHtml(item.user?.username || "не указан")}</b>`,
+      `Приглашено друзей: <b>${item.claim.invitedCount}</b>`,
+      `Заявка: <code>${escapeHtml(item.claim.id)}</code>`,
+      `ID сайта: <code>${escapeHtml(item.user?.id || item.claim.userId)}</code>`,
+    ].join("\n");
+
+    const sent = await sendPlainTelegramMessage(chatId, text, token);
+    if (sent) await markCustomerReferralClaimSent(item.claim.id);
+  }
+}
+
 export async function POST(request: Request) {
   const secret = process.env.TELEGRAM_WEBHOOK_SECRET || "";
   if (secret && request.headers.get("x-telegram-bot-api-secret-token") !== secret) {
@@ -90,7 +140,10 @@ export async function POST(request: Request) {
   const text = message?.text || "";
   const loginToken = text.match(/^\/start\s+login_([a-f0-9-]{20,80})/i)?.[1];
 
-  await rememberManagerChat(message?.from?.username, message?.chat?.id);
+  const managerRemembered = await rememberManagerChat(message?.from?.username, message?.chat?.id);
+  if (managerRemembered && message?.chat?.id) {
+    await flushPendingReferralClaims(message.chat.id, token);
+  }
 
   if (!loginToken && /^\/start(?:\s|$)/i.test(text) && message?.chat?.id) {
     await sendWelcomeMessage(message.chat.id, token);

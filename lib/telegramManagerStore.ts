@@ -41,5 +41,5 @@ export async function getManagerChatId() {
   const stored = normalize(await readAdminFallback<ManagerChatStore>(MANAGER_CHAT_FALLBACK));
   if (stored.chatId) return String(stored.chatId);
 
-  return "@Ecliptic_Store_PMR";
+  return "";
 }

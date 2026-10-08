@@ -311,6 +311,35 @@ export async function createCustomerReferralClaim(userIdValue: string, status: C
   return { claim, user, invitedCount, duplicate: false };
 }
 
+export async function markCustomerReferralClaimSent(claimId: string) {
+  const store = await readCustomerStore();
+  const index = store.referralClaims.findIndex((claim) => claim.id === claimId);
+  if (index === -1) return null;
+
+  store.referralClaims[index] = { ...store.referralClaims[index], status: "sent" };
+  await writeCustomerStore(store);
+  return store.referralClaims[index];
+}
+
+export async function getPendingCustomerReferralClaims(limit = 20) {
+  const store = await readCustomerStore();
+  return store.referralClaims
+    .filter((claim) => claim.status === "pending_manager")
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+    .slice(0, Math.max(1, Math.min(100, limit)))
+    .map((claim) => {
+      const user = store.users[claim.userId];
+      return {
+        claim,
+        user: user ? {
+          id: user.id,
+          name: user.name || user.username || "Пользователь",
+          username: user.username || "",
+        } : null,
+      };
+    });
+}
+
 export async function getCustomerAdminReferralReport() {
   const store = await readCustomerStore();
   let changed = false;
