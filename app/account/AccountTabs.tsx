@@ -23,6 +23,11 @@ type ReferralInfo = {
   link: string;
   invited: InvitedFriend[];
   invitedCount: number;
+  referrer?: {
+    id: string;
+    name: string;
+    username?: string;
+  } | null;
   lastClaim?: {
     id: string;
     createdAt: string;
@@ -146,6 +151,15 @@ export default function AccountTabs({ orders, referral }: { orders: AccountOrder
             <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.055] p-4">
               <div className="text-sm font-bold text-white/58">Приглашено друзей</div>
               <div className="mt-1 text-4xl font-black text-white">{invitedCount} / 5</div>
+            </div>
+            <div className="mt-4 rounded-2xl border border-sky-300/18 bg-sky-500/10 p-4 text-left">
+              <div className="text-xs font-black uppercase tracking-[0.1em] text-sky-100/60">Кто пригласил вас</div>
+              <div className="mt-2 text-base font-black text-white">
+                {referral?.referrer ? referral.referrer.name : "Вы зарегистрировались без приглашения"}
+              </div>
+              {referral?.referrer?.username ? (
+                <div className="mt-1 text-sm font-bold text-sky-100/72">{referral.referrer.username}</div>
+              ) : null}
             </div>
             {canClaimGift ? (
               <div className="mt-4 grid gap-3">

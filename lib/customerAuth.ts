@@ -249,6 +249,7 @@ export async function getCustomerReferralInfo(userIdValue: string, siteUrl = "ht
   const store = await readCustomerStore();
   const user = store.users[userIdValue];
   if (!user) return null;
+  const referrer = user.referredByUserId ? store.users[user.referredByUserId] : null;
 
   const referralCode = uniqueReferralCode(store, user.id, user.referralCode);
   if (user.referralCode !== referralCode) {
@@ -271,6 +272,11 @@ export async function getCustomerReferralInfo(userIdValue: string, siteUrl = "ht
     link: `${siteUrl.replace(/\/$/, "")}/?use=${encodeURIComponent(referralCode)}`,
     invited,
     invitedCount: invited.length,
+    referrer: referrer ? {
+      id: referrer.id,
+      name: referrer.name || referrer.username || "Пользователь",
+      username: referrer.username || "",
+    } : null,
     lastClaim: store.referralClaims
       .filter((claim) => claim.userId === user.id)
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0] || null,
