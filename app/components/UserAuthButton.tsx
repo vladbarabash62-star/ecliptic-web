@@ -67,6 +67,18 @@ export default function UserAuthButton() {
     return () => window.removeEventListener("ecliptic-auth-changed", handleAuthChange);
   }, []);
 
+  useEffect(() => {
+    const openAuth = () => {
+      if (user) {
+        window.location.href = "/account";
+        return;
+      }
+      setIsOpen(true);
+    };
+    window.addEventListener("ecliptic-open-auth", openAuth);
+    return () => window.removeEventListener("ecliptic-open-auth", openAuth);
+  }, [user]);
+
   async function authorizeTelegram() {
     const webApp = (window as Window & { Telegram?: { WebApp?: AuthTelegramWebApp } }).Telegram?.WebApp;
     const telegramUser = webApp?.initDataUnsafe?.user;

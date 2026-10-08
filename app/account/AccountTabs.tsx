@@ -172,9 +172,12 @@ export default function AccountTabs({ orders, referral }: { orders: AccountOrder
               {referral?.invited.length ? (
                 referral.invited.map((friend) => (
                   <div key={friend.id} className="rounded-2xl border border-white/10 bg-[#0f1420]/80 p-4">
-                    <div className="font-black text-white">{friend.name}</div>
+                    <div className="font-black text-white">Имя: {friend.name || "не указано"}</div>
+                    <div className="mt-1 text-sm font-bold text-sky-100/78">
+                      Telegram: {friend.username || "username не указан"}
+                    </div>
                     <div className="mt-1 text-xs font-semibold text-white/48">
-                      {[friend.username, formatDate(friend.joinedAt)].filter(Boolean).join(" · ")}
+                      Зарегистрировался по ссылке: {formatDate(friend.joinedAt)}
                     </div>
                   </div>
                 ))

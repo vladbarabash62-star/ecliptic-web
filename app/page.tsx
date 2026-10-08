@@ -1,4 +1,5 @@
 import ProductSearchGrid from "./components/ProductSearchGrid";
+import ReferralLanding from "./components/ReferralLanding";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { getProductBySlug, getProducts } from "../lib/productStore";
@@ -22,6 +23,11 @@ function normalizeStartSlug(value: string | undefined) {
   return /^[a-z0-9-]{1,80}$/.test(slug) ? slug : "";
 }
 
+function normalizeReferralCode(value: string | undefined) {
+  const code = (value || "").trim().toLowerCase();
+  return /^[a-z0-9_-]{1,32}$/.test(code) ? code : "";
+}
+
 export default async function HomePage({ searchParams }: HomePageProps) {
   const params: Record<string, string | string[] | undefined> = searchParams
     ? await searchParams
@@ -35,6 +41,11 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   if (startSlug) {
     const product = await getProductBySlug(startSlug);
     if (product) redirect(`/products/${product.slug}?app=1`);
+  }
+
+  const referralCode = normalizeReferralCode(firstSearchParam(params.use) || firstSearchParam(params.ref));
+  if (referralCode) {
+    return <ReferralLanding referralCode={referralCode} />;
   }
 
   const [allProducts, settings] = await Promise.all([
