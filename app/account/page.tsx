@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { getCustomerOrders, getCustomerUserFromCookies } from "../../lib/customerAuth";
 import { getProducts } from "../../lib/productStore";
+import AccountLogoutButton from "./AccountLogoutButton";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -55,10 +56,21 @@ export default async function AccountPage() {
             </div>
             {user ? (
               <div className="rounded-2xl border border-white/10 bg-white/[0.045] px-4 py-3 text-sm font-bold text-white/72">
-                {user.username || user.email || user.name}
+                {user.name || user.username || user.email}
               </div>
             ) : null}
           </div>
+
+          <div className="mt-6 flex flex-wrap gap-2 rounded-2xl border border-white/10 bg-white/[0.035] p-1.5">
+            <a href="#cabinet" className="rounded-xl bg-white px-4 py-2 text-sm font-black text-black">
+              Личный кабинет
+            </a>
+            <a href="#referral" className="rounded-xl px-4 py-2 text-sm font-black text-white/62 transition hover:bg-white/[0.08] hover:text-white">
+              Реферальная программа
+            </a>
+          </div>
+
+          <div id="cabinet" />
 
           {!user ? (
             <div className="mt-7 rounded-2xl border border-sky-300/18 bg-sky-500/10 p-5 text-sm font-semibold leading-relaxed text-white/72">
@@ -95,6 +107,18 @@ export default async function AccountPage() {
               Заказов пока нет. Выберите товар, нажмите “Купить”, и он появится здесь.
             </div>
           )}
+
+          {user ? (
+            <>
+              <section id="referral" className="mt-4 rounded-2xl border border-white/10 bg-white/[0.035] p-5">
+                <h2 className="text-lg font-black text-white">Реферальная программа</h2>
+                <p className="mt-2 text-sm font-semibold leading-relaxed text-white/56">
+                  Раздел подготовлен. Ссылка и начисления появятся здесь, когда реферальная программа будет включена.
+                </p>
+              </section>
+              <AccountLogoutButton />
+            </>
+          ) : null}
         </div>
       </section>
     </main>

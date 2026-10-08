@@ -26,15 +26,6 @@ type AuthTelegramWebApp = {
   };
 };
 
-function initials(name: string) {
-  return name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("") || "ES";
-}
-
 export default function UserAuthButton() {
   const [user, setUser] = useState<CustomerUser | null>(null);
   const [isOpen, setIsOpen] = useState(false);
@@ -43,7 +34,7 @@ export default function UserAuthButton() {
 
   const displayName = useMemo(() => {
     if (!user) return "";
-    return user.username || user.name || user.email || "Профиль";
+    return user.name || user.username || user.email || "Профиль";
   }, [user]);
 
   async function refreshUser() {
@@ -95,13 +86,6 @@ export default function UserAuthButton() {
     }
   }
 
-  async function logout() {
-    await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
-    setUser(null);
-    setIsOpen(false);
-    window.dispatchEvent(new Event("ecliptic-auth-changed"));
-  }
-
   return (
     <>
       <div className="fixed right-3 top-3 z-50 sm:right-5 sm:top-5">
@@ -110,13 +94,16 @@ export default function UserAuthButton() {
             href="/account"
             className="flex min-h-11 items-center gap-2 rounded-full border border-sky-300/24 bg-[#07111f]/92 px-3 py-2 text-sm font-black text-white shadow-[0_18px_44px_rgba(14,165,233,0.16)] backdrop-blur-md transition hover:-translate-y-0.5 hover:border-sky-300/42 hover:bg-[#0a1728] active:scale-95"
           >
-            {user.avatar ? (
-              <img src={user.avatar} alt="" className="h-7 w-7 rounded-full object-cover" referrerPolicy="no-referrer" />
-            ) : (
-              <span className="grid h-7 w-7 place-items-center rounded-full bg-sky-400/20 text-[11px] text-sky-100">
-                {initials(displayName)}
-              </span>
-            )}
+            <span className="grid h-7 w-7 place-items-center overflow-hidden rounded-full bg-sky-400 shadow-[0_0_0_1px_rgba(255,255,255,0.18)]">
+              <img
+                src="/telegram-profile-icon.png"
+                alt=""
+                className="h-full w-full object-cover"
+                width={28}
+                height={28}
+                draggable={false}
+              />
+            </span>
             <span className="hidden max-w-[150px] truncate sm:block">{displayName}</span>
           </Link>
         ) : (
@@ -177,15 +164,6 @@ export default function UserAuthButton() {
         </div>
       ) : null}
 
-      {user ? (
-        <button
-          type="button"
-          onClick={logout}
-          className="fixed right-3 top-[62px] z-40 hidden rounded-full border border-white/10 bg-black/42 px-3 py-1.5 text-xs font-bold text-white/45 backdrop-blur-md transition hover:text-white sm:right-5 sm:block"
-        >
-          Выйти
-        </button>
-      ) : null}
     </>
   );
 }
