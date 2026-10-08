@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AccountLogoutButton from "./AccountLogoutButton";
 
 type AccountOrder = {
@@ -45,6 +45,10 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
+function tabFromHash(value: string): "orders" | "referral" {
+  return value === "#referral" || value === "referral" ? "referral" : "orders";
+}
+
 export default function AccountTabs({ orders, referral }: { orders: AccountOrder[]; referral: ReferralInfo | null }) {
   const [tab, setTab] = useState<"orders" | "referral">("orders");
   const [copyText, setCopyText] = useState("Скопировать");
@@ -52,6 +56,21 @@ export default function AccountTabs({ orders, referral }: { orders: AccountOrder
   const [isClaiming, setIsClaiming] = useState(false);
   const invitedCount = referral?.invitedCount || 0;
   const canClaimGift = invitedCount >= 5;
+
+  useEffect(() => {
+    const syncFromHash = () => setTab(tabFromHash(window.location.hash));
+    syncFromHash();
+    window.addEventListener("hashchange", syncFromHash);
+    return () => window.removeEventListener("hashchange", syncFromHash);
+  }, []);
+
+  function selectTab(nextTab: "orders" | "referral") {
+    setTab(nextTab);
+    const nextHash = nextTab === "referral" ? "#referral" : "#orders";
+    if (window.location.hash !== nextHash) {
+      window.history.replaceState(null, "", nextHash);
+    }
+  }
 
   async function copyReferralLink() {
     if (!referral?.link) return;
@@ -80,7 +99,7 @@ export default function AccountTabs({ orders, referral }: { orders: AccountOrder
       <div className="mt-6 flex flex-wrap gap-2 rounded-2xl border border-white/10 bg-white/[0.035] p-1.5">
         <button
           type="button"
-          onClick={() => setTab("orders")}
+          onClick={() => selectTab("orders")}
           className={`rounded-xl px-4 py-2 text-sm font-black transition ${
             tab === "orders" ? "bg-white text-black" : "text-white/62 hover:bg-white/[0.08] hover:text-white"
           }`}
@@ -89,7 +108,7 @@ export default function AccountTabs({ orders, referral }: { orders: AccountOrder
         </button>
         <button
           type="button"
-          onClick={() => setTab("referral")}
+          onClick={() => selectTab("referral")}
           className={`rounded-xl px-4 py-2 text-sm font-black transition ${
             tab === "referral" ? "bg-white text-black" : "text-white/62 hover:bg-white/[0.08] hover:text-white"
           }`}

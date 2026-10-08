@@ -1603,19 +1603,35 @@ const ADMIN_HTML = `<!doctype html>
         hideNoticeSoon();
       }, 600);
     }
+    function activeAdminTabFromHash() {
+      var tab = String(window.location.hash || '').replace(/^#/, '');
+      return document.querySelector('.tab[data-tab="' + tab + '"]') ? tab : 'analytics';
+    }
+    function activateAdminTab(tabName, syncHash) {
+      var button = document.querySelector('.tab[data-tab="' + tabName + '"]') || document.querySelector('.tab[data-tab="analytics"]');
+      if (!button) return;
+      var target = button.dataset.tab || 'analytics';
+      document.querySelectorAll('.tab').forEach(function(tab) { tab.classList.remove('active'); });
+      document.querySelectorAll('.section').forEach(function(section) { section.classList.remove('active'); });
+      button.classList.add('active');
+      if ($(target)) $(target).classList.add('active');
+      if (syncHash !== false && window.location.hash !== '#' + target) {
+        window.history.replaceState(null, '', '#' + target);
+      }
+      if (target === 'charts' && analyticsPagination.hasMore) {
+        loadFullAnalyticsForCharts();
+      }
+      if (target === 'referrals' && !referralUsers.length) {
+        loadReferrals();
+      }
+    }
     document.querySelectorAll('.tab').forEach(function(button) {
       button.addEventListener('click', function() {
-        document.querySelectorAll('.tab').forEach(function(tab) { tab.classList.remove('active'); });
-        document.querySelectorAll('.section').forEach(function(section) { section.classList.remove('active'); });
-        button.classList.add('active');
-        $(button.dataset.tab).classList.add('active');
-        if (button.dataset.tab === 'charts' && analyticsPagination.hasMore) {
-          loadFullAnalyticsForCharts();
-        }
-        if (button.dataset.tab === 'referrals' && !referralUsers.length) {
-          loadReferrals();
-        }
+        activateAdminTab(button.dataset.tab || 'analytics', true);
       });
+    });
+    window.addEventListener('hashchange', function() {
+      activateAdminTab(activeAdminTabFromHash(), false);
     });
     $('reloadBtn').addEventListener('click', loadAll);
     $('downloadAdminBackupBtn').addEventListener('click', function() { downloadBackup('admin'); });
@@ -1673,6 +1689,7 @@ const ADMIN_HTML = `<!doctype html>
       event.preventDefault();
       event.returnValue = '';
     });
+    activateAdminTab(activeAdminTabFromHash(), false);
     loadAll();
   </script>
 </body>
