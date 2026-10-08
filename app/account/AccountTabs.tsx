@@ -1,0 +1,162 @@
+"use client";
+
+import { useState } from "react";
+import AccountLogoutButton from "./AccountLogoutButton";
+
+type AccountOrder = {
+  id: string;
+  createdAt: string;
+  productName: string;
+  offer: string;
+  priceRub?: number;
+};
+
+type InvitedFriend = {
+  id: string;
+  name: string;
+  username?: string;
+  joinedAt: string;
+};
+
+type ReferralInfo = {
+  code: string;
+  link: string;
+  invited: InvitedFriend[];
+  invitedCount: number;
+};
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("ru-RU", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
+export default function AccountTabs({ orders, referral }: { orders: AccountOrder[]; referral: ReferralInfo | null }) {
+  const [tab, setTab] = useState<"orders" | "referral">("orders");
+  const [copyText, setCopyText] = useState("Скопировать");
+
+  async function copyReferralLink() {
+    if (!referral?.link) return;
+    await navigator.clipboard?.writeText(referral.link).catch(() => undefined);
+    setCopyText("Скопировано");
+    window.setTimeout(() => setCopyText("Скопировать"), 1400);
+  }
+
+  return (
+    <>
+      <div className="mt-6 flex flex-wrap gap-2 rounded-2xl border border-white/10 bg-white/[0.035] p-1.5">
+        <button
+          type="button"
+          onClick={() => setTab("orders")}
+          className={`rounded-xl px-4 py-2 text-sm font-black transition ${
+            tab === "orders" ? "bg-white text-black" : "text-white/62 hover:bg-white/[0.08] hover:text-white"
+          }`}
+        >
+          Личный кабинет
+        </button>
+        <button
+          type="button"
+          onClick={() => setTab("referral")}
+          className={`rounded-xl px-4 py-2 text-sm font-black transition ${
+            tab === "referral" ? "bg-white text-black" : "text-white/62 hover:bg-white/[0.08] hover:text-white"
+          }`}
+        >
+          Реферальная программа
+        </button>
+      </div>
+
+      {tab === "orders" ? (
+        orders.length ? (
+          <div className="mt-7 grid gap-3">
+            {orders.map((order) => (
+              <article
+                key={order.id}
+                className="rounded-2xl border border-white/10 bg-[#0f1420]/86 p-4 shadow-[0_16px_40px_rgba(0,0,0,0.18)]"
+              >
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <div className="text-lg font-black text-white">{order.productName}</div>
+                    <div className="mt-1 text-sm font-semibold text-white/58">{order.offer}</div>
+                  </div>
+                  <div className="text-left sm:text-right">
+                    <div className="text-sm font-black text-emerald-200">
+                      {Number.isFinite(order.priceRub) ? `${order.priceRub} р` : "Цена уточняется"}
+                    </div>
+                    <div className="mt-1 text-xs font-semibold text-white/44">{formatDate(order.createdAt)}</div>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-7 rounded-2xl border border-white/10 bg-white/[0.045] p-5 text-sm font-semibold leading-relaxed text-white/62">
+            Заказов пока нет. Выберите товар, нажмите “Купить”, и он появится здесь.
+          </div>
+        )
+      ) : (
+        <section className="mt-7 grid gap-4">
+          <div className="rounded-3xl border border-sky-300/18 bg-gradient-to-br from-sky-500/14 to-emerald-500/10 p-5">
+            <div className="text-xs font-black uppercase tracking-[0.12em] text-sky-100/74">Ваша ссылка</div>
+            <h2 className="mt-2 text-2xl font-black text-white">Пригласи 5 друзей и получи подарок</h2>
+            <p className="mt-2 max-w-[720px] text-sm font-semibold leading-relaxed text-white/62">
+              За 5 приглашённых друзей можно получить любой подарок стоимостью до 25 Telegram Stars. Когда условия выполнены,
+              напишите нам, и мы проверим приглашения.
+            </p>
+            <div className="mt-5 grid gap-2 sm:grid-cols-[1fr_auto]">
+              <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/24 px-4 py-3 text-sm font-black text-sky-50">
+                <span className="block truncate">{referral?.link || "Ссылка появится после входа"}</span>
+              </div>
+              <button
+                type="button"
+                onClick={copyReferralLink}
+                disabled={!referral?.link}
+                className="rounded-2xl border border-white/10 bg-white px-5 py-3 text-sm font-black text-black transition hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {copyText}
+              </button>
+            </div>
+            <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.055] p-4">
+              <div className="text-sm font-bold text-white/58">Приглашено друзей</div>
+              <div className="mt-1 text-4xl font-black text-white">{referral?.invitedCount || 0} / 5</div>
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-white/10 bg-white/[0.035] p-5">
+            <h2 className="text-lg font-black text-white">Приглашённые друзья</h2>
+            <div className="mt-4 grid gap-2">
+              {referral?.invited.length ? (
+                referral.invited.map((friend) => (
+                  <div key={friend.id} className="rounded-2xl border border-white/10 bg-[#0f1420]/80 p-4">
+                    <div className="font-black text-white">{friend.name}</div>
+                    <div className="mt-1 text-xs font-semibold text-white/48">
+                      {[friend.username, formatDate(friend.joinedAt)].filter(Boolean).join(" · ")}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4 text-sm font-semibold text-white/58">
+                  Пока никто не зарегистрировался по вашей ссылке.
+                </div>
+              )}
+            </div>
+          </div>
+
+          <a
+            href="https://t.me/Ecliptic_Store"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-2xl border border-emerald-300/26 bg-emerald-500/14 px-5 py-4 text-center text-sm font-black text-emerald-100 transition hover:bg-emerald-500/20"
+          >
+            Выполнил все условия — написать нам
+          </a>
+        </section>
+      )}
+
+      <AccountLogoutButton />
+    </>
+  );
+}

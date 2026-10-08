@@ -15,6 +15,9 @@ export type CustomerUser = {
   username?: string;
   email?: string;
   avatar?: string;
+  referralCode?: string;
+  referredByUserId?: string;
+  referredAt?: string;
   createdAt: string;
 };
 
@@ -117,6 +120,42 @@ function userId(provider: CustomerProvider, providerId: string) {
   return `${provider}:${createHash("sha256").update(providerId).digest("hex").slice(0, 24)}`;
 }
 
+export function cleanReferralCode(value: unknown) {
+  if (typeof value !== "string") return "";
+  return value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 32);
+}
+
+function makeReferralCode(id: string) {
+  return createHash("sha256")
+    .update(`referral|${id}`)
+    .digest("base64url")
+    .replace(/[^a-z0-9]/gi, "")
+    .slice(0, 8)
+    .toLowerCase();
+}
+
+function uniqueReferralCode(store: CustomerStore, id: string, currentCode?: string) {
+  const cleanCurrent = cleanReferralCode(currentCode);
+  if (cleanCurrent && !Object.values(store.users).some((user) => user.id !== id && cleanReferralCode(user.referralCode) === cleanCurrent)) {
+    return cleanCurrent;
+  }
+
+  const base = makeReferralCode(id) || "ecliptic";
+  let code = base;
+  let index = 2;
+  while (Object.values(store.users).some((user) => user.id !== id && cleanReferralCode(user.referralCode) === code)) {
+    code = `${base}${index}`;
+    index += 1;
+  }
+  return code;
+}
+
+function findUserByReferralCode(store: CustomerStore, code: string) {
+  const cleanCode = cleanReferralCode(code);
+  if (!cleanCode) return null;
+  return Object.values(store.users).find((user) => cleanReferralCode(user.referralCode) === cleanCode) || null;
+}
+
 export async function getCustomerUserFromCookies() {
   const cookieStore = await cookies();
   const session = verifySessionCookie(cookieStore.get(CUSTOMER_SESSION_COOKIE)?.value || "");
@@ -143,16 +182,24 @@ export function clearCustomerSession(response: NextResponse) {
   });
 }
 
-export async function upsertCustomerUser(input: Omit<CustomerUser, "id" | "createdAt">) {
+export async function upsertCustomerUser(input: Omit<CustomerUser, "id" | "createdAt" | "referralCode" | "referredByUserId" | "referredAt">, referrerCode?: string) {
   const store = await readCustomerStore();
   const id = userId(input.provider, input.providerId);
   const current = store.users[id];
+  const now = new Date().toISOString();
   const user: CustomerUser = {
     ...current,
     ...input,
     id,
-    createdAt: current?.createdAt || new Date().toISOString(),
+    referralCode: uniqueReferralCode(store, id, current?.referralCode),
+    createdAt: current?.createdAt || now,
   };
+
+  const referrer = !current?.referredByUserId ? findUserByReferralCode(store, referrerCode || "") : null;
+  if (referrer && referrer.id !== id) {
+    user.referredByUserId = referrer.id;
+    user.referredAt = now;
+  }
 
   store.users[id] = user;
   await writeCustomerStore(store);
@@ -186,6 +233,83 @@ export async function addCustomerOrder(user: CustomerUser, input: Partial<Custom
   store.orders = [...store.orders, order].slice(-5000);
   await writeCustomerStore(store);
   return order;
+}
+
+export async function getCustomerReferralInfo(userIdValue: string, siteUrl = "https://ecliptic.website") {
+  const store = await readCustomerStore();
+  const user = store.users[userIdValue];
+  if (!user) return null;
+
+  const referralCode = uniqueReferralCode(store, user.id, user.referralCode);
+  if (user.referralCode !== referralCode) {
+    store.users[user.id] = { ...user, referralCode };
+    await writeCustomerStore(store);
+  }
+
+  const invited = Object.values(store.users)
+    .filter((item) => item.referredByUserId === user.id)
+    .sort((a, b) => String(b.referredAt || b.createdAt).localeCompare(String(a.referredAt || a.createdAt)))
+    .map((item) => ({
+      id: item.id,
+      name: item.name || item.username || "Пользователь",
+      username: item.username || "",
+      joinedAt: item.referredAt || item.createdAt,
+    }));
+
+  return {
+    code: referralCode,
+    link: `${siteUrl.replace(/\/$/, "")}/?use=${encodeURIComponent(referralCode)}`,
+    invited,
+    invitedCount: invited.length,
+  };
+}
+
+export async function getCustomerAdminReferralReport() {
+  const store = await readCustomerStore();
+  let changed = false;
+  for (const user of Object.values(store.users)) {
+    const referralCode = uniqueReferralCode(store, user.id, user.referralCode);
+    if (user.referralCode !== referralCode) {
+      store.users[user.id] = { ...user, referralCode };
+      changed = true;
+    }
+  }
+  if (changed) await writeCustomerStore(store);
+
+  const users = Object.values(store.users);
+  const ordersByUser = store.orders.reduce<Record<string, CustomerOrder[]>>((acc, order) => {
+    if (!acc[order.userId]) acc[order.userId] = [];
+    acc[order.userId].push(order);
+    return acc;
+  }, {});
+  const invitedByUser = users.reduce<Record<string, CustomerUser[]>>((acc, user) => {
+    if (!user.referredByUserId) return acc;
+    if (!acc[user.referredByUserId]) acc[user.referredByUserId] = [];
+    acc[user.referredByUserId].push(user);
+    return acc;
+  }, {});
+
+  return users
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .map((user) => ({
+      id: user.id,
+      name: user.name || user.username || "Пользователь",
+      username: user.username || "",
+      provider: user.provider,
+      createdAt: user.createdAt,
+      referralCode: user.referralCode || uniqueReferralCode(store, user.id, user.referralCode),
+      referredByUserId: user.referredByUserId || "",
+      referredAt: user.referredAt || "",
+      orders: (ordersByUser[user.id] || []).sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+      invited: (invitedByUser[user.id] || [])
+        .sort((a, b) => String(b.referredAt || b.createdAt).localeCompare(String(a.referredAt || a.createdAt)))
+        .map((item) => ({
+          id: item.id,
+          name: item.name || item.username || "Пользователь",
+          username: item.username || "",
+          joinedAt: item.referredAt || item.createdAt,
+        })),
+    }));
 }
 
 export async function verifyGoogleCredential(credential: string) {
@@ -278,7 +402,7 @@ export function verifyTelegramLoginData(params: URLSearchParams) {
   };
 }
 
-export async function telegramUserToCustomer(user: { id?: number; username?: string; first_name?: string; last_name?: string; photo_url?: string }) {
+export async function telegramUserToCustomer(user: { id?: number; username?: string; first_name?: string; last_name?: string; photo_url?: string }, referrerCode?: string) {
   if (!user.id) throw new Error("Telegram user is missing");
 
   const name = [user.first_name, user.last_name].filter(Boolean).join(" ").trim() || user.username || "Telegram пользователь";
@@ -288,5 +412,5 @@ export async function telegramUserToCustomer(user: { id?: number; username?: str
     name: cleanText(name, "Telegram пользователь", 90),
     username: cleanText(user.username ? `@${user.username.replace(/^@/, "")}` : "", "", 80),
     avatar: cleanText(user.photo_url, "", 500),
-  });
+  }, referrerCode);
 }

@@ -26,11 +26,16 @@ type AuthTelegramWebApp = {
   };
 };
 
+function cleanReferralCode(value: string | null) {
+  return String(value || "").trim().toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 32);
+}
+
 export default function UserAuthButton() {
   const [user, setUser] = useState<CustomerUser | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [status, setStatus] = useState("");
   const [isBusy, setIsBusy] = useState(false);
+  const [referralCode, setReferralCode] = useState("");
 
   const displayName = useMemo(() => {
     if (!user) return "";
@@ -47,6 +52,16 @@ export default function UserAuthButton() {
 
   useEffect(() => {
     void refreshUser();
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const fromUrl = cleanReferralCode(params.get("use") || params.get("ref"));
+      const saved = cleanReferralCode(window.localStorage.getItem("ecliptic_referral_code"));
+      const nextCode = fromUrl || saved;
+      if (fromUrl) window.localStorage.setItem("ecliptic_referral_code", fromUrl);
+      if (nextCode) setReferralCode(nextCode);
+    } catch {
+      setReferralCode("");
+    }
     const handleAuthChange = () => void refreshUser();
     window.addEventListener("ecliptic-auth-changed", handleAuthChange);
     return () => window.removeEventListener("ecliptic-auth-changed", handleAuthChange);
@@ -60,7 +75,11 @@ export default function UserAuthButton() {
     setStatus("Открываю Telegram...");
     try {
       if (!telegramUser?.id) {
-        const startResponse = await fetch("/api/auth/telegram/start", { method: "POST" });
+        const startResponse = await fetch("/api/auth/telegram/start", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ referralCode }),
+        });
         const startData = await startResponse.json().catch(() => ({}));
         if (!startResponse.ok || !startData.url) throw new Error(startData.error || "Не удалось открыть Telegram.");
         window.location.href = startData.url;
@@ -70,7 +89,7 @@ export default function UserAuthButton() {
       const response = await fetch("/api/auth/telegram", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ initData: webApp?.initData || "", user: telegramUser }),
+        body: JSON.stringify({ initData: webApp?.initData || "", referralCode, user: telegramUser }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "Telegram вход не прошёл.");

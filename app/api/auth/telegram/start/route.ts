@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { createTelegramLoginToken } from "../../../../../lib/telegramLoginStore";
+import { cleanReferralCode } from "../../../../../lib/customerAuth";
+import { createPendingTelegramLogin } from "../../../../../lib/telegramLoginStore";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,13 +15,14 @@ function getTelegramBotUsername() {
   return username.replace(/^@/, "").trim();
 }
 
-export async function POST() {
+export async function POST(request: Request) {
   const bot = getTelegramBotUsername();
   if (!/^[a-zA-Z0-9_]{5,32}$/.test(bot)) {
     return NextResponse.json({ ok: false, error: "Telegram bot is not configured" }, { status: 500 });
   }
 
-  const token = createTelegramLoginToken();
+  const body = await request.json().catch(() => ({})) as { referralCode?: string };
+  const token = await createPendingTelegramLogin(cleanReferralCode(body.referralCode || ""));
   return NextResponse.json({
     ok: true,
     url: `https://t.me/${bot}?start=login_${token}`,

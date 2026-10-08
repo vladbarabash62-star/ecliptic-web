@@ -114,6 +114,15 @@ const STYLE = `
   .reviews-row { display:grid; grid-template-columns:minmax(145px,.8fr) minmax(120px,.7fr) minmax(160px,1fr); gap:10px; align-items:start; padding:10px; border:1px solid rgba(255,255,255,.08); border-radius:12px; background:rgba(255,255,255,.035); font-size:12px; }
   .reviews-row strong { display:block; color:#e0f2fe; font-size:12px; overflow-wrap:anywhere; }
   .reviews-row span { display:block; margin-bottom:3px; color:rgba(255,255,255,.48); font-weight:800; }
+  .referral-grid { display:grid; grid-template-columns:minmax(280px,390px) minmax(0,1fr); gap:14px; }
+  .referral-users { display:grid; gap:8px; max-height:640px; overflow:auto; padding-right:4px; }
+  .referral-user { width:100%; display:block; padding:12px; border:1px solid rgba(255,255,255,.1); border-radius:14px; background:rgba(255,255,255,.04); color:#fff; text-align:left; }
+  .referral-user:hover,.referral-user.active { border-color:rgba(56,189,248,.5); background:rgba(14,165,233,.13); }
+  .referral-detail-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-top:14px; }
+  .referral-metric { border:1px solid rgba(255,255,255,.08); border-radius:14px; background:rgba(255,255,255,.04); padding:12px; }
+  .referral-metric span { display:block; color:var(--muted); font-size:12px; font-weight:800; }
+  .referral-metric strong { display:block; margin-top:5px; font-size:24px; overflow-wrap:anywhere; }
+  .referral-columns { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:14px; }
   .insight-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:14px; }
   .insight { padding:14px; }
   .insight strong { display:block; margin-top:8px; font-size:22px; }
@@ -123,7 +132,7 @@ const STYLE = `
   .login-form { display:grid; gap:14px; margin-top:24px; text-align:left; }
   .login-form .btn { width:100%; }
   @media (max-width:1100px) { .chart-grid,.chart-grid.two,.insight-grid { grid-template-columns:1fr; } .pie-wrap { grid-template-columns:1fr; justify-items:center; } }
-  @media (max-width:940px) { .stats,.grid2,.admin-grid,.two { grid-template-columns:1fr; } .top { align-items:flex-start; flex-direction:column; } .sidebar { max-height:none; } .upload-row { grid-template-columns:1fr; } }
+  @media (max-width:940px) { .stats,.grid2,.admin-grid,.two,.referral-grid,.referral-detail-grid,.referral-columns { grid-template-columns:1fr; } .top { align-items:flex-start; flex-direction:column; } .sidebar { max-height:none; } .upload-row { grid-template-columns:1fr; } }
 `;
 
 const LOGIN_HTML = `<!doctype html>
@@ -217,6 +226,7 @@ const ADMIN_HTML = `<!doctype html>
       <button class="tab" type="button" data-tab="charts">Диаграммы</button>
       <button class="tab" type="button" data-tab="products">Товары</button>
       <button class="tab" type="button" data-tab="settings">Главная</button>
+      <button class="tab" type="button" data-tab="referrals">Реферальная программа</button>
     </nav>
 
     <div id="notice" class="notice show">Загружаю данные...</div>
@@ -346,6 +356,25 @@ const ADMIN_HTML = `<!doctype html>
         </div>
       </div>
     </section>
+
+    <section id="referrals" class="section">
+      <div class="toolbar" style="justify-content:space-between;margin-bottom:12px">
+        <div>
+          <h2>Реферальная программа</h2>
+          <p class="muted" id="referralsUpdatedAt" style="margin-top:6px">Пользователи загружаются...</p>
+        </div>
+        <button class="btn secondary" id="reloadReferralsBtn" type="button">Обновить</button>
+      </div>
+      <div class="referral-grid">
+        <aside class="card panel">
+          <h2>Пользователи</h2>
+          <div id="referralUsers" class="referral-users"></div>
+        </aside>
+        <section class="card panel">
+          <div id="referralDetails" class="empty">Выберите пользователя слева.</div>
+        </section>
+      </div>
+    </section>
   </main>
 
   <input id="imagePicker" type="file" accept="image/png,image/jpeg,image/webp" hidden>
@@ -359,6 +388,8 @@ const ADMIN_HTML = `<!doctype html>
     var analyticsEvents = [];
     var analyticsSummary = { total: 0, views: 0, buys: 0, telegram: 0, actions: {}, products: {} };
     var analyticsPagination = { offset: 0, limit: 5000, loaded: 0, totalStored: 0, hasMore: false, nextOffset: 0 };
+    var referralUsers = [];
+    var selectedReferralUserId = '';
     var selectedSlug = '';
     var uploadTarget = null;
     var dirtyProducts = false;
@@ -903,6 +934,52 @@ const ADMIN_HTML = `<!doctype html>
         : 'Все события загружены';
       renderCharts();
     }
+    function formatAdminDate(value) {
+      return value ? new Date(value).toLocaleString('ru-RU') : '-';
+    }
+    function referralUserName(user) {
+      return user.name || user.username || user.id || 'Пользователь';
+    }
+    function renderReferrals() {
+      $('referralUsers').innerHTML = referralUsers.map(function(user) {
+        return '<button class="referral-user ' + (user.id === selectedReferralUserId ? 'active' : '') + '" type="button" data-referral-user="' + esc(user.id) + '">' +
+          '<strong>' + esc(referralUserName(user)) + '</strong>' +
+          '<div class="row-meta">' + esc([user.username, user.provider, formatAdminDate(user.createdAt)].filter(Boolean).join(' · ')) + '</div>' +
+          '<div class="row-meta">Код: ' + esc(user.referralCode || '-') + ' · друзья: ' + ((user.invited || []).length) + ' · заказы: ' + ((user.orders || []).length) + '</div>' +
+        '</button>';
+      }).join('') || '<p class="muted">Пока нет зарегистрированных пользователей.</p>';
+      renderReferralDetails();
+    }
+    function renderReferralDetails() {
+      var user = referralUsers.find(function(item) { return item.id === selectedReferralUserId; });
+      if (!user) {
+        $('referralDetails').className = 'empty';
+        $('referralDetails').innerHTML = 'Выберите пользователя слева.';
+        return;
+      }
+      var link = 'https://ecliptic.website/?use=' + encodeURIComponent(user.referralCode || '');
+      var orders = (user.orders || []).map(function(order) {
+        return '<div class="row"><div><strong>' + esc(productNameBySlug(order.productSlug) || order.productSlug || 'Товар') + '</strong><div class="row-meta">' + esc(order.offer || '') + ' · ' + esc(formatAdminDate(order.createdAt)) + '</div></div><strong>' + (Number(order.priceRub) > 0 ? Number(order.priceRub) + ' р' : '-') + '</strong></div>';
+      }).join('') || '<p class="muted">Заказов пока нет.</p>';
+      var invited = (user.invited || []).map(function(friend) {
+        return '<div class="row"><div><strong>' + esc(friend.name || 'Пользователь') + '</strong><div class="row-meta">' + esc([friend.username, formatAdminDate(friend.joinedAt)].filter(Boolean).join(' · ')) + '</div></div><strong>друг</strong></div>';
+      }).join('') || '<p class="muted">Приглашённых друзей пока нет.</p>';
+      $('referralDetails').className = '';
+      $('referralDetails').innerHTML =
+        '<div class="toolbar" style="justify-content:space-between;align-items:flex-start">' +
+          '<div><h2>' + esc(referralUserName(user)) + '</h2><p class="muted" style="margin-top:6px">' + esc([user.username, user.id].filter(Boolean).join(' · ')) + '</p></div>' +
+          '<a class="btn secondary" href="' + esc(link) + '" target="_blank" rel="noreferrer">Открыть ссылку</a>' +
+        '</div>' +
+        '<div class="referral-detail-grid">' +
+          '<div class="referral-metric"><span>Реферальный код</span><strong>' + esc(user.referralCode || '-') + '</strong></div>' +
+          '<div class="referral-metric"><span>Заказы</span><strong>' + ((user.orders || []).length) + '</strong></div>' +
+          '<div class="referral-metric"><span>Приглашённые</span><strong>' + ((user.invited || []).length) + '</strong></div>' +
+        '</div>' +
+        '<div class="referral-columns">' +
+          '<div><h3>Заказы пользователя</h3><div class="list">' + orders + '</div></div>' +
+          '<div><h3>Приглашённые друзья</h3><div class="list">' + invited + '</div></div>' +
+        '</div>';
+    }
     function renderCharts() {
       var chartEvents = analyticsEvents.filter(isCountedEvent);
       var buyEvents = chartEvents.filter(function(e) { return e.type === 'buy_click'; });
@@ -1392,6 +1469,23 @@ const ADMIN_HTML = `<!doctype html>
         $('loadMoreEventsBtn').disabled = false;
       }
     }
+    async function loadReferrals() {
+      $('reloadReferralsBtn').disabled = true;
+      try {
+        var data = await postJson('/api/admin/referrals', {}, 12000);
+        referralUsers = data.users || [];
+        if (!selectedReferralUserId || !referralUsers.some(function(user) { return user.id === selectedReferralUserId; })) {
+          selectedReferralUserId = referralUsers[0] ? referralUsers[0].id : '';
+        }
+        renderReferrals();
+        $('referralsUpdatedAt').textContent = 'Обновлено: ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' · пользователей: ' + referralUsers.length;
+      } catch (error) {
+        $('referralsUpdatedAt').textContent = 'Не удалось загрузить пользователей';
+        showNotice(error.message || 'Реферальная программа временно недоступна.', true);
+      } finally {
+        $('reloadReferralsBtn').disabled = false;
+      }
+    }
     async function loadFullAnalyticsForCharts() {
       $('reloadChartsBtn').disabled = true;
       $('loadMoreEventsBtn').disabled = true;
@@ -1509,6 +1603,9 @@ const ADMIN_HTML = `<!doctype html>
         if (button.dataset.tab === 'charts' && analyticsPagination.hasMore) {
           loadFullAnalyticsForCharts();
         }
+        if (button.dataset.tab === 'referrals' && !referralUsers.length) {
+          loadReferrals();
+        }
       });
     });
     $('reloadBtn').addEventListener('click', loadAll);
@@ -1517,6 +1614,13 @@ const ADMIN_HTML = `<!doctype html>
     $('reloadAnalyticsBtn').addEventListener('click', function() { loadAnalytics(0); });
     $('loadMoreEventsBtn').addEventListener('click', function() { loadAnalytics(analyticsPagination.nextOffset || analyticsEvents.length); });
     $('reloadChartsBtn').addEventListener('click', loadFullAnalyticsForCharts);
+    $('reloadReferralsBtn').addEventListener('click', loadReferrals);
+    $('referralUsers').addEventListener('click', function(event) {
+      var button = event.target.closest('[data-referral-user]');
+      if (!button) return;
+      selectedReferralUserId = button.dataset.referralUser || '';
+      renderReferrals();
+    });
     document.addEventListener('mouseover', function(event) {
       var bar = event.target.closest && event.target.closest('.week-bar[data-week-tip]');
       if (!bar) return;

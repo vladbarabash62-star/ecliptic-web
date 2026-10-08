@@ -13,7 +13,8 @@ type TelegramLoginUser = {
 type PendingTelegramLogin = {
   createdAt: string;
   expiresAt: string;
-  user: TelegramLoginUser;
+  user?: TelegramLoginUser;
+  referrerCode?: string;
 };
 
 type TelegramLoginStore = {
@@ -59,12 +60,27 @@ export function createTelegramLoginToken() {
   return randomUUID();
 }
 
+export async function createPendingTelegramLogin(referrerCode?: string) {
+  const token = createTelegramLoginToken();
+  const store = await readStore();
+  const now = new Date();
+  store.pending[token] = {
+    createdAt: now.toISOString(),
+    expiresAt: new Date(now.getTime() + LOGIN_TTL_MS).toISOString(),
+    referrerCode: String(referrerCode || "").trim().slice(0, 32) || undefined,
+  };
+  await writeStore(store);
+  return token;
+}
+
 export async function savePendingTelegramLogin(token: string, user: TelegramLoginUser) {
   if (!/^[a-f0-9-]{20,80}$/i.test(token) || !user.id) return false;
 
   const store = await readStore();
+  const current = store.pending[token];
   const now = new Date();
   store.pending[token] = {
+    ...current,
     createdAt: now.toISOString(),
     expiresAt: new Date(now.getTime() + LOGIN_TTL_MS).toISOString(),
     user,
@@ -83,5 +99,5 @@ export async function consumePendingTelegramLogin(token: string) {
   await writeStore(store);
 
   if (!login || new Date(login.expiresAt).getTime() <= Date.now()) return null;
-  return login.user;
+  return login;
 }

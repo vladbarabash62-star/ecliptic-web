@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { setCustomerSession, telegramUserToCustomer, verifyTelegramInitData } from "../../../../lib/customerAuth";
+import { cleanReferralCode, setCustomerSession, telegramUserToCustomer, verifyTelegramInitData } from "../../../../lib/customerAuth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,6 +15,7 @@ type TelegramUnsafeUser = {
 export async function POST(request: Request) {
   const body = await request.json().catch(() => ({})) as {
     initData?: string;
+    referralCode?: string;
     user?: TelegramUnsafeUser;
   };
 
@@ -25,7 +26,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const customer = await telegramUserToCustomer(user);
+    const customer = await telegramUserToCustomer(user, cleanReferralCode(body.referralCode || ""));
     const response = NextResponse.json({ ok: true, user: customer });
     setCustomerSession(response, customer);
     return response;
