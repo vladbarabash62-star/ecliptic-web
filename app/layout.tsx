@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import AnalyticsTracker from "./components/AnalyticsTracker";
 import ContactButton from "./components/ContactButton";
+import FloatingReferralStar from "./components/FloatingReferralStar";
 import HomeButton from "./components/HomeButton";
 import PageLoader from "./components/PageLoader";
 import SiteFooter from "./components/SiteFooter";
@@ -163,6 +164,7 @@ export default function RootLayout({
         <PageLoader />
         <HomeButton />
         <UserAuthButton />
+        <FloatingReferralStar />
         <ContactButton />
         <SwipeHomeGesture />
         <TelegramStartRouter />

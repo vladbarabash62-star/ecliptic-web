@@ -420,6 +420,122 @@ main {
   padding-bottom: calc(92px + env(safe-area-inset-bottom));
 }
 
+.floating-referral-star {
+  position: fixed;
+  left: clamp(14px, 5vw, 92px);
+  top: 54vh;
+  z-index: 34;
+  display: grid;
+  width: clamp(78px, 8.5vw, 128px);
+  place-items: center;
+  gap: 5px;
+  border: 0;
+  background: transparent;
+  color: #fff7cc;
+  cursor: pointer;
+  filter: drop-shadow(0 18px 24px rgba(0, 0, 0, 0.38));
+  animation:
+    referralStarDrift 38s ease-in-out infinite alternate,
+    referralStarBob 17s ease-in-out infinite;
+  transform: translate3d(0, 0, 0);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.floating-referral-star__image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  transition: transform 180ms ease, filter 180ms ease;
+}
+
+.floating-referral-star__image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+}
+
+.floating-referral-star__label {
+  border: 1px solid rgba(255, 214, 102, 0.26);
+  border-radius: 999px;
+  background: rgba(8, 15, 29, 0.78);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.26);
+  padding: 6px 9px;
+  color: #fff4bd;
+  font-size: clamp(10px, 1.1vw, 12px);
+  font-weight: 950;
+  line-height: 1.05;
+  text-align: center;
+  white-space: nowrap;
+  backdrop-filter: blur(10px);
+}
+
+.floating-referral-star:hover .floating-referral-star__image,
+.floating-referral-star:focus-visible .floating-referral-star__image {
+  transform: scale(1.08) rotate(3deg);
+  filter: brightness(1.06);
+}
+
+.floating-referral-star:focus-visible {
+  outline: 2px solid rgba(255, 214, 102, 0.7);
+  outline-offset: 6px;
+}
+
+@keyframes referralStarDrift {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(-4deg);
+  }
+  35% {
+    transform: translate3d(16vw, -7vh, 0) rotate(5deg);
+  }
+  70% {
+    transform: translate3d(8vw, 6vh, 0) rotate(-2deg);
+  }
+  100% {
+    transform: translate3d(24vw, -2vh, 0) rotate(4deg);
+  }
+}
+
+@keyframes referralStarBob {
+  0%,
+  100% {
+    margin-top: 0;
+  }
+  50% {
+    margin-top: -16px;
+  }
+}
+
+@media (max-width: 700px) {
+  .floating-referral-star {
+    left: 10px;
+    top: 62vh;
+    width: 76px;
+    z-index: 36;
+    animation:
+      referralStarDriftMobile 34s ease-in-out infinite alternate,
+      referralStarBob 16s ease-in-out infinite;
+  }
+
+  .floating-referral-star__label {
+    max-width: 94px;
+    white-space: normal;
+  }
+}
+
+@keyframes referralStarDriftMobile {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(-4deg);
+  }
+  45% {
+    transform: translate3d(40vw, -5vh, 0) rotate(5deg);
+  }
+  100% {
+    transform: translate3d(18vw, 6vh, 0) rotate(-2deg);
+  }
+}
+
 .is-telegram-webapp .product-title {
   font-size: 13px;
   line-height: 1.16;
