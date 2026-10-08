@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type CustomerUser = {
   id: string;
@@ -11,18 +11,6 @@ type CustomerUser = {
   username?: string;
   email?: string;
   avatar?: string;
-};
-
-type GoogleAccounts = {
-  accounts?: {
-    id?: {
-      initialize: (options: {
-        client_id: string;
-        callback: (response: { credential?: string }) => void;
-      }) => void;
-      prompt: () => void;
-    };
-  };
 };
 
 type AuthTelegramWebApp = {
@@ -38,18 +26,6 @@ type AuthTelegramWebApp = {
   };
 };
 
-declare global {
-  interface Window {
-    google?: GoogleAccounts;
-  }
-}
-
-const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
-const TELEGRAM_LOGIN_BOT =
-  process.env.NEXT_PUBLIC_TELEGRAM_LOGIN_BOT_USERNAME ||
-  process.env.NEXT_PUBLIC_TELEGRAM_WEBAPP_BOT_USERNAME ||
-  "Ecliptic_Store_BOT";
-
 function initials(name: string) {
   return name
     .split(/\s+/)
@@ -59,36 +35,11 @@ function initials(name: string) {
     .join("") || "ES";
 }
 
-function loadScript(src: string, id: string) {
-  return new Promise<void>((resolve, reject) => {
-    const existing = document.getElementById(id) as HTMLScriptElement | null;
-    if (existing) {
-      if (existing.dataset.loaded === "true") resolve();
-      existing.addEventListener("load", () => resolve(), { once: true });
-      existing.addEventListener("error", () => reject(new Error("Script load failed")), { once: true });
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.id = id;
-    script.src = src;
-    script.async = true;
-    script.defer = true;
-    script.onload = () => {
-      script.dataset.loaded = "true";
-      resolve();
-    };
-    script.onerror = () => reject(new Error("Script load failed"));
-    document.head.appendChild(script);
-  });
-}
-
 export default function UserAuthButton() {
   const [user, setUser] = useState<CustomerUser | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [status, setStatus] = useState("");
   const [isBusy, setIsBusy] = useState(false);
-  const telegramWidgetRef = useRef<HTMLDivElement | null>(null);
 
   const displayName = useMemo(() => {
     if (!user) return "";
@@ -110,85 +61,21 @@ export default function UserAuthButton() {
     return () => window.removeEventListener("ecliptic-auth-changed", handleAuthChange);
   }, []);
 
-  useEffect(() => {
-    if (!isOpen || !telegramWidgetRef.current || user) return;
-
-    const container = telegramWidgetRef.current;
-    container.innerHTML = "";
-    const bot = TELEGRAM_LOGIN_BOT.replace(/^@/, "").trim();
-    if (!/^[a-zA-Z0-9_]{5,32}$/.test(bot)) {
-      setStatus("Telegram бот для входа не настроен.");
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.async = true;
-    script.src = "https://telegram.org/js/telegram-widget.js?22";
-    script.setAttribute("data-telegram-login", bot);
-    script.setAttribute("data-size", "large");
-    script.setAttribute("data-radius", "14");
-    script.setAttribute("data-userpic", "true");
-    script.setAttribute("data-request-access", "write");
-    script.setAttribute("data-auth-url", `${window.location.origin}/api/auth/telegram/callback?returnTo=/account`);
-    container.appendChild(script);
-
-    return () => {
-      container.innerHTML = "";
-    };
-  }, [isOpen, user]);
-
-  async function authorizeGoogle() {
-    if (!GOOGLE_CLIENT_ID) {
-      setStatus("Google вход почти готов. Нужно добавить NEXT_PUBLIC_GOOGLE_CLIENT_ID в Vercel.");
-      return;
-    }
-
-    setIsBusy(true);
-    setStatus("Открываю Google...");
-    try {
-      await loadScript("https://accounts.google.com/gsi/client", "google-identity-services");
-      window.google?.accounts?.id?.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: async (response) => {
-          if (!response.credential) {
-            setStatus("Google не передал данные входа.");
-            setIsBusy(false);
-            return;
-          }
-
-          const authResponse = await fetch("/api/auth/google", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ credential: response.credential }),
-          });
-          const data = await authResponse.json().catch(() => ({}));
-          if (!authResponse.ok) throw new Error(data.error || "Google вход не прошёл.");
-          setUser(data.user);
-          setIsOpen(false);
-          setStatus("");
-          window.dispatchEvent(new Event("ecliptic-auth-changed"));
-          setIsBusy(false);
-        },
-      });
-      window.google?.accounts?.id?.prompt();
-      setStatus("Подтвердите вход в окне Google.");
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Google вход не прошёл.");
-      setIsBusy(false);
-    }
-  }
-
   async function authorizeTelegram() {
     const webApp = (window as Window & { Telegram?: { WebApp?: AuthTelegramWebApp } }).Telegram?.WebApp;
     const telegramUser = webApp?.initDataUnsafe?.user;
-    if (!telegramUser?.id) {
-      setStatus("Нажмите синюю кнопку Telegram ниже. Если она не появилась, проверьте блокировку скриптов.");
-      return;
-    }
 
     setIsBusy(true);
-    setStatus("Вхожу через Telegram...");
+    setStatus("Открываю Telegram...");
     try {
+      if (!telegramUser?.id) {
+        const startResponse = await fetch("/api/auth/telegram/start", { method: "POST" });
+        const startData = await startResponse.json().catch(() => ({}));
+        if (!startResponse.ok || !startData.url) throw new Error(startData.error || "Не удалось открыть Telegram.");
+        window.location.href = startData.url;
+        return;
+      }
+
       const response = await fetch("/api/auth/telegram", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -269,23 +156,12 @@ export default function UserAuthButton() {
             <div className="grid gap-3">
               <button
                 type="button"
-                onClick={authorizeGoogle}
+                onClick={authorizeTelegram}
                 disabled={isBusy}
-                className="flex min-h-12 items-center justify-center gap-3 rounded-2xl border border-white/12 bg-white text-sm font-black text-black transition hover:bg-white/90 disabled:opacity-60"
+                className="flex min-h-12 items-center justify-center gap-3 rounded-2xl border border-sky-300/28 bg-sky-500/16 text-sm font-black text-sky-50 transition hover:bg-sky-500/22 disabled:opacity-60"
               >
-                Войти через Google
+                Войти через Telegram
               </button>
-              <div className="grid min-h-12 place-items-center rounded-2xl border border-sky-300/28 bg-sky-500/10 px-3 py-2">
-                <div ref={telegramWidgetRef} className="telegram-login-widget min-h-10" />
-                <button
-                  type="button"
-                  onClick={authorizeTelegram}
-                  disabled={isBusy}
-                  className="mt-2 text-xs font-bold text-sky-100/72 transition hover:text-sky-50 disabled:opacity-60"
-                >
-                  Войти через Telegram Mini App
-                </button>
-              </div>
             </div>
 
             {status ? (
@@ -295,7 +171,7 @@ export default function UserAuthButton() {
             ) : null}
 
             <p className="mt-4 text-xs font-semibold leading-relaxed text-white/40">
-              Вход нужен только для кабинета и списка заказов. Админка от этого не меняется.
+              После нажатия откроется бот. Нажмите Start, затем кнопку входа в сообщении от бота.
             </p>
           </div>
         </div>
