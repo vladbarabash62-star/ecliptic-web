@@ -14,13 +14,16 @@ import {
   buildStoreJsonLd,
   SITE_DESCRIPTION,
   SITE_IMAGE,
+  SITE_KEYWORDS,
   SITE_NAME,
+  SITE_TITLE,
   SITE_URL,
   stringifyJsonLd,
 } from "../lib/seo";
 import "./globals.css";
 
 const seoKeywordBase = [
+  ...SITE_KEYWORDS,
   "Ecliptic Store",
   "ecliptic.website",
   "интернет магазин ПМР",
@@ -89,13 +92,13 @@ const seoKeywords = Array.from(
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: SITE_NAME,
-    template: `%s`,
+    default: SITE_TITLE,
+    template: `%s | ${SITE_NAME}`,
   },
   description: SITE_DESCRIPTION,
   keywords: seoKeywords,
   alternates: {
-    canonical: SITE_URL,
+    canonical: "/",
   },
   icons: {
     icon: [
@@ -107,9 +110,9 @@ export const metadata: Metadata = {
     apple: [{ url: "/apple-icon.png", sizes: "512x512" }],
   },
   openGraph: {
-    title: SITE_NAME,
+    title: SITE_TITLE,
     description: SITE_DESCRIPTION,
-    url: SITE_URL,
+    url: "/",
     siteName: SITE_NAME,
     locale: "ru_RU",
     type: "website",

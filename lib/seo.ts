@@ -7,7 +7,18 @@ export const SITE_NAME = "Ecliptic Store";
 export const SITE_IMAGE = `${SITE_URL}/ecliptic-link-icon-v5.png`;
 export const SITE_LOGO = `${SITE_URL}/google-favicon.png`;
 export const SITE_DESCRIPTION =
-  "Ecliptic Store — интернет-магазин цифровых товаров, игровых пополнений и подписок в Приднестровье: Тирасполь, Бендеры, Рыбница и весь ПМР.";
+  "Официальный магазин цифровых товаров Ecliptic Store в ПМР. Пополнение Steam, Telegram Premium, игровые валюты и подписки по лучшим ценам.";
+export const SITE_TITLE =
+  "Ecliptic Store — Цифровые товары, Telegram Premium и Steam в ПМР";
+export const SITE_KEYWORDS = [
+  "Ecliptic Store",
+  "Ecliptic Store PMR",
+  "Ecliptic",
+  "Ecliptic PMR",
+  "Telegram Premium ПМР",
+  "Пополнение Steam ПМР",
+  "Цифровые товары ПМР",
+];
 
 const seoBrandKeywords = [
   SITE_NAME,
@@ -284,6 +295,12 @@ export function buildStoreJsonLd() {
       url: SITE_URL,
       inLanguage: "ru",
       description: SITE_DESCRIPTION,
+      publisher: {
+        "@type": "Organization",
+        name: SITE_NAME,
+        url: SITE_URL,
+        logo: SITE_LOGO,
+      },
       potentialAction: {
         "@type": "SearchAction",
         target: `${SITE_URL}/?q={search_term_string}`,
@@ -296,6 +313,7 @@ export function buildStoreJsonLd() {
       name: SITE_NAME,
       alternateName: seoBrandKeywords,
       url: SITE_URL,
+      description: SITE_DESCRIPTION,
       logo: SITE_LOGO,
       image: SITE_IMAGE,
       hasMerchantReturnPolicy: {
@@ -485,7 +503,7 @@ export function stringifyJsonLd(value: unknown) {
 }
 
 export function buildProductMetadata(product: Product): Metadata {
-  const title = `${SITE_NAME} — ${product.name}`;
+  const title = product.name;
   const description = buildProductDescription(product);
   const url = `${SITE_URL}/products/${product.slug}`;
 
@@ -497,7 +515,7 @@ export function buildProductMetadata(product: Product): Metadata {
       canonical: url,
     },
     openGraph: {
-      title,
+      title: `${SITE_NAME} — ${product.name}`,
       description,
       url,
       siteName: SITE_NAME,

@@ -1,12 +1,15 @@
-export default function robots() {
-    return {
-      rules: [
-        {
-          userAgent: "*",
-          allow: "/",
-          disallow: ["/admin", "/admin/", "/api/admin", "/api/admin/"],
-        },
-      ],
-      sitemap: "https://ecliptic.website/sitemap.xml",
-    };
-  }
+import type { MetadataRoute } from "next";
+import { SITE_URL } from "../lib/seo";
+
+export default function robots(): MetadataRoute.Robots {
+  return {
+    rules: [
+      {
+        userAgent: "*",
+        allow: "/",
+        disallow: ["/admin", "/admin/", "/api/admin", "/api/admin/"],
+      },
+    ],
+    sitemap: `${SITE_URL}/sitemap.xml`,
+  };
+}
