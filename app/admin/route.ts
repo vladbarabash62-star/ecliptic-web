@@ -118,6 +118,12 @@ const STYLE = `
   .referral-users { display:grid; gap:8px; max-height:640px; overflow:auto; padding-right:4px; }
   .referral-user { width:100%; display:block; padding:12px; border:1px solid rgba(255,255,255,.1); border-radius:14px; background:rgba(255,255,255,.04); color:#fff; text-align:left; }
   .referral-user:hover,.referral-user.active { border-color:rgba(56,189,248,.5); background:rgba(14,165,233,.13); }
+  .referral-user.ref-good { border-color:rgba(163,230,53,.42); background:rgba(132,204,22,.18); }
+  .referral-user.ref-good:hover,.referral-user.ref-good.active { border-color:rgba(190,242,100,.7); background:rgba(132,204,22,.25); }
+  .referral-user.ref-hot { border-color:rgba(251,146,60,.48); background:rgba(249,115,22,.2); }
+  .referral-user.ref-hot:hover,.referral-user.ref-hot.active { border-color:rgba(253,186,116,.78); background:rgba(249,115,22,.28); }
+  .referral-user.ref-vip { border-color:rgba(248,113,113,.56); background:rgba(239,68,68,.22); }
+  .referral-user.ref-vip:hover,.referral-user.ref-vip.active { border-color:rgba(252,165,165,.82); background:rgba(239,68,68,.3); }
   .referral-detail-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-top:14px; }
   .referral-metric { border:1px solid rgba(255,255,255,.08); border-radius:14px; background:rgba(255,255,255,.04); padding:12px; }
   .referral-metric span { display:block; color:var(--muted); font-size:12px; font-weight:800; }
@@ -950,9 +956,17 @@ const ADMIN_HTML = `<!doctype html>
       if (claim.status === 'pending_manager') return 'Ожидает сообщения менеджеру · ' + formatAdminDate(claim.createdAt);
       return 'Заявка отправлена · ' + formatAdminDate(claim.createdAt);
     }
+    function referralUserTierClass(user) {
+      var ordersCount = (user.orders || []).length;
+      var invitedCount = (user.invited || []).length;
+      if (ordersCount > 50) return 'ref-vip';
+      if (ordersCount > 10) return 'ref-hot';
+      if (invitedCount >= 5) return 'ref-good';
+      return '';
+    }
     function renderReferrals() {
       $('referralUsers').innerHTML = referralUsers.map(function(user) {
-        return '<button class="referral-user ' + (user.id === selectedReferralUserId ? 'active' : '') + '" type="button" data-referral-user="' + esc(user.id) + '">' +
+        return '<button class="referral-user ' + esc(referralUserTierClass(user)) + ' ' + (user.id === selectedReferralUserId ? 'active' : '') + '" type="button" data-referral-user="' + esc(user.id) + '">' +
           '<strong>' + esc(referralUserName(user)) + '</strong>' +
           '<div class="row-meta">' + esc([user.username, user.provider, formatAdminDate(user.createdAt)].filter(Boolean).join(' · ')) + '</div>' +
           '<div class="row-meta">Код: ' + esc(user.referralCode || '-') + ' · друзья: ' + ((user.invited || []).length) + ' · заказы: ' + ((user.orders || []).length) + '</div>' +
