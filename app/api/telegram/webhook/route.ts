@@ -113,10 +113,10 @@ async function flushPendingReferralClaims(chatId: number, token: string) {
     const text = [
       "🎁 <b>Реферальная программа</b>",
       "",
-      "Пользователь выполнил условия и просит подарок до <b>25 Telegram Stars</b>.",
+      "Пользователь выполнил условия и просит подарок до <b>50 Telegram Stars</b>.",
       `Имя: <b>${escapeHtml(item.user?.name || "не указано")}</b>`,
       `Telegram: <b>${escapeHtml(item.user?.username || "не указан")}</b>`,
-      `Приглашено друзей: <b>${item.claim.invitedCount}</b>`,
+      `Приглашено участников: <b>${item.claim.invitedCount}</b>`,
       `Заявка: <code>${escapeHtml(item.claim.id)}</code>`,
       `ID сайта: <code>${escapeHtml(item.user?.id || item.claim.userId)}</code>`,
     ].join("\n");

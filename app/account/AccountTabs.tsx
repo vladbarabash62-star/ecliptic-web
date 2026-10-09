@@ -56,12 +56,16 @@ function formatClaimWait(ms: number) {
   return `${minutes} мин. ${seconds} сек.`;
 }
 
-function tabFromHash(value: string): "orders" | "referral" {
-  return value === "#referral" || value === "referral" ? "referral" : "orders";
+type AccountTab = "profile" | "orders" | "referral";
+
+function tabFromHash(value: string): AccountTab {
+  if (value === "#referral" || value === "referral") return "referral";
+  if (value === "#orders" || value === "orders") return "orders";
+  return "profile";
 }
 
 export default function AccountTabs({ orders, referral }: { orders: AccountOrder[]; referral: ReferralInfo | null }) {
-  const [tab, setTab] = useState<"orders" | "referral">("orders");
+  const [tab, setTab] = useState<AccountTab>("profile");
   const [copyText, setCopyText] = useState("Скопировать");
   const [claimText, setClaimText] = useState("");
   const [isClaiming, setIsClaiming] = useState(false);
@@ -87,9 +91,9 @@ export default function AccountTabs({ orders, referral }: { orders: AccountOrder
     return () => window.clearInterval(interval);
   }, [canClaimGift, lastClaimAt]);
 
-  function selectTab(nextTab: "orders" | "referral") {
+  function selectTab(nextTab: AccountTab) {
     setTab(nextTab);
-    const nextHash = nextTab === "referral" ? "#referral" : "#orders";
+    const nextHash = nextTab === "profile" ? "#profile" : nextTab === "referral" ? "#referral" : "#orders";
     if (window.location.hash !== nextHash) {
       window.history.replaceState(null, "", nextHash);
     }
@@ -125,12 +129,21 @@ export default function AccountTabs({ orders, referral }: { orders: AccountOrder
       <div className="mt-6 flex flex-wrap gap-2 rounded-2xl border border-white/10 bg-white/[0.035] p-1.5">
         <button
           type="button"
+          onClick={() => selectTab("profile")}
+          className={`rounded-xl px-4 py-2 text-sm font-black transition ${
+            tab === "profile" ? "bg-white text-black" : "text-white/62 hover:bg-white/[0.08] hover:text-white"
+          }`}
+        >
+          Личный кабинет
+        </button>
+        <button
+          type="button"
           onClick={() => selectTab("orders")}
           className={`rounded-xl px-4 py-2 text-sm font-black transition ${
             tab === "orders" ? "bg-white text-black" : "text-white/62 hover:bg-white/[0.08] hover:text-white"
           }`}
         >
-          Личный кабинет
+          Мои заказы
         </button>
         <button
           type="button"
@@ -143,9 +156,18 @@ export default function AccountTabs({ orders, referral }: { orders: AccountOrder
         </button>
       </div>
 
-      {tab === "orders" ? (
+      {tab === "profile" ? (
+        <section className="mt-7 rounded-3xl border border-white/10 bg-white/[0.035] p-5">
+          <h2 className="text-xl font-black text-white">Личный кабинет</h2>
+          <p className="mt-2 text-sm font-semibold leading-relaxed text-white/58">
+            Здесь можно управлять аккаунтом Ecliptic Store.
+          </p>
+          <AccountLogoutButton />
+        </section>
+      ) : tab === "orders" ? (
         orders.length ? (
-          <div className="mt-7 grid gap-3">
+          <section className="mt-7 grid gap-3">
+            <h2 className="text-xl font-black text-white">Мои заказы</h2>
             {orders.map((order) => (
               <article
                 key={order.id}
@@ -165,7 +187,7 @@ export default function AccountTabs({ orders, referral }: { orders: AccountOrder
                 </div>
               </article>
             ))}
-          </div>
+          </section>
         ) : (
           <div className="mt-7 rounded-2xl border border-white/10 bg-white/[0.045] p-5 text-sm font-semibold leading-relaxed text-white/62">
             Заказов пока нет. Выберите товар, нажмите “Купить”, и он появится здесь.
@@ -174,11 +196,9 @@ export default function AccountTabs({ orders, referral }: { orders: AccountOrder
       ) : (
         <section className="mt-7 grid gap-4">
           <div className="rounded-3xl border border-sky-300/18 bg-gradient-to-br from-sky-500/14 to-emerald-500/10 p-5">
-            <div className="text-xs font-black uppercase tracking-[0.12em] text-sky-100/74">Ваша ссылка</div>
-            <h2 className="mt-2 text-2xl font-black text-white">Пригласи 5 друзей и получи подарок</h2>
+            <h2 className="text-2xl font-black text-white">Пригласи 5 друзей и получи подарок</h2>
             <p className="mt-2 max-w-[720px] text-sm font-semibold leading-relaxed text-white/62">
-              За 5 приглашённых друзей можно получить любой подарок стоимостью до 25 Telegram Stars. Когда условия выполнены,
-              здесь появится кнопка для заявки менеджеру.
+              За 5 приглашённых участников можно получить любой подарок стоимостью до 50 Telegram Stars.
             </p>
             <div className="mt-5 grid gap-2 sm:grid-cols-[1fr_auto]">
               <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/24 px-4 py-3 text-sm font-black text-sky-50">
@@ -194,7 +214,7 @@ export default function AccountTabs({ orders, referral }: { orders: AccountOrder
               </button>
             </div>
             <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.055] p-4">
-              <div className="text-sm font-bold text-white/58">Приглашено друзей</div>
+              <div className="text-sm font-bold text-white/58">Приглашено участников</div>
               <div className="mt-1 text-4xl font-black text-white">{invitedCount} / 5</div>
             </div>
             <div className="mt-4 rounded-2xl border border-sky-300/18 bg-sky-500/10 p-4 text-left">
@@ -220,9 +240,9 @@ export default function AccountTabs({ orders, referral }: { orders: AccountOrder
                       ? `Повторно через ${formatClaimWait(claimCooldownMs)}`
                       : "Я выполнил все условия"}
                 </button>
-                {claimCooldownMs > 0 || claimText ? (
+                {claimText ? (
                   <div className="rounded-2xl border border-white/10 bg-white/[0.055] p-4 text-sm font-semibold leading-relaxed text-white/68">
-                    {claimText || `Заявка уже отправлена. Следующую можно отправить через ${formatClaimWait(claimCooldownMs)}.`}
+                    {claimText}
                   </div>
                 ) : null}
               </div>
@@ -230,7 +250,7 @@ export default function AccountTabs({ orders, referral }: { orders: AccountOrder
           </div>
 
           <div className="rounded-3xl border border-white/10 bg-white/[0.035] p-5">
-            <h2 className="text-lg font-black text-white">Приглашённые друзья</h2>
+            <h2 className="text-lg font-black text-white">Приглашённые участники</h2>
             <div className="mt-4 grid gap-2">
               {referral?.invited.length ? (
                 referral.invited.map((friend) => (
@@ -254,13 +274,11 @@ export default function AccountTabs({ orders, referral }: { orders: AccountOrder
 
           {!canClaimGift ? (
             <div className="rounded-2xl border border-white/10 bg-white/[0.035] px-5 py-4 text-center text-sm font-bold text-white/48">
-              Кнопка заявки появится после 5 приглашённых друзей.
+              Кнопка заявки появится после 5 приглашённых участников.
             </div>
           ) : null}
         </section>
       )}
-
-      <AccountLogoutButton />
     </>
   );
 }

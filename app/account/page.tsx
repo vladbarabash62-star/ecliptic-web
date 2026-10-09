@@ -48,10 +48,7 @@ export default async function AccountPage() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.12em] text-sky-200/72">Личный кабинет</p>
-              <h1 className="mt-2 text-4xl font-black sm:text-5xl">Мои заказы</h1>
-              <p className="mt-3 max-w-[640px] text-sm font-semibold leading-relaxed text-white/58">
-                Здесь сохраняются покупки, которые вы нажали на сайте после входа в аккаунт.
-              </p>
+              <h1 className="mt-2 text-4xl font-black sm:text-5xl">Ecliptic Store</h1>
             </div>
             {user ? (
               <div className="rounded-2xl border border-white/10 bg-white/[0.045] px-4 py-3 text-sm font-bold text-white/72">
