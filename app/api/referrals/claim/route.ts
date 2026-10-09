@@ -3,6 +3,7 @@ import {
   createCustomerReferralClaim,
   getCustomerUserFromCookies,
   markCustomerReferralClaimSent,
+  REFERRAL_CLAIM_COOLDOWN_MS,
 } from "../../../../lib/customerAuth";
 import { getManagerChatId } from "../../../../lib/telegramManagerStore";
 
@@ -41,6 +42,14 @@ function escapeHtml(value: string) {
     .replace(/"/g, "&quot;");
 }
 
+function formatRetryAfter(ms: number) {
+  const totalMinutes = Math.max(1, Math.ceil(ms / 60000));
+  if (totalMinutes >= 30) return "30 минут";
+  if (totalMinutes === 1) return "1 минуту";
+  if (totalMinutes >= 2 && totalMinutes <= 4) return `${totalMinutes} минуты`;
+  return `${totalMinutes} минут`;
+}
+
 export async function POST() {
   const user = await getCustomerUserFromCookies();
   if (!user) {
@@ -49,6 +58,20 @@ export async function POST() {
 
   const result = await createCustomerReferralClaim(user.id, "pending_manager");
   const claim = result.claim;
+
+  if (result.duplicate) {
+    const retryAfterMs = Math.max(0, result.retryAfterMs || REFERRAL_CLAIM_COOLDOWN_MS);
+    return NextResponse.json(
+      {
+        ok: false,
+        duplicate: true,
+        retryAfterMs,
+        claim,
+        error: `Повторную заявку можно отправить через ${formatRetryAfter(retryAfterMs)}.`,
+      },
+      { status: 429 }
+    );
+  }
 
   const managerSent = await sendManagerNotification(
     [

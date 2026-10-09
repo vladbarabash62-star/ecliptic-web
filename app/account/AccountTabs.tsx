@@ -35,6 +35,8 @@ type ReferralInfo = {
   } | null;
 };
 
+const REFERRAL_CLAIM_COOLDOWN_MS = 30 * 60 * 1000;
+
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("ru-RU", {
     day: "2-digit",
@@ -45,6 +47,15 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
+function formatClaimWait(ms: number) {
+  const totalSeconds = Math.max(1, Math.ceil(ms / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  if (minutes <= 0) return `${seconds} сек.`;
+  if (seconds <= 0) return `${minutes} мин.`;
+  return `${minutes} мин. ${seconds} сек.`;
+}
+
 function tabFromHash(value: string): "orders" | "referral" {
   return value === "#referral" || value === "referral" ? "referral" : "orders";
 }
@@ -52,10 +63,16 @@ function tabFromHash(value: string): "orders" | "referral" {
 export default function AccountTabs({ orders, referral }: { orders: AccountOrder[]; referral: ReferralInfo | null }) {
   const [tab, setTab] = useState<"orders" | "referral">("orders");
   const [copyText, setCopyText] = useState("Скопировать");
-  const [claimText, setClaimText] = useState(referral?.lastClaim ? "Заявка уже отправлена" : "");
+  const [claimText, setClaimText] = useState("");
   const [isClaiming, setIsClaiming] = useState(false);
+  const [lastClaimAt, setLastClaimAt] = useState(referral?.lastClaim?.createdAt || "");
+  const [now, setNow] = useState(() => Date.now());
   const invitedCount = referral?.invitedCount || 0;
   const canClaimGift = invitedCount >= 5;
+  const claimCooldownMs = lastClaimAt
+    ? Math.max(0, REFERRAL_CLAIM_COOLDOWN_MS - (now - new Date(lastClaimAt).getTime()))
+    : 0;
+  const canSubmitClaim = canClaimGift && claimCooldownMs <= 0;
 
   useEffect(() => {
     const syncFromHash = () => setTab(tabFromHash(window.location.hash));
@@ -63,6 +80,12 @@ export default function AccountTabs({ orders, referral }: { orders: AccountOrder
     window.addEventListener("hashchange", syncFromHash);
     return () => window.removeEventListener("hashchange", syncFromHash);
   }, []);
+
+  useEffect(() => {
+    if (!canClaimGift || !lastClaimAt) return;
+    const interval = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(interval);
+  }, [canClaimGift, lastClaimAt]);
 
   function selectTab(nextTab: "orders" | "referral") {
     setTab(nextTab);
@@ -86,9 +109,12 @@ export default function AccountTabs({ orders, referral }: { orders: AccountOrder
       const response = await fetch("/api/referrals/claim", { method: "POST" });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || !data.ok) throw new Error(data.error || "Не удалось отправить заявку.");
+      if (data.claim?.createdAt) setLastClaimAt(data.claim.createdAt);
+      setNow(Date.now());
       setClaimText(data.message || "Заявка отправлена менеджеру.");
     } catch (error) {
       setClaimText(error instanceof Error ? error.message : "Не удалось отправить заявку.");
+      setNow(Date.now());
     } finally {
       setIsClaiming(false);
     }
@@ -185,14 +211,18 @@ export default function AccountTabs({ orders, referral }: { orders: AccountOrder
                 <button
                   type="button"
                   onClick={claimGift}
-                  disabled={isClaiming || Boolean(referral?.lastClaim)}
+                  disabled={isClaiming || !canSubmitClaim}
                   className="rounded-2xl border border-emerald-300/26 bg-emerald-500/14 px-5 py-4 text-center text-sm font-black text-emerald-100 transition hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-65"
                 >
-                  {isClaiming ? "Отправляю..." : referral?.lastClaim ? "Заявка уже отправлена" : "Я выполнил все условия"}
+                  {isClaiming
+                    ? "Отправляю..."
+                    : claimCooldownMs > 0
+                      ? `Повторно через ${formatClaimWait(claimCooldownMs)}`
+                      : "Я выполнил все условия"}
                 </button>
-                {claimText ? (
+                {claimCooldownMs > 0 || claimText ? (
                   <div className="rounded-2xl border border-white/10 bg-white/[0.055] p-4 text-sm font-semibold leading-relaxed text-white/68">
-                    {claimText}
+                    {claimText || `Заявка уже отправлена. Следующую можно отправить через ${formatClaimWait(claimCooldownMs)}.`}
                   </div>
                 ) : null}
               </div>

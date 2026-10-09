@@ -55,6 +55,7 @@ const CUSTOMER_SESSION_COOKIE = "ecliptic_customer_session";
 const CUSTOMER_STORE_BLOB = "customers/store-v1.json";
 const CUSTOMER_STORE_FALLBACK = "customer-store-v1";
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 180;
+export const REFERRAL_CLAIM_COOLDOWN_MS = 30 * 60 * 1000;
 
 function useSecureCookie() {
   return Boolean(process.env.VERCEL || process.env.VERCEL_URL);
@@ -294,8 +295,11 @@ export async function createCustomerReferralClaim(userIdValue: string, status: C
   const recentClaim = store.referralClaims
     .filter((claim) => claim.userId === user.id)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
-  if (recentClaim && Date.now() - new Date(recentClaim.createdAt).getTime() < 24 * 60 * 60 * 1000) {
-    return { claim: recentClaim, user, invitedCount, duplicate: true };
+  if (recentClaim) {
+    const retryAfterMs = REFERRAL_CLAIM_COOLDOWN_MS - (Date.now() - new Date(recentClaim.createdAt).getTime());
+    if (retryAfterMs > 0) {
+      return { claim: recentClaim, user, invitedCount, duplicate: true, retryAfterMs };
+    }
   }
 
   const claim: CustomerReferralClaim = {
@@ -308,7 +312,7 @@ export async function createCustomerReferralClaim(userIdValue: string, status: C
 
   store.referralClaims = [...store.referralClaims, claim].slice(-1000);
   await writeCustomerStore(store);
-  return { claim, user, invitedCount, duplicate: false };
+  return { claim, user, invitedCount, duplicate: false, retryAfterMs: 0 };
 }
 
 export async function markCustomerReferralClaimSent(claimId: string) {
