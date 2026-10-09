@@ -183,7 +183,16 @@ function pickSafePosition(
     if (!lane) break;
     const x = Math.round(randomBetween(lane.left, lane.right));
     const y = Math.round(randomBetween(lane.top, lane.bottom));
-    if (previous && Math.abs(previous.x - x) < 58 && Math.abs(previous.y - y) < 58) continue;
+    const minHorizontalShift = window.innerWidth < 700 ? 70 : 145;
+    const minVerticalShift = window.innerWidth < 700 ? 58 : 96;
+    if (
+      previous &&
+      attempt < 95 &&
+      Math.abs(previous.x - x) < minHorizontalShift &&
+      Math.abs(previous.y - y) < minVerticalShift
+    ) {
+      continue;
+    }
     if (isSafePosition(x, y, width, height, blockers)) return { x, y, laneId: lane.id };
   }
 
@@ -262,7 +271,7 @@ export default function FloatingReferralStar() {
       const { width, height } = measure();
       const laneMode = !motion.lastLaneId || force
         ? "any"
-        : Math.random() < 0.78
+        : Math.random() < 0.66
           ? "same-root"
           : "different-root";
       const picked = pickSafePosition(
@@ -282,7 +291,7 @@ export default function FloatingReferralStar() {
       motion.targetX = picked.x;
       motion.targetY = picked.y;
       motion.lastLaneId = picked.laneId;
-      motion.nextTargetAt = performance.now() + 9000 + Math.random() * 7000;
+      motion.nextTargetAt = performance.now() + 5600 + Math.random() * 4600;
       if (!isReadyRef.current) {
         motion.x = picked.x;
         motion.y = picked.y;
@@ -312,7 +321,7 @@ export default function FloatingReferralStar() {
       const { width, height } = measure();
       if (!motion.nextTargetAt || time > motion.nextTargetAt) chooseTarget();
 
-      const pull = window.innerWidth < 700 ? 0.018 : 0.012;
+      const pull = window.innerWidth < 700 ? 0.026 : 0.02;
       motion.x += (motion.targetX - motion.x) * pull;
       motion.y += (motion.targetY - motion.y) * pull;
       motion.scrollOffsetY *= 0.89;
