@@ -250,10 +250,6 @@ const ADMIN_HTML = `<!doctype html>
         <div class="card stat"><p class="muted">Клики купить</p><div id="statBuys" class="value">0</div></div>
         <div class="card stat"><p class="muted">Telegram</p><div id="statTelegram" class="value">0</div></div>
       </div>
-      <div class="grid2">
-        <div class="card panel"><h2>Открытия товаров</h2><div id="productStats" class="list"></div></div>
-        <div class="card panel"><h2>Действия</h2><div id="actionStats" class="list"></div></div>
-      </div>
       <div class="card panel" style="margin-top:14px">
         <h2>Последние события</h2>
         <div style="overflow:auto">
@@ -278,53 +274,15 @@ const ADMIN_HTML = `<!doctype html>
       </div>
       <div class="chart-grid">
         <div class="card chart-card">
-          <h2>Открытия товаров</h2>
-          <p class="hint">Сколько раз открывали каждый товар. Например: Telegram Stars 100 — товар открыли 100 раз.</p>
+          <h2>Сколько раз открыли товар</h2>
+          <p class="hint">Считает открытия страниц товаров по ссылке /products/.... Главная страница сюда не попадает.</p>
           <div id="chartProducts"></div>
         </div>
         <div class="card chart-card">
-          <h2>Покупки по товарам</h2>
-          <p class="hint">Сколько раз нажали «Купить» внутри каждого товара. Показывает, какие товары чаще доводят до заявки.</p>
+          <h2>Сколько раз нажали «Купить»</h2>
+          <p class="hint">Считает нажатия «Купить» внутри каждого товара по ссылке /products/....</p>
           <div id="chartProductBuys"></div>
         </div>
-        <div class="card chart-card">
-          <h2>Регионы</h2>
-          <p class="hint">Откуда заходят посетители по данным сервера. Если город не определён, показывается страна или «Неизвестно».</p>
-          <div id="chartRegions"></div>
-        </div>
-        <div class="card chart-card">
-          <h2>Просмотры / покупки</h2>
-          <p class="hint">Соотношение обычных просмотров и нажатий «Купить». Чем больше доля покупок, тем лучше конверсия.</p>
-          <div id="chartConversion"></div>
-        </div>
-      </div>
-      <div class="insight-grid">
-        <div class="card insight"><span class="muted">Конверсия в покупку</span><strong id="insightConversion">0%</strong></div>
-        <div class="card insight"><span class="muted">Самый популярный товар</span><strong id="insightTopProduct">-</strong></div>
-        <div class="card insight"><span class="muted">Лучший регион</span><strong id="insightTopRegion">-</strong></div>
-        <div class="card insight"><span class="muted">Вернулись через день</span><strong id="insightReturnVisitors">0</strong></div>
-      </div>
-      <div class="chart-grid">
-        <div class="card chart-card">
-          <h2>Отзывы</h2>
-          <p class="hint">Общее число открытий отзывов и список посетителей: время, IP и ID устройства.</p>
-          <div id="chartReviews"></div>
-        </div>
-      </div>
-      <div class="card wide-chart">
-        <h2>Клики «Купить» по неделям</h2>
-        <p class="muted" style="margin-top:6px">Сравнение недель показывает, растёт ли желание купить.</p>
-        <div id="chartWeeklyBuys"></div>
-      </div>
-      <div class="card wide-chart">
-        <h2>Открытия товаров по неделям</h2>
-        <p class="muted" style="margin-top:6px">Сколько раз люди открывали страницы товаров в каждую неделю.</p>
-        <div id="chartWeeklyProductViews"></div>
-      </div>
-      <div class="card wide-chart">
-        <h2>Повторные посетители</h2>
-        <p class="muted" style="margin-top:6px">Сколько клиентов возвращались на сайт снова минимум через 1 день с того же IP или того же браузера.</p>
-        <div id="chartReturnVisitors"></div>
       </div>
     </section>
 
@@ -687,9 +645,20 @@ const ADMIN_HTML = `<!doctype html>
       var slug = eventProductSlug(event);
       return slug ? productName(slug) : 'Неизвестно';
     }
+    function productLinkLabel(slug) {
+      var cleanSlug = String(slug || '').trim();
+      if (!cleanSlug) return 'Неизвестно';
+      return productNameBySlug(cleanSlug) + ' · /products/' + cleanSlug;
+    }
     function productSummaryNames(data) {
       return Object.entries(data || {}).reduce(function(acc, row) {
         acc[productNameBySlug(row[0])] = Number(row[1] || 0);
+        return acc;
+      }, {});
+    }
+    function productSummaryLinkNames(data) {
+      return Object.entries(data || {}).reduce(function(acc, row) {
+        acc[productLinkLabel(row[0])] = Number(row[1] || 0);
         return acc;
       }, {});
     }
@@ -703,12 +672,12 @@ const ADMIN_HTML = `<!doctype html>
     function productOpenCounts(events) {
       return countBy((events || []).filter(function(event) {
         return event.type === 'product_open' && eventProductSlug(event);
-      }), eventProductName);
+      }), function(event) { return productLinkLabel(eventProductSlug(event)); });
     }
     function productBuyCounts(events) {
       return countBy((events || []).filter(function(event) {
         return event.type === 'buy_click' && eventProductSlug(event);
-      }), eventProductName);
+      }), function(event) { return productLinkLabel(eventProductSlug(event)); });
     }
     function productOpenCountsByVisitorLastDay(events) {
       var since = Date.now() - 24 * 60 * 60 * 1000;
@@ -952,14 +921,10 @@ const ADMIN_HTML = `<!doctype html>
     }
     function renderAnalytics() {
       hotVisitorOpenCounts = productOpenCountsByVisitorLastDay(analyticsEvents);
-      var fallbackProducts = countBy(analyticsEvents.filter(function(e) { return e.type === 'product_open' && eventProductSlug(e); }), function(e) { return eventProductSlug(e); });
-      var fallbackActions = countBy(analyticsEvents, function(e) { return e.type; });
       $('statTotal').textContent = analyticsSummary.total || analyticsEvents.length;
       $('statViews').textContent = analyticsSummary.views || analyticsEvents.filter(function(e) { return e.type === 'product_open'; }).length;
       $('statBuys').textContent = analyticsSummary.buys || analyticsEvents.filter(function(e) { return e.type === 'buy_click'; }).length;
       $('statTelegram').textContent = analyticsSummary.telegram || analyticsEvents.filter(function(e) { return String(e.type || '').indexOf('telegram') !== -1; }).length;
-      renderBars('productStats', Object.keys(analyticsSummary.products || {}).length ? analyticsSummary.products : fallbackProducts);
-      renderBars('actionStats', Object.keys(analyticsSummary.actions || {}).length ? analyticsSummary.actions : fallbackActions);
       $('eventsTable').innerHTML = analyticsEvents.map(function(event) {
         var time = event.time ? new Date(event.time).toLocaleString('ru-RU') : '';
         return '<tr><td class="nowrap">' + esc(time) + '</td><td>' + esc(actionLabel(event.type)) + '</td><td>' + esc(eventProductLabel(event)) + '</td><td>' + esc(pageLabel(event.path)) + '</td><td>' + visitorHtml(event) + '</td></tr>';
@@ -1050,29 +1015,13 @@ const ADMIN_HTML = `<!doctype html>
       var chartEvents = analyticsEvents.filter(isCountedEvent);
       var buyEvents = chartEvents.filter(function(e) { return e.type === 'buy_click'; });
       var productOpens = chartEvents.filter(function(e) { return e.type === 'product_open'; });
-      var regions = countBy(chartEvents, eventRegion);
       var fallbackProductCounts = productOpenCounts(chartEvents);
-      var productCounts = Object.keys(analyticsSummary.products || {}).length ? productSummaryNames(analyticsSummary.products) : fallbackProductCounts;
+      var productCounts = Object.keys(analyticsSummary.products || {}).length ? productSummaryLinkNames(analyticsSummary.products) : fallbackProductCounts;
       var productBuyCountsData = productBuyCounts(chartEvents);
-      var conversionRows = [['Открыли товар', productOpens.length], ['Нажали «Купить»', buyEvents.length]];
-      var topProduct = topEntries(productCounts, 1)[0];
-      var topRegion = topEntries(regions, 1)[0];
-      var returnCount = returningVisitors(analyticsEvents).length;
 
       renderPie('chartProducts', topEntries(productCounts, products.length || 100));
       renderPie('chartProductBuys', topEntries(productBuyCountsData, products.length || 100));
-      renderPie('chartRegions', topEntries(regions, 6));
-      renderPie('chartConversion', conversionRows);
-      renderReviewsChart(chartEvents);
-      renderWeekBars('chartWeeklyBuys', chartEvents, 'buy_click', 'кликов');
-      renderWeekBars('chartWeeklyProductViews', chartEvents, 'product_page_view', 'открытий');
-      renderReturnVisitors('chartReturnVisitors', chartEvents);
-
-      $('insightConversion').textContent = percent(buyEvents.length, Math.max(1, productOpens.length)) + '%';
-      $('insightTopProduct').textContent = topProduct ? topProduct[0] : '-';
-      $('insightTopRegion').textContent = topRegion ? topRegion[0] : '-';
-      $('insightReturnVisitors').textContent = String(returnCount);
-      $('chartsUpdatedAt').textContent = 'Обновлено: ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' · событий без главной: ' + chartEvents.length + ' · открытий товаров: ' + productOpens.length;
+      $('chartsUpdatedAt').textContent = 'Обновлено: ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' · открытий товаров: ' + productOpens.length + ' · кликов «Купить»: ' + buyEvents.length;
     }
     function updateAnalyticsTimestamp() {
       $('analyticsUpdatedAt').textContent = 'Обновлено: ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });

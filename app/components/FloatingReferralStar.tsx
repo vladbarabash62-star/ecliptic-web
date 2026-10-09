@@ -19,9 +19,12 @@ type MotionState = {
   y: number;
   targetX: number;
   targetY: number;
+  lastSafeX: number;
+  lastSafeY: number;
   scrollOffsetY: number;
   lastScrollY: number;
   nextTargetAt: number;
+  lastRecoveryAt: number;
   lastLaneId: string;
 };
 
@@ -88,6 +91,14 @@ function randomBetween(min: number, max: number) {
   return min + Math.random() * (max - min);
 }
 
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function laneRoot(id: string) {
+  return id.split("-")[0] || id;
+}
+
 function addSplitLanes(lanes: SafeLane[], id: string, left: number, right: number, top: number, bottom: number, weight: number) {
   if (right <= left || bottom <= top) return;
   const height = bottom - top;
@@ -144,11 +155,28 @@ function rectCandidates(width: number, height: number) {
   return lanes;
 }
 
-function pickSafePosition(width: number, height: number, previous?: StarPosition): StarPosition | null {
+function pickSafePosition(
+  width: number,
+  height: number,
+  previous?: StarPosition,
+  mode: "any" | "same-root" | "different-root" = "any"
+): StarPosition | null {
   const blockers = visibleRects(BLOCKER_SELECTOR);
   const lanes = rectCandidates(width, height);
-  const differentLanes = previous?.laneId && lanes.length > 1 ? lanes.filter((lane) => lane.id !== previous.laneId) : lanes;
-  const weightedLanes = differentLanes.flatMap((lane) => Array.from({ length: lane.weight }, () => lane));
+  const previousRoot = previous?.laneId ? laneRoot(previous.laneId) : "";
+  let laneChoices = lanes;
+
+  if (previousRoot && mode === "same-root") {
+    laneChoices = lanes.filter((lane) => laneRoot(lane.id) === previousRoot);
+  }
+
+  if (previousRoot && mode === "different-root" && lanes.length > 1) {
+    laneChoices = lanes.filter((lane) => laneRoot(lane.id) !== previousRoot);
+  }
+
+  if (!laneChoices.length) laneChoices = lanes;
+
+  const weightedLanes = laneChoices.flatMap((lane) => Array.from({ length: lane.weight }, () => lane));
 
   for (let attempt = 0; attempt < 130; attempt += 1) {
     const lane = weightedLanes[Math.floor(Math.random() * weightedLanes.length)] || lanes[Math.floor(Math.random() * lanes.length)];
@@ -162,30 +190,6 @@ function pickSafePosition(width: number, height: number, previous?: StarPosition
   return null;
 }
 
-function nearestSafePosition(x: number, y: number, width: number, height: number): StarPosition | null {
-  const blockers = visibleRects(BLOCKER_SELECTOR);
-  const lanes = rectCandidates(width, height);
-  const candidates: StarPosition[] = [];
-
-  for (const lane of lanes) {
-    candidates.push(
-      { x: lane.left, y: lane.top, laneId: lane.id },
-      { x: lane.left, y: lane.bottom, laneId: lane.id },
-      { x: lane.right, y: lane.top, laneId: lane.id },
-      { x: lane.right, y: lane.bottom, laneId: lane.id },
-      {
-        x: Math.min(lane.right, Math.max(lane.left, x)),
-        y: Math.min(lane.bottom, Math.max(lane.top, y)),
-        laneId: lane.id,
-      }
-    );
-  }
-
-  return candidates
-    .filter((candidate) => isSafePosition(candidate.x, candidate.y, width, height, blockers))
-    .sort((a, b) => (a.x - x) ** 2 + (a.y - y) ** 2 - ((b.x - x) ** 2 + (b.y - y) ** 2))[0] || null;
-}
-
 export default function FloatingReferralStar() {
   const pathname = usePathname();
   const buttonRef = useRef<HTMLButtonElement | null>(null);
@@ -196,9 +200,12 @@ export default function FloatingReferralStar() {
     y: 220,
     targetX: 18,
     targetY: 220,
+    lastSafeX: 18,
+    lastSafeY: 220,
     scrollOffsetY: 0,
     lastScrollY: 0,
     nextTargetAt: 0,
+    lastRecoveryAt: 0,
     lastLaneId: "",
   });
   const [user, setUser] = useState<CustomerUser | null>(null);
@@ -253,7 +260,17 @@ export default function FloatingReferralStar() {
 
     const chooseTarget = (force = false) => {
       const { width, height } = measure();
-      const picked = pickSafePosition(width, height, { x: motion.targetX, y: motion.targetY, laneId: motion.lastLaneId });
+      const laneMode = !motion.lastLaneId || force
+        ? "any"
+        : Math.random() < 0.78
+          ? "same-root"
+          : "different-root";
+      const picked = pickSafePosition(
+        width,
+        height,
+        { x: motion.targetX, y: motion.targetY, laneId: motion.lastLaneId },
+        laneMode
+      );
       if (!picked) {
         if (buttonRef.current) {
           buttonRef.current.style.opacity = "0";
@@ -265,10 +282,12 @@ export default function FloatingReferralStar() {
       motion.targetX = picked.x;
       motion.targetY = picked.y;
       motion.lastLaneId = picked.laneId;
-      motion.nextTargetAt = performance.now() + 4300 + Math.random() * 2700;
-      if (!isReadyRef.current || force) {
+      motion.nextTargetAt = performance.now() + 9000 + Math.random() * 7000;
+      if (!isReadyRef.current) {
         motion.x = picked.x;
         motion.y = picked.y;
+        motion.lastSafeX = picked.x;
+        motion.lastSafeY = picked.y;
         isReadyRef.current = true;
       }
       if (buttonRef.current) buttonRef.current.style.pointerEvents = "auto";
@@ -293,20 +312,33 @@ export default function FloatingReferralStar() {
       const { width, height } = measure();
       if (!motion.nextTargetAt || time > motion.nextTargetAt) chooseTarget();
 
-      motion.x += (motion.targetX - motion.x) * 0.026;
-      motion.y += (motion.targetY - motion.y) * 0.026;
+      const pull = window.innerWidth < 700 ? 0.018 : 0.012;
+      motion.x += (motion.targetX - motion.x) * pull;
+      motion.y += (motion.targetY - motion.y) * pull;
       motion.scrollOffsetY *= 0.89;
       if (Math.abs(motion.scrollOffsetY) < 0.25) motion.scrollOffsetY = 0;
 
-      const safe = nearestSafePosition(motion.x, motion.y + motion.scrollOffsetY, width, height);
-      if (safe) {
-        element.style.left = `${Math.round(safe.x)}px`;
-        element.style.top = `${Math.round(safe.y)}px`;
+      const margin = window.innerWidth < 700 ? 10 : 18;
+      const bottomInset = window.innerWidth < 700 ? 22 : 18;
+      const renderX = clamp(motion.x, margin, window.innerWidth - width - margin);
+      const renderY = clamp(motion.y + motion.scrollOffsetY, 76, window.innerHeight - height - bottomInset);
+
+      if (isSafePosition(renderX, renderY, width, height)) {
+        motion.lastSafeX = renderX;
+        motion.lastSafeY = renderY;
+        element.style.left = `${Math.round(renderX)}px`;
+        element.style.top = `${Math.round(renderY)}px`;
         element.style.opacity = isReadyRef.current ? "1" : "0";
         element.style.pointerEvents = "auto";
       } else {
-        element.style.opacity = "0";
-        element.style.pointerEvents = "none";
+        if (time - motion.lastRecoveryAt > 900) {
+          chooseTarget();
+          motion.lastRecoveryAt = time;
+        }
+        element.style.left = `${Math.round(motion.lastSafeX)}px`;
+        element.style.top = `${Math.round(motion.lastSafeY)}px`;
+        element.style.opacity = isReadyRef.current ? "1" : "0";
+        element.style.pointerEvents = "auto";
       }
 
       frameRef.current = window.requestAnimationFrame(tick);
