@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getProductBySlug } from "../../../lib/productStore";
-import { landingPageUrl, seoLandingPages } from "../../../lib/seoLandingPages";
-import { SITE_NAME } from "../../../lib/seo";
+import { landingPageUrl, seoLandingPages, type SeoLandingPage } from "../../../lib/seoLandingPages";
+import { SITE_NAME, SITE_URL, stringifyJsonLd } from "../../../lib/seo";
 
 type SearchLandingPageProps = {
   params: Promise<{ slug: string }>;
@@ -11,6 +11,79 @@ type SearchLandingPageProps = {
 
 function findLandingPage(slug: string) {
   return seoLandingPages.find((page) => page.slug === slug);
+}
+
+function buildSearchPageJsonLd(page: SeoLandingPage) {
+  const url = landingPageUrl(page.slug);
+  const mainService = page.services[0] || page.h1;
+
+  return [
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      name: page.h1,
+      url,
+      description: page.description,
+      inLanguage: "ru",
+      isPartOf: {
+        "@type": "WebSite",
+        name: SITE_NAME,
+        url: SITE_URL,
+      },
+      about: page.services.map((service) => ({
+        "@type": "Thing",
+        name: service,
+      })),
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: SITE_NAME,
+          item: SITE_URL,
+        },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: page.h1,
+          item: url,
+        },
+      ],
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: [
+        {
+          "@type": "Question",
+          name: `Можно ли оформить ${mainService} в ПМР через Ecliptic Store?`,
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: `Да. В Ecliptic Store можно оформить ${mainService}, игровые пополнения, Telegram Stars, Telegram Premium и другие цифровые товары для ПМР и Приднестровья.`,
+          },
+        },
+        {
+          "@type": "Question",
+          name: "Как оформить заказ?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Выберите нужный товар на сайте, нажмите кнопку покупки и отправьте заявку менеджеру Ecliptic Store в Telegram.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "Работает ли Ecliptic Store для Тирасполя и всего ПМР?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Да. Ecliptic Store работает онлайн для покупателей из Тирасполя, Бендер, Рыбницы и других городов ПМР.",
+          },
+        },
+      ],
+    },
+  ];
 }
 
 export async function generateStaticParams() {
@@ -55,9 +128,17 @@ export default async function SearchLandingPage({ params }: SearchLandingPagePro
   if (!page) notFound();
 
   const product = page.productSlug ? await getProductBySlug(page.productSlug) : null;
+  const jsonLd = buildSearchPageJsonLd(page);
 
   return (
     <main className="relative min-h-screen w-full overflow-x-hidden px-4 py-10 text-white sm:py-14">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: stringifyJsonLd(jsonLd),
+        }}
+      />
+
       <section className="mx-auto w-full max-w-[1080px]">
         <p className="text-sm font-bold uppercase tracking-[0.18em] text-emerald-300/85">
           {SITE_NAME}
