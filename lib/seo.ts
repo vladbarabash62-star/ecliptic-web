@@ -260,10 +260,13 @@ export function productHasOrderForm(product: Product) {
     "steam",
     "epic-games-topup",
     "minecraft",
+    "site-topups",
+    "sbp-payment",
     "boosty",
     "twitch",
     "card-withdrawal-rf",
     "card-withdrawal-md",
+    "transfers",
   ].includes(product.slug);
 }
 

@@ -51,14 +51,34 @@ function isPageRequest(request: NextRequest) {
   return accept.includes("text/html") || accept === "*/*" || !accept;
 }
 
+function hasPrivateOrDuplicateSearchParams(request: NextRequest) {
+  return ["use", "ref", "app", "tgWebAppStartParam", "startapp", "start_param", "_fresh"].some((key) =>
+    request.nextUrl.searchParams.has(key)
+  );
+}
+
 function preparePageResponse(request: NextRequest, response: NextResponse) {
   if (!isPageRequest(request)) return response;
 
-  if (request.nextUrl.pathname === "/admin" || request.nextUrl.pathname.startsWith("/admin/")) {
+  const pathname = request.nextUrl.pathname;
+  const shouldNoIndex =
+    pathname === "/admin" ||
+    pathname.startsWith("/admin/") ||
+    pathname === "/account" ||
+    pathname.startsWith("/account/") ||
+    pathname === "/shop" ||
+    pathname === "/tags" ||
+    pathname.startsWith("/go/") ||
+    hasPrivateOrDuplicateSearchParams(request);
+
+  if (shouldNoIndex) {
+    response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive, nosnippet");
+  }
+
+  if (pathname === "/admin" || pathname.startsWith("/admin/") || pathname === "/account" || pathname.startsWith("/account/")) {
     response.headers.set("Cache-Control", "private, no-cache, max-age=0, must-revalidate");
     response.headers.set("Pragma", "no-cache");
     response.headers.set("Expires", "0");
-    response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive, nosnippet");
   }
 
   return response;

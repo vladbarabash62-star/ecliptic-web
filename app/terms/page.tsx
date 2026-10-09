@@ -1,8 +1,18 @@
 import type { Metadata } from "next";
 import LegalPage from "../components/LegalPage";
+import { SITE_URL } from "../../lib/seo";
 
 export const metadata: Metadata = {
   title: "Ecliptic Store — Пользовательское соглашение",
+  description:
+    "Пользовательское соглашение Ecliptic Store: правила оформления заявок, ответственность клиента и порядок работы магазина.",
+  alternates: {
+    canonical: `${SITE_URL}/terms`,
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function TermsPage() {

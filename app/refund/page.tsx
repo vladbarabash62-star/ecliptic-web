@@ -1,8 +1,18 @@
 import type { Metadata } from "next";
 import LegalPage from "../components/LegalPage";
+import { SITE_URL } from "../../lib/seo";
 
 export const metadata: Metadata = {
   title: "Ecliptic Store — Политика возврата",
+  description:
+    "Политика возврата Ecliptic Store: когда возможен возврат или замена цифрового товара и как решаются спорные ситуации.",
+  alternates: {
+    canonical: `${SITE_URL}/refund`,
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RefundPage() {

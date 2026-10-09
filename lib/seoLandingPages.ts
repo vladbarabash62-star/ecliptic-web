@@ -454,7 +454,7 @@ const manualSeoLandingPages: SeoLandingPage[] = [
     h1: "GTA 5 RP донат ПМР",
     intro:
       "Страница для запросов GTA 5 RP, Majestic RP, Radmir RP, Amazing RP, Black Russia и RP-донат в ПМР.",
-    productSlug: "gta-5-rp",
+    productSlug: "gta-5-rp-majestic-rp",
     phrases: [
       "gta 5 rp донат пмр",
       "majestic rp пмр",

@@ -42,12 +42,6 @@ export async function GET() {
       changeFrequency: "daily",
       priority: 1,
     },
-    {
-      url: `${SITE_URL}/shop`,
-      lastModified: now,
-      changeFrequency: "daily",
-      priority: 0.9,
-    },
     ...products
       .filter(productShouldBeIndexed)
       .map((product) => ({
@@ -80,18 +74,13 @@ export async function GET() {
       changeFrequency: "monthly",
       priority: 0.2,
     },
-    {
-      url: `${SITE_URL}/tags`,
-      lastModified: now,
-      changeFrequency: "weekly",
-      priority: 0.6,
-    },
   ];
+  const uniqueEntries = Array.from(new Map(entries.map((entry) => [entry.url, entry])).values());
 
   const xml = [
     '<?xml version="1.0" encoding="UTF-8"?>',
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
-    entries.map(sitemapUrl).join("\n"),
+    uniqueEntries.map(sitemapUrl).join("\n"),
     "</urlset>",
     "",
   ].join("\n");

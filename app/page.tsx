@@ -6,6 +6,7 @@ import { getProductBySlug, getProducts } from "../lib/productStore";
 import { withOptimizedProductsImages } from "../lib/optimizedImages";
 import { getSiteSettings } from "../lib/siteSettings";
 import { defaultSiteSettings } from "../lib/siteSettingsDefaults";
+import { productShouldBeIndexed } from "../lib/seo";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -52,12 +53,14 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     getProducts({ cached: true }),
     getSiteSettings().catch(() => defaultSiteSettings),
   ]);
-  const products = withOptimizedProductsImages(allProducts).map((product) => ({
-    name: product.name,
-    slug: product.slug,
-    icon: product.icon,
-    iconScale: product.iconScale,
-  }));
+  const products = withOptimizedProductsImages(allProducts)
+    .filter(productShouldBeIndexed)
+    .map((product) => ({
+      name: product.name,
+      slug: product.slug,
+      icon: product.icon,
+      iconScale: product.iconScale,
+    }));
 
   return (
     <main className="relative min-h-screen w-full overflow-x-hidden bg-transparent px-4 py-6 text-white">

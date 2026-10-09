@@ -1,8 +1,18 @@
 import type { Metadata } from "next";
 import LegalPage from "../components/LegalPage";
+import { SITE_URL } from "../../lib/seo";
 
 export const metadata: Metadata = {
   title: "Ecliptic Store — Конфиденциальность",
+  description:
+    "Политика конфиденциальности Ecliptic Store: какие данные нужны для обработки заказов, связи в Telegram и поддержки клиентов.",
+  alternates: {
+    canonical: `${SITE_URL}/policy`,
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function PolicyPage() {

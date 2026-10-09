@@ -96,7 +96,7 @@ export async function generateMetadata({ params }: SearchLandingPageProps): Prom
 
   if (!page) return {};
 
-  const title = page.h1;
+  const title = page.title || page.h1;
   const canonical = landingPageUrl(page.slug);
 
   return {
@@ -168,14 +168,22 @@ export default async function SearchLandingPage({ params }: SearchLandingPagePro
           </div>
         </div>
 
-        {product && (
+        <div className="mt-7 flex flex-wrap gap-3">
+          {product ? (
+            <Link
+              href={`/products/${product.slug}`}
+              className="inline-flex rounded-xl bg-emerald-500 px-5 py-3 text-sm font-black text-white shadow-[0_10px_24px_rgba(16,185,129,0.24)] transition hover:bg-emerald-400"
+            >
+              Перейти к товару
+            </Link>
+          ) : null}
           <Link
-            href={`/products/${product.slug}`}
-            className="mt-7 inline-flex rounded-xl bg-emerald-500 px-5 py-3 text-sm font-black text-white shadow-[0_10px_24px_rgba(16,185,129,0.24)] transition hover:bg-emerald-400"
+            href="/"
+            className="inline-flex rounded-xl border border-white/12 bg-white/[0.06] px-5 py-3 text-sm font-black text-white/82 transition hover:bg-white/[0.1] hover:text-white"
           >
-            Перейти к товару
+            Открыть каталог Ecliptic Store
           </Link>
-        )}
+        </div>
       </section>
     </main>
   );
