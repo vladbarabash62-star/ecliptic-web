@@ -11,6 +11,7 @@ type CustomerUser = {
 type StarPosition = {
   x: number;
   y: number;
+  laneId: string;
 };
 
 type MotionState = {
@@ -21,6 +22,16 @@ type MotionState = {
   scrollOffsetY: number;
   lastScrollY: number;
   nextTargetAt: number;
+  lastLaneId: string;
+};
+
+type SafeLane = {
+  id: string;
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+  weight: number;
 };
 
 const BLOCKER_SELECTOR = [
@@ -77,6 +88,24 @@ function randomBetween(min: number, max: number) {
   return min + Math.random() * (max - min);
 }
 
+function addSplitLanes(lanes: SafeLane[], id: string, left: number, right: number, top: number, bottom: number, weight: number) {
+  if (right <= left || bottom <= top) return;
+  const height = bottom - top;
+  const minSegment = window.innerWidth < 700 ? 84 : 132;
+
+  if (height < minSegment * 2.6) {
+    lanes.push({ id, left, right, top, bottom, weight });
+    return;
+  }
+
+  const segment = height / 3;
+  lanes.push(
+    { id: `${id}-top`, left, right, top, bottom: top + segment, weight },
+    { id: `${id}-middle`, left, right, top: top + segment, bottom: top + segment * 2, weight },
+    { id: `${id}-bottom`, left, right, top: top + segment * 2, bottom, weight }
+  );
+}
+
 function rectCandidates(width: number, height: number) {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
@@ -88,20 +117,28 @@ function rectCandidates(width: number, height: number) {
   const contentLeft = contentRects.length ? Math.min(...contentRects.map((rect) => rect.left)) : vw * 0.24;
   const contentRight = contentRects.length ? Math.max(...contentRects.map((rect) => rect.right)) : vw * 0.76;
   const contentTop = contentRects.length ? Math.min(...contentRects.map((rect) => rect.top)) : vh * 0.32;
-  const lanes: Array<{ left: number; right: number; top: number; bottom: number; weight: number }> = [];
+  const contentBottom = contentRects.length ? Math.max(...contentRects.map((rect) => rect.bottom)) : vh * 0.72;
+  const lanes: SafeLane[] = [];
 
   const leftRight = contentLeft - gap - width;
-  if (leftRight > margin) lanes.push({ left: margin, right: leftRight, top, bottom, weight: 4 });
+  if (leftRight > margin) addSplitLanes(lanes, "left", margin, leftRight, top, bottom, 4);
 
   const rightLeft = contentRight + gap;
   const rightRight = vw - width - margin;
-  if (rightRight > rightLeft) lanes.push({ left: rightLeft, right: rightRight, top, bottom, weight: 4 });
+  if (rightRight > rightLeft) addSplitLanes(lanes, "right", rightLeft, rightRight, top, bottom, 4);
 
   const topBottom = contentTop - gap - height;
-  if (topBottom > top) lanes.push({ left: margin, right: vw - width - margin, top, bottom: topBottom, weight: 2 });
+  if (topBottom > top) {
+    addSplitLanes(lanes, "top", margin, vw - width - margin, top, topBottom, 2);
+  }
+
+  const bottomTop = contentBottom + gap;
+  if (bottom > bottomTop) {
+    addSplitLanes(lanes, "bottom", margin, vw - width - margin, bottomTop, bottom, 2);
+  }
 
   if (vw < 760) {
-    lanes.push({ left: margin, right: vw - width - margin, top, bottom, weight: 1 });
+    lanes.push({ id: "mobile-free", left: margin, right: vw - width - margin, top, bottom, weight: 1 });
   }
 
   return lanes;
@@ -110,15 +147,16 @@ function rectCandidates(width: number, height: number) {
 function pickSafePosition(width: number, height: number, previous?: StarPosition): StarPosition | null {
   const blockers = visibleRects(BLOCKER_SELECTOR);
   const lanes = rectCandidates(width, height);
-  const weightedLanes = lanes.flatMap((lane) => Array.from({ length: lane.weight }, () => lane));
+  const differentLanes = previous?.laneId && lanes.length > 1 ? lanes.filter((lane) => lane.id !== previous.laneId) : lanes;
+  const weightedLanes = differentLanes.flatMap((lane) => Array.from({ length: lane.weight }, () => lane));
 
-  for (let attempt = 0; attempt < 90; attempt += 1) {
-    const lane = weightedLanes[Math.floor(Math.random() * weightedLanes.length)];
+  for (let attempt = 0; attempt < 130; attempt += 1) {
+    const lane = weightedLanes[Math.floor(Math.random() * weightedLanes.length)] || lanes[Math.floor(Math.random() * lanes.length)];
     if (!lane) break;
     const x = Math.round(randomBetween(lane.left, lane.right));
     const y = Math.round(randomBetween(lane.top, lane.bottom));
     if (previous && Math.abs(previous.x - x) < 58 && Math.abs(previous.y - y) < 58) continue;
-    if (isSafePosition(x, y, width, height, blockers)) return { x, y };
+    if (isSafePosition(x, y, width, height, blockers)) return { x, y, laneId: lane.id };
   }
 
   return null;
@@ -131,11 +169,15 @@ function nearestSafePosition(x: number, y: number, width: number, height: number
 
   for (const lane of lanes) {
     candidates.push(
-      { x: lane.left, y: lane.top },
-      { x: lane.left, y: lane.bottom },
-      { x: lane.right, y: lane.top },
-      { x: lane.right, y: lane.bottom },
-      { x: Math.min(lane.right, Math.max(lane.left, x)), y: Math.min(lane.bottom, Math.max(lane.top, y)) }
+      { x: lane.left, y: lane.top, laneId: lane.id },
+      { x: lane.left, y: lane.bottom, laneId: lane.id },
+      { x: lane.right, y: lane.top, laneId: lane.id },
+      { x: lane.right, y: lane.bottom, laneId: lane.id },
+      {
+        x: Math.min(lane.right, Math.max(lane.left, x)),
+        y: Math.min(lane.bottom, Math.max(lane.top, y)),
+        laneId: lane.id,
+      }
     );
   }
 
@@ -157,6 +199,7 @@ export default function FloatingReferralStar() {
     scrollOffsetY: 0,
     lastScrollY: 0,
     nextTargetAt: 0,
+    lastLaneId: "",
   });
   const [user, setUser] = useState<CustomerUser | null>(null);
   const [locationSearch, setLocationSearch] = useState("");
@@ -210,7 +253,7 @@ export default function FloatingReferralStar() {
 
     const chooseTarget = (force = false) => {
       const { width, height } = measure();
-      const picked = pickSafePosition(width, height, { x: motion.targetX, y: motion.targetY });
+      const picked = pickSafePosition(width, height, { x: motion.targetX, y: motion.targetY, laneId: motion.lastLaneId });
       if (!picked) {
         if (buttonRef.current) {
           buttonRef.current.style.opacity = "0";
@@ -221,6 +264,7 @@ export default function FloatingReferralStar() {
 
       motion.targetX = picked.x;
       motion.targetY = picked.y;
+      motion.lastLaneId = picked.laneId;
       motion.nextTargetAt = performance.now() + 4300 + Math.random() * 2700;
       if (!isReadyRef.current || force) {
         motion.x = picked.x;
