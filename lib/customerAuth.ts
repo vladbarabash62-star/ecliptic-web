@@ -36,7 +36,8 @@ export type CustomerReferralClaim = {
   userId: string;
   createdAt: string;
   invitedCount: number;
-  status: "sent" | "pending_manager";
+  status: "sent" | "pending_manager" | "rewarded";
+  rewardedAt?: string;
 };
 
 type CustomerSession = {
@@ -281,6 +282,9 @@ export async function getCustomerReferralInfo(userIdValue: string, siteUrl = "ht
     lastClaim: store.referralClaims
       .filter((claim) => claim.userId === user.id)
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0] || null,
+    rewardClaim: store.referralClaims
+      .filter((claim) => claim.userId === user.id && claim.status === "rewarded")
+      .sort((a, b) => String(b.rewardedAt || b.createdAt).localeCompare(String(a.rewardedAt || a.createdAt)))[0] || null,
   };
 }
 
@@ -292,13 +296,20 @@ export async function createCustomerReferralClaim(userIdValue: string, status: C
   const invitedCount = Object.values(store.users).filter((item) => item.referredByUserId === user.id).length;
   if (invitedCount < 5) throw new Error("Для подарка нужно пригласить минимум 5 друзей.");
 
+  const rewardedClaim = store.referralClaims
+    .filter((claim) => claim.userId === user.id && claim.status === "rewarded")
+    .sort((a, b) => String(b.rewardedAt || b.createdAt).localeCompare(String(a.rewardedAt || a.createdAt)))[0];
+  if (rewardedClaim) {
+    return { claim: rewardedClaim, user, invitedCount, duplicate: true, retryAfterMs: 0, rewarded: true };
+  }
+
   const recentClaim = store.referralClaims
     .filter((claim) => claim.userId === user.id)
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
   if (recentClaim) {
     const retryAfterMs = REFERRAL_CLAIM_COOLDOWN_MS - (Date.now() - new Date(recentClaim.createdAt).getTime());
     if (retryAfterMs > 0) {
-      return { claim: recentClaim, user, invitedCount, duplicate: true, retryAfterMs };
+      return { claim: recentClaim, user, invitedCount, duplicate: true, retryAfterMs, rewarded: false };
     }
   }
 
@@ -312,7 +323,7 @@ export async function createCustomerReferralClaim(userIdValue: string, status: C
 
   store.referralClaims = [...store.referralClaims, claim].slice(-1000);
   await writeCustomerStore(store);
-  return { claim, user, invitedCount, duplicate: false, retryAfterMs: 0 };
+  return { claim, user, invitedCount, duplicate: false, retryAfterMs: 0, rewarded: false };
 }
 
 export async function markCustomerReferralClaimSent(claimId: string) {
@@ -323,6 +334,48 @@ export async function markCustomerReferralClaimSent(claimId: string) {
   store.referralClaims[index] = { ...store.referralClaims[index], status: "sent" };
   await writeCustomerStore(store);
   return store.referralClaims[index];
+}
+
+export async function markCustomerReferralRewarded(userIdValue: string) {
+  const store = await readCustomerStore();
+  const user = store.users[userIdValue];
+  if (!user) throw new Error("Пользователь не найден.");
+
+  const invitedCount = Object.values(store.users).filter((item) => item.referredByUserId === user.id).length;
+  if (invitedCount < 5) throw new Error("У пользователя меньше 5 приглашённых участников.");
+
+  const userClaims = store.referralClaims
+    .map((claim, index) => ({ claim, index }))
+    .filter((item) => item.claim.userId === user.id)
+    .sort((a, b) => b.claim.createdAt.localeCompare(a.claim.createdAt));
+  const existingReward = userClaims.find((item) => item.claim.status === "rewarded");
+  if (existingReward) {
+    return existingReward.claim;
+  }
+
+  const latest = userClaims[0];
+  if (latest) {
+    store.referralClaims[latest.index] = {
+      ...latest.claim,
+      status: "rewarded",
+      rewardedAt: new Date().toISOString(),
+      invitedCount,
+    };
+    await writeCustomerStore(store);
+    return store.referralClaims[latest.index];
+  }
+
+  const claim: CustomerReferralClaim = {
+    id: randomUUID(),
+    userId: user.id,
+    createdAt: new Date().toISOString(),
+    invitedCount,
+    status: "rewarded",
+    rewardedAt: new Date().toISOString(),
+  };
+  store.referralClaims = [...store.referralClaims, claim].slice(-1000);
+  await writeCustomerStore(store);
+  return claim;
 }
 
 export async function getPendingCustomerReferralClaims(limit = 20) {
@@ -397,6 +450,12 @@ export async function getCustomerAdminReferralReport() {
           username: item.username || "",
           joinedAt: item.referredAt || item.createdAt,
         })),
+        lastClaim: store.referralClaims
+          .filter((claim) => claim.userId === user.id)
+          .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0] || null,
+        rewardClaim: store.referralClaims
+          .filter((claim) => claim.userId === user.id && claim.status === "rewarded")
+          .sort((a, b) => String(b.rewardedAt || b.createdAt).localeCompare(String(a.rewardedAt || a.createdAt)))[0] || null,
       };
     });
 }

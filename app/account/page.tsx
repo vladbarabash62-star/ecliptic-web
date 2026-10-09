@@ -47,14 +47,8 @@ export default async function AccountPage() {
         <div className="rounded-3xl border border-white/10 bg-[#090f1b]/88 p-5 shadow-[0_24px_90px_rgba(0,0,0,0.34)] backdrop-blur-md sm:p-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.12em] text-sky-200/72">Личный кабинет</p>
               <h1 className="mt-2 text-4xl font-black sm:text-5xl">Ecliptic Store</h1>
             </div>
-            {user ? (
-              <div className="rounded-2xl border border-white/10 bg-white/[0.045] px-4 py-3 text-sm font-bold text-white/72">
-                {user.name || user.username || user.email}
-              </div>
-            ) : null}
           </div>
 
           {!user ? (
@@ -62,7 +56,7 @@ export default async function AccountPage() {
               Войдите через кнопку “Авторизоваться” справа сверху, и после этого заказы начнут появляться в этом кабинете.
             </div>
           ) : (
-            <AccountTabs orders={accountOrders} referral={referral} />
+            <AccountTabs orders={accountOrders} referral={referral} accountName={user.name || user.username || user.email || "Аккаунт"} />
           )}
         </div>
       </section>

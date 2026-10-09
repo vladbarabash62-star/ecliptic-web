@@ -59,6 +59,18 @@ export async function POST() {
   const result = await createCustomerReferralClaim(user.id, "pending_manager");
   const claim = result.claim;
 
+  if (result.rewarded) {
+    return NextResponse.json(
+      {
+        ok: false,
+        rewarded: true,
+        claim,
+        error: "Подарок уже отправлен.",
+      },
+      { status: 409 }
+    );
+  }
+
   if (result.duplicate) {
     const retryAfterMs = Math.max(0, result.retryAfterMs || REFERRAL_CLAIM_COOLDOWN_MS);
     return NextResponse.json(

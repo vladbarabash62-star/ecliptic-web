@@ -31,7 +31,14 @@ type ReferralInfo = {
   lastClaim?: {
     id: string;
     createdAt: string;
-    status: "sent" | "pending_manager";
+    status: "sent" | "pending_manager" | "rewarded";
+    rewardedAt?: string;
+  } | null;
+  rewardClaim?: {
+    id: string;
+    createdAt: string;
+    status: "sent" | "pending_manager" | "rewarded";
+    rewardedAt?: string;
   } | null;
 };
 
@@ -64,7 +71,7 @@ function tabFromHash(value: string): AccountTab {
   return "profile";
 }
 
-export default function AccountTabs({ orders, referral }: { orders: AccountOrder[]; referral: ReferralInfo | null }) {
+export default function AccountTabs({ orders, referral, accountName }: { orders: AccountOrder[]; referral: ReferralInfo | null; accountName: string }) {
   const [tab, setTab] = useState<AccountTab>("profile");
   const [copyText, setCopyText] = useState("Скопировать");
   const [claimText, setClaimText] = useState("");
@@ -73,10 +80,11 @@ export default function AccountTabs({ orders, referral }: { orders: AccountOrder
   const [now, setNow] = useState(() => Date.now());
   const invitedCount = referral?.invitedCount || 0;
   const canClaimGift = invitedCount >= 5;
+  const rewardReceived = Boolean(referral?.rewardClaim || referral?.lastClaim?.status === "rewarded");
   const claimCooldownMs = lastClaimAt
     ? Math.max(0, REFERRAL_CLAIM_COOLDOWN_MS - (now - new Date(lastClaimAt).getTime()))
     : 0;
-  const canSubmitClaim = canClaimGift && claimCooldownMs <= 0;
+  const canSubmitClaim = canClaimGift && !rewardReceived && claimCooldownMs <= 0;
 
   useEffect(() => {
     const syncFromHash = () => setTab(tabFromHash(window.location.hash));
@@ -158,10 +166,12 @@ export default function AccountTabs({ orders, referral }: { orders: AccountOrder
 
       {tab === "profile" ? (
         <section className="mt-7 rounded-3xl border border-white/10 bg-white/[0.035] p-5">
-          <h2 className="text-xl font-black text-white">Личный кабинет</h2>
-          <p className="mt-2 text-sm font-semibold leading-relaxed text-white/58">
-            Здесь можно управлять аккаунтом Ecliptic Store.
-          </p>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="text-xl font-black text-white">Личный кабинет</h2>
+            <div className="rounded-2xl border border-white/10 bg-white/[0.055] px-4 py-3 text-sm font-black text-white/76">
+              {accountName}
+            </div>
+          </div>
           <AccountLogoutButton />
         </section>
       ) : tab === "orders" ? (
@@ -226,7 +236,11 @@ export default function AccountTabs({ orders, referral }: { orders: AccountOrder
                 <div className="mt-1 text-sm font-bold text-sky-100/72">{referral.referrer.username}</div>
               ) : null}
             </div>
-            {canClaimGift ? (
+            {rewardReceived ? (
+              <div className="mt-4 rounded-2xl border border-emerald-300/22 bg-emerald-500/12 p-4 text-center text-sm font-black text-emerald-100">
+                Подарок уже отправлен.
+              </div>
+            ) : canClaimGift ? (
               <div className="mt-4 grid gap-3">
                 <button
                   type="button"

@@ -944,6 +944,12 @@ const ADMIN_HTML = `<!doctype html>
       if (!person) return '';
       return [person.name || 'Пользователь', person.username || ''].filter(Boolean).join(' ');
     }
+    function referralClaimLabel(claim) {
+      if (!claim) return 'Заявок пока нет';
+      if (claim.status === 'rewarded') return 'Подарок выдан' + (claim.rewardedAt ? ' · ' + formatAdminDate(claim.rewardedAt) : '');
+      if (claim.status === 'pending_manager') return 'Ожидает сообщения менеджеру · ' + formatAdminDate(claim.createdAt);
+      return 'Заявка отправлена · ' + formatAdminDate(claim.createdAt);
+    }
     function renderReferrals() {
       $('referralUsers').innerHTML = referralUsers.map(function(user) {
         return '<button class="referral-user ' + (user.id === selectedReferralUserId ? 'active' : '') + '" type="button" data-referral-user="' + esc(user.id) + '">' +
@@ -972,11 +978,17 @@ const ADMIN_HTML = `<!doctype html>
       var referrer = user.referrer
         ? referralPersonLabel(user.referrer) + (user.referredAt ? ' · ' + formatAdminDate(user.referredAt) : '')
         : 'Никем не приглашён';
+      var latestClaim = user.lastClaim || null;
+      var rewardClaim = user.rewardClaim || (latestClaim && latestClaim.status === 'rewarded' ? latestClaim : null);
+      var canMarkRewarded = (user.invited || []).length >= 5 && !rewardClaim;
       $('referralDetails').className = '';
       $('referralDetails').innerHTML =
         '<div class="toolbar" style="justify-content:space-between;align-items:flex-start">' +
           '<div><h2>' + esc(referralUserName(user)) + '</h2><p class="muted" style="margin-top:6px">' + esc([user.username, user.id].filter(Boolean).join(' · ')) + '</p></div>' +
-          '<a class="btn secondary" href="' + esc(link) + '" target="_blank" rel="noreferrer">Открыть ссылку</a>' +
+          '<div class="toolbar">' +
+            (canMarkRewarded ? '<button class="btn" type="button" data-referral-action="mark-rewarded" data-user-id="' + esc(user.id) + '">Подарок выдан</button>' : '') +
+            '<a class="btn secondary" href="' + esc(link) + '" target="_blank" rel="noreferrer">Открыть ссылку</a>' +
+          '</div>' +
         '</div>' +
         '<div class="referral-detail-grid">' +
           '<div class="referral-metric"><span>Реферальный код</span><strong>' + esc(user.referralCode || '-') + '</strong></div>' +
@@ -984,6 +996,7 @@ const ADMIN_HTML = `<!doctype html>
           '<div class="referral-metric"><span>Приглашённые</span><strong>' + ((user.invited || []).length) + '</strong></div>' +
         '</div>' +
         '<div class="referral-metric" style="margin-top:10px"><span>Кто пригласил этого пользователя</span><strong>' + esc(referrer) + '</strong></div>' +
+        '<div class="referral-metric" style="margin-top:10px"><span>Статус подарка</span><strong>' + esc(referralClaimLabel(rewardClaim || latestClaim)) + '</strong></div>' +
         '<div class="referral-columns">' +
           '<div><h3>Заказы пользователя</h3><div class="list">' + orders + '</div></div>' +
           '<div><h3>Приглашённые друзья</h3><div class="list">' + invited + '</div></div>' +
@@ -1495,6 +1508,23 @@ const ADMIN_HTML = `<!doctype html>
         $('reloadReferralsBtn').disabled = false;
       }
     }
+    async function markReferralRewarded(userId, button) {
+      if (!userId) return;
+      if (!confirm('Отметить подарок выданным? Клиент больше не сможет отправлять заявки по этой реферальной награде.')) return;
+      if (button) button.disabled = true;
+      showNotice('Отмечаю подарок выданным...', false);
+      try {
+        var data = await postJson('/api/admin/referrals', { action: 'mark_rewarded', userId: userId }, 12000);
+        referralUsers = data.users || referralUsers;
+        renderReferrals();
+        $('referralsUpdatedAt').textContent = 'Обновлено: ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' · подарок выдан';
+        showNotice('Подарок отмечен как выданный.', false);
+        hideNoticeSoon();
+      } catch (error) {
+        showNotice(error.message || 'Не удалось отметить подарок.', true);
+        if (button) button.disabled = false;
+      }
+    }
     async function loadFullAnalyticsForCharts() {
       $('reloadChartsBtn').disabled = true;
       $('loadMoreEventsBtn').disabled = true;
@@ -1645,6 +1675,11 @@ const ADMIN_HTML = `<!doctype html>
       if (!button) return;
       selectedReferralUserId = button.dataset.referralUser || '';
       renderReferrals();
+    });
+    $('referralDetails').addEventListener('click', function(event) {
+      var button = event.target.closest('[data-referral-action="mark-rewarded"]');
+      if (!button) return;
+      markReferralRewarded(button.dataset.userId || '', button);
     });
     document.addEventListener('mouseover', function(event) {
       var bar = event.target.closest && event.target.closest('.week-bar[data-week-tip]');
