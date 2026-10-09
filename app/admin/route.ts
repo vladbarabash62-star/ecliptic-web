@@ -81,7 +81,7 @@ const STYLE = `
   .visitor-main { font-weight:850; color:#e0f2fe; }
   .visitor-meta { margin-top:4px; color:rgba(255,255,255,.56); font-size:12px; line-height:1.35; overflow-wrap:anywhere; }
   .load-more-wrap { display:flex; justify-content:center; margin-top:14px; }
-  .chart-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; margin-bottom:14px; }
+  .chart-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:14px; margin-bottom:14px; }
   .chart-grid.two { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .chart-card { padding:16px; min-height:330px; }
   .chart-card h2 { font-size:22px; margin-bottom:6px; }
@@ -278,8 +278,13 @@ const ADMIN_HTML = `<!doctype html>
       <div class="chart-grid">
         <div class="card chart-card">
           <h2>Популярность товаров</h2>
-          <p class="hint">Все действия по товарам: открытия и нажатия «Купить». Помогает понять общий интерес к каждому товару.</p>
+          <p class="hint">Сколько раз открывали каждый товар. Например: Telegram Stars 100 — товар открыли 100 раз.</p>
           <div id="chartProducts"></div>
+        </div>
+        <div class="card chart-card">
+          <h2>Покупки по товарам</h2>
+          <p class="hint">Сколько раз нажали «Купить» внутри каждого товара. Показывает, какие товары чаще доводят до заявки.</p>
+          <div id="chartProductBuys"></div>
         </div>
         <div class="card chart-card">
           <h2>Регионы</h2>
@@ -653,7 +658,7 @@ const ADMIN_HTML = `<!doctype html>
         buys: rows.filter(function(event) { return event.type === 'buy_click'; }).length,
         telegram: rows.filter(function(event) { return String(event.type || '').indexOf('telegram') !== -1; }).length,
         actions: countBy(rows, function(event) { return event.type; }),
-        products: countBy(rows.filter(function(event) { return eventProductSlug(event); }), function(event) { return eventProductSlug(event); })
+        products: countBy(rows.filter(function(event) { return event.type === 'product_open' && eventProductSlug(event); }), function(event) { return eventProductSlug(event); })
       };
     }
     function mergeSummary(serverSummary, events) {
@@ -693,6 +698,16 @@ const ADMIN_HTML = `<!doctype html>
         acc[label] = (acc[label] || 0) + Number(row[1] || 0);
         return acc;
       }, {});
+    }
+    function productOpenCounts(events) {
+      return countBy((events || []).filter(function(event) {
+        return event.type === 'product_open' && eventProductSlug(event);
+      }), eventProductName);
+    }
+    function productBuyCounts(events) {
+      return countBy((events || []).filter(function(event) {
+        return event.type === 'buy_click' && eventProductSlug(event);
+      }), eventProductName);
     }
     var chartColors = ['#38bdf8','#22c55e','#f59e0b','#a78bfa','#fb7185','#2dd4bf','#f97316','#60a5fa','#facc15','#34d399','#c084fc','#fb923c','#67e8f9','#fda4af'];
     function renderPie(id, rows) {
@@ -922,7 +937,7 @@ const ADMIN_HTML = `<!doctype html>
       }).join('') : '<p class="muted">Пока нет данных.</p>';
     }
     function renderAnalytics() {
-      var fallbackProducts = countBy(analyticsEvents.filter(function(e) { return eventProductSlug(e); }), function(e) { return eventProductSlug(e); });
+      var fallbackProducts = countBy(analyticsEvents.filter(function(e) { return e.type === 'product_open' && eventProductSlug(e); }), function(e) { return eventProductSlug(e); });
       var fallbackActions = countBy(analyticsEvents, function(e) { return e.type; });
       $('statTotal').textContent = analyticsSummary.total || analyticsEvents.length;
       $('statViews').textContent = analyticsSummary.views || analyticsEvents.filter(function(e) { return e.type === 'product_open'; }).length;
@@ -1021,8 +1036,9 @@ const ADMIN_HTML = `<!doctype html>
       var buyEvents = chartEvents.filter(function(e) { return e.type === 'buy_click'; });
       var productOpens = chartEvents.filter(function(e) { return e.type === 'product_open'; });
       var regions = countBy(chartEvents, eventRegion);
-      var fallbackProductCounts = countBy(chartEvents.filter(function(e) { return e.product; }), eventProductName);
+      var fallbackProductCounts = productOpenCounts(chartEvents);
       var productCounts = Object.keys(analyticsSummary.products || {}).length ? productSummaryNames(analyticsSummary.products) : fallbackProductCounts;
+      var productBuyCountsData = productBuyCounts(chartEvents);
       var fallbackActions = countBy(chartEvents, function(e) { return actionLabel(e.type); });
       var actions = fallbackActions;
       var conversionRows = [['Открыли товар', productOpens.length], ['Нажали «Купить»', buyEvents.length]];
@@ -1031,6 +1047,7 @@ const ADMIN_HTML = `<!doctype html>
       var returnCount = returningVisitors(analyticsEvents).length;
 
       renderPie('chartProducts', topEntries(productCounts, products.length || 100));
+      renderPie('chartProductBuys', topEntries(productBuyCountsData, products.length || 100));
       renderPie('chartRegions', topEntries(regions, 6));
       renderPie('chartConversion', conversionRows);
       renderPie('chartActions', topEntries(actions, 10));

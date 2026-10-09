@@ -102,7 +102,7 @@ export async function POST(request: Request) {
   if (type === "product_open") commands.push(["HINCRBY", ANALYTICS_TOTALS_KEY, "views", "1"]);
   if (type === "buy_click") commands.push(["HINCRBY", ANALYTICS_TOTALS_KEY, "buys", "1"]);
   if (type.includes("telegram")) commands.push(["HINCRBY", ANALYTICS_TOTALS_KEY, "telegram", "1"]);
-  if (product) commands.push(["HINCRBY", ANALYTICS_PRODUCTS_KEY, product, "1"]);
+  if (type === "product_open" && product) commands.push(["HINCRBY", ANALYTICS_PRODUCTS_KEY, product, "1"]);
 
   if (process.env.BLOB_STORE_ID || process.env.BLOB_READ_WRITE_TOKEN) {
     await addFallbackAnalyticsEvent(event);

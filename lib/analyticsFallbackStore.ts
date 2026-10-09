@@ -117,10 +117,12 @@ export function summarizeAnalyticsEvents(events: AnalyticsEvent[]) {
     const type = String(event.type || "unknown");
     if (type === "page_view") continue;
     actions[type] = (actions[type] || 0) + 1;
-    if (type === "product_open") views += 1;
+    if (type === "product_open") {
+      views += 1;
+      if (event.product) products[event.product] = (products[event.product] || 0) + 1;
+    }
     if (type === "buy_click") buys += 1;
     if (type.includes("telegram")) telegram += 1;
-    if (event.product) products[event.product] = (products[event.product] || 0) + 1;
   }
 
   return {
