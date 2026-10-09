@@ -32,6 +32,7 @@ function cleanReferralCode(value: string | null) {
 
 export default function UserAuthButton() {
   const [user, setUser] = useState<CustomerUser | null>(null);
+  const [isAuthReady, setIsAuthReady] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [status, setStatus] = useState("");
   const [isBusy, setIsBusy] = useState(false);
@@ -43,11 +44,18 @@ export default function UserAuthButton() {
   }, [user]);
 
   async function refreshUser() {
-    const response = await fetch("/api/auth/me", { cache: "no-store" }).catch(() => null);
-    if (!response?.ok) return;
+    try {
+      const response = await fetch("/api/auth/me", { cache: "no-store" }).catch(() => null);
+      if (!response?.ok) {
+        setUser(null);
+        return;
+      }
 
-    const data = await response.json().catch(() => ({}));
-    setUser(data.user || null);
+      const data = await response.json().catch(() => ({}));
+      setUser(data.user || null);
+    } finally {
+      setIsAuthReady(true);
+    }
   }
 
   useEffect(() => {
@@ -125,7 +133,12 @@ export default function UserAuthButton() {
   return (
     <>
       <div className="fixed right-3 top-3 z-50 sm:right-5 sm:top-5">
-        {user ? (
+        {!isAuthReady ? (
+          <div
+            className="h-11 w-[148px] animate-pulse rounded-full border border-white/10 bg-[#07111f]/80 shadow-[0_18px_44px_rgba(14,165,233,0.12)] backdrop-blur-md sm:w-[164px]"
+            aria-hidden="true"
+          />
+        ) : user ? (
           <Link
             href="/account"
             className="flex min-h-11 items-center gap-2 rounded-full border border-sky-300/24 bg-[#07111f]/92 px-3 py-2 text-sm font-black text-white shadow-[0_18px_44px_rgba(14,165,233,0.16)] backdrop-blur-md transition hover:-translate-y-0.5 hover:border-sky-300/42 hover:bg-[#0a1728] active:scale-95"
