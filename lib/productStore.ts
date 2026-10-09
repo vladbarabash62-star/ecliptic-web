@@ -26,6 +26,7 @@ type ProductOverride = Pick<Product, "name" | "icon" | "offers"> & {
 type ProductOverrides = Record<string, ProductOverride>;
 type ProductStorage = {
   hiddenBaseSlugs: string[];
+  order: string[];
   overrides: ProductOverrides;
   version: number;
 };
@@ -76,15 +77,22 @@ function normalizeHiddenBaseSlugs(value: unknown) {
   return Array.from(new Set(value.map((slug) => canonicalProductSlug(slug)).filter((slug) => baseSlugs.has(slug))));
 }
 
+function normalizeProductOrder(value: unknown) {
+  if (!Array.isArray(value)) return [];
+
+  return Array.from(new Set(value.map((slug) => canonicalProductSlug(slug)).filter(Boolean)));
+}
+
 function normalizeProductStorage(value: unknown): ProductStorage {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
-    return { hiddenBaseSlugs: [], overrides: {}, version: PRODUCT_STORAGE_VERSION };
+    return { hiddenBaseSlugs: [], order: [], overrides: {}, version: PRODUCT_STORAGE_VERSION };
   }
 
-  const stored = value as { hiddenBaseSlugs?: unknown; overrides?: unknown; version?: unknown };
+  const stored = value as { hiddenBaseSlugs?: unknown; order?: unknown; overrides?: unknown; version?: unknown };
   if (stored.overrides && typeof stored.overrides === "object" && !Array.isArray(stored.overrides)) {
     return {
       hiddenBaseSlugs: normalizeHiddenBaseSlugs(stored.hiddenBaseSlugs),
+      order: normalizeProductOrder(stored.order),
       overrides: normalizeOverrides(stored.overrides),
       version: typeof stored.version === "number" ? stored.version : 1,
     };
@@ -92,6 +100,7 @@ function normalizeProductStorage(value: unknown): ProductStorage {
 
   return {
     hiddenBaseSlugs: [],
+    order: normalizeProductOrder(Object.keys(normalizeOverrides(value))),
     overrides: normalizeOverrides(value),
     version: 1,
   };
@@ -257,12 +266,12 @@ async function readProductStorage(options: ProductReadOptions = {}): Promise<Pro
       : { timeoutMs: 500 }
   ).catch(() => null);
   const raw = result?.[0]?.result;
-  if (!raw || typeof raw !== "string") return { hiddenBaseSlugs: [], overrides: {}, version: PRODUCT_STORAGE_VERSION };
+  if (!raw || typeof raw !== "string") return { hiddenBaseSlugs: [], order: [], overrides: {}, version: PRODUCT_STORAGE_VERSION };
 
   try {
     return normalizeProductStorage(JSON.parse(raw));
   } catch {
-    return { hiddenBaseSlugs: [], overrides: {}, version: PRODUCT_STORAGE_VERSION };
+    return { hiddenBaseSlugs: [], order: [], overrides: {}, version: PRODUCT_STORAGE_VERSION };
   }
 }
 
@@ -273,6 +282,7 @@ function shouldPreferCodeAuthoredOffers(storage: ProductStorage, slug: string) {
 export async function getProducts(options: ProductReadOptions = {}) {
   const storage = await readProductStorage(options).catch(() => ({
     hiddenBaseSlugs: [],
+    order: [],
     overrides: {},
     version: PRODUCT_STORAGE_VERSION,
   }));
@@ -338,7 +348,23 @@ export async function getProducts(options: ProductReadOptions = {}) {
     })
     .filter((product): product is Product => Boolean(product));
 
-  return [...orderedBaseProducts, ...customProducts];
+  const mergedProducts = [...orderedBaseProducts, ...customProducts];
+  const productOrder = storage.order;
+
+  if (!productOrder.length) return mergedProducts;
+
+  const productsBySlug = new Map(mergedProducts.map((product) => [product.slug, product]));
+  const orderedSlugs = new Set<string>();
+  const storedOrderProducts = productOrder
+    .map((slug) => productsBySlug.get(slug))
+    .filter((product): product is Product => {
+      if (!product || orderedSlugs.has(product.slug)) return false;
+      orderedSlugs.add(product.slug);
+      return true;
+    });
+  const remainingProducts = mergedProducts.filter((product) => !orderedSlugs.has(product.slug));
+
+  return [...storedOrderProducts, ...remainingProducts];
 }
 
 export async function getProductBySlug(slug: string, options: ProductReadOptions = {}) {
@@ -349,6 +375,7 @@ export async function getProductBySlug(slug: string, options: ProductReadOptions
 
 export function buildProductStorage(nextProducts: Product[]): ProductStorage {
   const overrides: ProductOverrides = {};
+  const order: string[] = [];
   const usedSlugs = new Set<string>();
   const usedBaseSlugs = new Set<string>();
   const baseBySlug = new Map(products.map((product) => [product.slug, product]));
@@ -375,11 +402,12 @@ export function buildProductStorage(nextProducts: Product[]): ProductStorage {
     };
 
     if (baseProduct) usedBaseSlugs.add(baseProduct.slug);
+    order.push(slug);
   }
 
   const hiddenBaseSlugs = products.filter((product) => !usedBaseSlugs.has(product.slug)).map((product) => product.slug);
 
-  return { hiddenBaseSlugs, overrides, version: PRODUCT_STORAGE_VERSION };
+  return { hiddenBaseSlugs, order, overrides, version: PRODUCT_STORAGE_VERSION };
 }
 
 export async function saveProducts(nextProducts: Product[]) {
