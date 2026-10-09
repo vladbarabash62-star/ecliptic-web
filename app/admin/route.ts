@@ -79,6 +79,7 @@ const STYLE = `
   .nowrap { white-space:nowrap; }
   .visitor-cell { min-width:190px; }
   .visitor-main { font-weight:850; color:#e0f2fe; }
+  .visitor-main.hot { display:inline-flex; align-items:center; border:1px solid rgba(248,113,113,.7); border-radius:10px; background:rgba(239,68,68,.2); box-shadow:0 0 0 1px rgba(239,68,68,.12),0 12px 28px rgba(239,68,68,.12); padding:5px 8px; color:#fee2e2; }
   .visitor-meta { margin-top:4px; color:rgba(255,255,255,.56); font-size:12px; line-height:1.35; overflow-wrap:anywhere; }
   .load-more-wrap { display:flex; justify-content:center; margin-top:14px; }
   .chart-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:14px; margin-bottom:14px; }
@@ -250,7 +251,7 @@ const ADMIN_HTML = `<!doctype html>
         <div class="card stat"><p class="muted">Telegram</p><div id="statTelegram" class="value">0</div></div>
       </div>
       <div class="grid2">
-        <div class="card panel"><h2>Популярные товары</h2><div id="productStats" class="list"></div></div>
+        <div class="card panel"><h2>Открытия товаров</h2><div id="productStats" class="list"></div></div>
         <div class="card panel"><h2>Действия</h2><div id="actionStats" class="list"></div></div>
       </div>
       <div class="card panel" style="margin-top:14px">
@@ -277,7 +278,7 @@ const ADMIN_HTML = `<!doctype html>
       </div>
       <div class="chart-grid">
         <div class="card chart-card">
-          <h2>Популярность товаров</h2>
+          <h2>Открытия товаров</h2>
           <p class="hint">Сколько раз открывали каждый товар. Например: Telegram Stars 100 — товар открыли 100 раз.</p>
           <div id="chartProducts"></div>
         </div>
@@ -303,12 +304,7 @@ const ADMIN_HTML = `<!doctype html>
         <div class="card insight"><span class="muted">Лучший регион</span><strong id="insightTopRegion">-</strong></div>
         <div class="card insight"><span class="muted">Вернулись через день</span><strong id="insightReturnVisitors">0</strong></div>
       </div>
-      <div class="chart-grid two">
-        <div class="card chart-card">
-          <h2>Типы действий</h2>
-          <p class="hint">Что чаще делают на сайте: смотрят, открывают товары, нажимают купить, переходят в Telegram.</p>
-          <div id="chartActions"></div>
-        </div>
+      <div class="chart-grid">
         <div class="card chart-card">
           <h2>Отзывы</h2>
           <p class="hint">Общее число открытий отзывов и список посетителей: время, IP и ID устройства.</p>
@@ -399,6 +395,7 @@ const ADMIN_HTML = `<!doctype html>
     var analyticsEvents = [];
     var analyticsSummary = { total: 0, views: 0, buys: 0, telegram: 0, actions: {}, products: {} };
     var analyticsPagination = { offset: 0, limit: 5000, loaded: 0, totalStored: 0, hasMore: false, nextOffset: 0 };
+    var hotVisitorOpenCounts = {};
     var referralUsers = [];
     var selectedReferralUserId = '';
     var selectedSlug = '';
@@ -596,6 +593,9 @@ const ADMIN_HTML = `<!doctype html>
     }
     function visitorHtml(event) {
       var main = 'ID ' + (event.visitorId || 'неизвестен');
+      var visitorKey = eventVisitorKey(event);
+      var hotCount = visitorKey ? Number(hotVisitorOpenCounts[visitorKey] || 0) : 0;
+      var mainClass = hotCount > 10 ? 'visitor-main hot' : 'visitor-main';
       var meta = [];
       if (event.ipAddress) {
         meta.push('IP: ' + event.ipAddress);
@@ -605,7 +605,8 @@ const ADMIN_HTML = `<!doctype html>
       if (event.city || event.region || event.country) meta.push([event.city, event.region, event.country].filter(Boolean).map(cleanText).join(', '));
       meta.push(deviceLabel(event.userAgent));
       if (event.screen) meta.push(event.screen);
-      return '<div class="visitor-cell"><div class="visitor-main">' + esc(main) + '</div><div class="visitor-meta">' + esc(meta.join(' · ')) + '</div></div>';
+      if (hotCount > 10) meta.unshift('открытий товаров за 24ч: ' + hotCount);
+      return '<div class="visitor-cell"><div class="' + mainClass + '">' + esc(main) + '</div><div class="visitor-meta">' + esc(meta.join(' · ')) + '</div></div>';
     }
     function countBy(items, getter) {
       return items.reduce(function(acc, item) {
@@ -708,6 +709,19 @@ const ADMIN_HTML = `<!doctype html>
       return countBy((events || []).filter(function(event) {
         return event.type === 'buy_click' && eventProductSlug(event);
       }), eventProductName);
+    }
+    function productOpenCountsByVisitorLastDay(events) {
+      var since = Date.now() - 24 * 60 * 60 * 1000;
+      var counts = {};
+      (events || []).forEach(function(event) {
+        if (event.type !== 'product_open') return;
+        var key = eventVisitorKey(event);
+        if (!key) return;
+        var time = event.time ? new Date(event.time).getTime() : 0;
+        if (!time || Number.isNaN(time) || time < since) return;
+        counts[key] = (counts[key] || 0) + 1;
+      });
+      return counts;
     }
     var chartColors = ['#38bdf8','#22c55e','#f59e0b','#a78bfa','#fb7185','#2dd4bf','#f97316','#60a5fa','#facc15','#34d399','#c084fc','#fb923c','#67e8f9','#fda4af'];
     function renderPie(id, rows) {
@@ -937,6 +951,7 @@ const ADMIN_HTML = `<!doctype html>
       }).join('') : '<p class="muted">Пока нет данных.</p>';
     }
     function renderAnalytics() {
+      hotVisitorOpenCounts = productOpenCountsByVisitorLastDay(analyticsEvents);
       var fallbackProducts = countBy(analyticsEvents.filter(function(e) { return e.type === 'product_open' && eventProductSlug(e); }), function(e) { return eventProductSlug(e); });
       var fallbackActions = countBy(analyticsEvents, function(e) { return e.type; });
       $('statTotal').textContent = analyticsSummary.total || analyticsEvents.length;
@@ -1039,8 +1054,6 @@ const ADMIN_HTML = `<!doctype html>
       var fallbackProductCounts = productOpenCounts(chartEvents);
       var productCounts = Object.keys(analyticsSummary.products || {}).length ? productSummaryNames(analyticsSummary.products) : fallbackProductCounts;
       var productBuyCountsData = productBuyCounts(chartEvents);
-      var fallbackActions = countBy(chartEvents, function(e) { return actionLabel(e.type); });
-      var actions = fallbackActions;
       var conversionRows = [['Открыли товар', productOpens.length], ['Нажали «Купить»', buyEvents.length]];
       var topProduct = topEntries(productCounts, 1)[0];
       var topRegion = topEntries(regions, 1)[0];
@@ -1050,7 +1063,6 @@ const ADMIN_HTML = `<!doctype html>
       renderPie('chartProductBuys', topEntries(productBuyCountsData, products.length || 100));
       renderPie('chartRegions', topEntries(regions, 6));
       renderPie('chartConversion', conversionRows);
-      renderPie('chartActions', topEntries(actions, 10));
       renderReviewsChart(chartEvents);
       renderWeekBars('chartWeeklyBuys', chartEvents, 'buy_click', 'кликов');
       renderWeekBars('chartWeeklyProductViews', chartEvents, 'product_page_view', 'открытий');

@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import type { CSSProperties } from "react";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { playProductHaptic } from "./haptics";
 
 type ProductGroup = "all" | "services" | "games" | "social";
@@ -13,10 +13,6 @@ type ProductCard = {
   icon: string;
   iconScale?: number;
 };
-
-const FILTER_FADE_MS = 180;
-const MOBILE_GRID_COLUMNS = 3;
-const WIDE_GRID_COLUMNS = 4;
 
 const PRODUCT_GROUPS: Array<{ id: ProductGroup; label: string }> = [
   { id: "social", label: "Соцсети" },
@@ -84,37 +80,16 @@ function getProductGroup(product: ProductCard): ProductGroup {
 
 export default function ProductSearchGrid({ products }: { products: ProductCard[] }) {
   const [activeGroup, setActiveGroup] = useState<ProductGroup>("all");
-  const [visibleGroup, setVisibleGroup] = useState<ProductGroup>("all");
-  const [isSwitching, setIsSwitching] = useState(false);
-  const fadeTimer = useRef<number | null>(null);
-  const revealTimer = useRef<number | null>(null);
 
   const filteredProducts = useMemo(() => {
-    if (visibleGroup === "all") return products;
+    if (activeGroup === "all") return products;
 
-    return products.filter((product) => getProductGroup(product) === visibleGroup);
-  }, [products, visibleGroup]);
-
-  function revealDelay(index: number) {
-    const mobileRow = Math.floor(index / MOBILE_GRID_COLUMNS);
-    const wideRow = Math.floor(index / WIDE_GRID_COLUMNS);
-    const rowDelay = Math.min(Math.max(mobileRow, wideRow), 8) * 64;
-
-    return `${220 + rowDelay + (index % MOBILE_GRID_COLUMNS) * 18}ms`;
-  }
+    return products.filter((product) => getProductGroup(product) === activeGroup);
+  }, [products, activeGroup]);
 
   function switchGroup(group: ProductGroup) {
     if (group === activeGroup) return;
-
-    if (fadeTimer.current) window.clearTimeout(fadeTimer.current);
-    if (revealTimer.current) window.clearTimeout(revealTimer.current);
-
     setActiveGroup(group);
-    setIsSwitching(true);
-    fadeTimer.current = window.setTimeout(() => {
-      setVisibleGroup(group);
-      revealTimer.current = window.setTimeout(() => setIsSwitching(false), 35);
-    }, FILTER_FADE_MS);
   }
 
   return (
@@ -156,9 +131,7 @@ export default function ProductSearchGrid({ products }: { products: ProductCard[
 
       {filteredProducts.length > 0 ? (
         <section
-          className={`products-grid grid w-full grid-cols-3 gap-3 transition-all duration-200 ease-out min-[500px]:grid-cols-4 min-[500px]:gap-4 ${
-            isSwitching ? "translate-y-1 scale-[0.992] opacity-0" : "translate-y-0 scale-100 opacity-100"
-          }`}
+          className="products-grid grid w-full grid-cols-3 gap-3 transition-all duration-200 ease-out min-[500px]:grid-cols-4 min-[500px]:gap-4"
         >
           {filteredProducts.map((product, index) => {
             return (
@@ -173,7 +146,7 @@ export default function ProductSearchGrid({ products }: { products: ProductCard[
                 style={
                   {
                     "--icon-scale": product.iconScale ?? 1,
-                    "--home-card-delay": revealDelay(index),
+                    "--home-card-delay": "0ms",
                   } as CSSProperties
                 }
                 className="home-product-card product-card group flex min-h-[154px] min-w-0 rounded-2xl border border-white/10 bg-[#0a0d14] p-3 transition-all duration-300 hover:scale-105 hover:border-white/20"
@@ -186,8 +159,8 @@ export default function ProductSearchGrid({ products }: { products: ProductCard[
                       className="product-icon product-grid-icon h-[64%] w-[64%] object-contain"
                       width={180}
                       height={180}
-                      loading={index < 6 ? "eager" : "lazy"}
-                      fetchPriority={index < 3 ? "high" : "auto"}
+                      loading="eager"
+                      fetchPriority={index < 12 ? "high" : "auto"}
                       decoding="async"
                       draggable={false}
                       onError={(event) => {

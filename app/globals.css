@@ -237,8 +237,6 @@ html {
   opacity: 1;
   transform: none;
   animation: homeRevealDown 560ms cubic-bezier(0.22, 1, 0.36, 1) var(--home-card-delay, 220ms) backwards;
-  content-visibility: auto;
-  contain-intrinsic-size: 180px 210px;
 }
 
 .contact-float {
