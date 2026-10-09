@@ -93,12 +93,12 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
     default: SITE_TITLE,
-    template: `%s | ${SITE_NAME}`,
+    template: `%s | Ecliptic Store PMR`,
   },
   description: SITE_DESCRIPTION,
   keywords: seoKeywords,
   alternates: {
-    canonical: "/",
+    canonical: "./",
   },
   icons: {
     icon: [
@@ -110,9 +110,9 @@ export const metadata: Metadata = {
     apple: [{ url: "/apple-icon.png", sizes: "512x512" }],
   },
   openGraph: {
-    title: SITE_TITLE,
-    description: SITE_DESCRIPTION,
-    url: "/",
+    title: "Ecliptic Store PMR",
+    description: "Цифровые товары и пополнение игр в ПМР",
+    url: SITE_URL,
     siteName: SITE_NAME,
     locale: "ru_RU",
     type: "website",
@@ -138,6 +138,17 @@ export const metadata: Metadata = {
   },
 };
 
+const rootJsonLd = [
+  {
+    "@context": "https://schema.org",
+    "@type": "OnlineStore",
+    name: "Ecliptic Store PMR",
+    url: SITE_URL,
+    description: "Цифровые товары, пополнение Steam и Telegram Premium в ПМР",
+  },
+  ...buildStoreJsonLd(),
+];
+
 export default function RootLayout({
   children,
 }: {
@@ -156,7 +167,7 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: stringifyJsonLd(buildStoreJsonLd()),
+            __html: stringifyJsonLd(rootJsonLd),
           }}
         />
 

@@ -7,7 +7,7 @@ export const SITE_NAME = "Ecliptic Store";
 export const SITE_IMAGE = `${SITE_URL}/ecliptic-link-icon-v5.png`;
 export const SITE_LOGO = `${SITE_URL}/google-favicon.png`;
 export const SITE_DESCRIPTION =
-  "Официальный магазин цифровых товаров Ecliptic Store в ПМР. Пополнение Steam, Telegram Premium, игровые валюты и подписки по лучшим ценам.";
+  "Официальный магазин цифровых товаров Ecliptic Store в ПМР. Пополнение Steam, Telegram Premium, Stars, игровые валюты и подписки.";
 export const SITE_TITLE =
   "Ecliptic Store — Цифровые товары, Telegram Premium и Steam в ПМР";
 export const SITE_KEYWORDS = [
@@ -17,7 +17,7 @@ export const SITE_KEYWORDS = [
   "Ecliptic PMR",
   "Telegram Premium ПМР",
   "Пополнение Steam ПМР",
-  "Цифровые товары ПМР",
+  "Донат ПМР",
 ];
 
 const seoBrandKeywords = [
