@@ -1,3 +1,5 @@
+import { products } from "./products";
+
 const LANDING_SITE_URL = "https://ecliptic.website";
 
 export type SeoLandingPage = {
@@ -11,7 +13,7 @@ export type SeoLandingPage = {
   services: string[];
 };
 
-export const seoLandingPages: SeoLandingPage[] = [
+const manualSeoLandingPages: SeoLandingPage[] = [
   {
     slug: "donat-pmr",
     title: "Донат ПМР - игровые пополнения в Ecliptic Store",
@@ -22,7 +24,11 @@ export const seoLandingPages: SeoLandingPage[] = [
       "Ecliptic Store помогает оформить игровые пополнения и цифровые товары для покупателей из ПМР, Тирасполя, Бендер и всего Приднестровья.",
     phrases: [
       "донат пмр",
+      "донат по мр",
+      "донат мр",
       "задонатить в пмр",
+      "пмр задонатить",
+      "пмр задонатить в игру",
       "донат приднестровье",
       "донат тирасполь",
       "игровой донат пмр",
@@ -31,6 +37,88 @@ export const seoLandingPages: SeoLandingPage[] = [
       "донат онлайн пмр",
     ],
     services: ["Standoff 2", "Roblox", "Brawl Stars", "Steam", "PUBG Mobile", "Telegram Stars", "PlayStation"],
+  },
+  {
+    slug: "donat-po-mr",
+    title: "Донат по МР и ПМР - игровые пополнения Ecliptic Store",
+    description:
+      "Донат по МР и ПМР: игровые пополнения, Telegram Stars, Steam, Black Russia, Roblox и подписки через Ecliptic Store.",
+    h1: "Донат по МР и ПМР",
+    intro:
+      "Эта страница помогает найти Ecliptic Store по запросам с опечатками и разными формулировками: донат по МР, донат ПМР, задонатить в игру в ПМР.",
+    phrases: [
+      "донат по мр",
+      "донат мр",
+      "донат пмр",
+      "пмр задонатить",
+      "пмр задонатить в игру",
+      "задонатить в пмр",
+      "задонатить по мр",
+      "купить донат по мр",
+    ],
+    services: ["Telegram Stars", "Steam", "Black Russia", "Roblox", "Brawl Stars", "Standoff 2", "PUBG Mobile"],
+  },
+  {
+    slug: "pmr-zvezdy-telegram",
+    title: "ПМР звёзды Telegram - купить Telegram Stars",
+    description:
+      "ПМР звёзды Telegram: купить Telegram Stars, оформить звезды Телеграм и Telegram Premium через Ecliptic Store.",
+    h1: "ПМР звёзды Telegram",
+    intro:
+      "Страница под запросы про звёзды Telegram, Telegram Stars, телеграм звезды и цифровые товары Telegram в ПМР.",
+    productSlug: "telegram-stars",
+    phrases: [
+      "пмр звезды",
+      "пмр звёзды",
+      "звезды телеграм",
+      "звёзды телеграм",
+      "звезды telegram",
+      "звёзды telegram",
+      "купить звезды телеграм",
+      "купить звёзды telegram пмр",
+      "telegram stars пмр",
+    ],
+    services: ["Telegram Stars", "звёзды Telegram", "Telegram Premium", "Telegram аккаунты"],
+  },
+  {
+    slug: "telegram-premium-pmr-kupit",
+    title: "Телеграм Премиум ПМР - Telegram Premium",
+    description:
+      "Телеграм Премиум в ПМР: купить Telegram Premium, оформить подписку и цифровые товары Telegram через Ecliptic Store.",
+    h1: "Телеграм Премиум ПМР",
+    intro:
+      "Страница для запросов Telegram Premium, Телеграм Премиум, премиум телеграм и подписки Telegram в ПМР.",
+    productSlug: "telegram-premium",
+    phrases: [
+      "телеграм премиум",
+      "телеграм премиум пмр",
+      "telegram premium",
+      "telegram premium пмр",
+      "купить телеграм премиум",
+      "купить telegram premium пмр",
+      "премиум телеграм пмр",
+    ],
+    services: ["Telegram Premium", "Telegram Stars", "Telegram аккаунты"],
+  },
+  {
+    slug: "black-russia-donat-pmr",
+    title: "Black Russia донат ПМР - пополнение Black Russia",
+    description:
+      "Black Russia донат в ПМР: пополнение Black Russia, игровые товары и RP-донат через Ecliptic Store.",
+    h1: "Black Russia донат ПМР",
+    intro:
+      "Страница для запросов Black Russia, Блэк Раша, донат Black Russia и игровые пополнения в ПМР.",
+    productSlug: "black-russia",
+    phrases: [
+      "black russia пмр",
+      "black russia донат пмр",
+      "блэк раша пмр",
+      "блэк раша донат пмр",
+      "донат black russia",
+      "пополнение black russia пмр",
+      "black russia тирасполь",
+    ],
+    services: ["Black Russia", "донат Black Russia", "игровые пополнения", "RP донат"],
   },
   {
     slug: "donat-pridnestrovie",
@@ -393,6 +481,84 @@ export const seoLandingPages: SeoLandingPage[] = [
     ],
     services: ["Telegram Premium", "YouTube Premium", "Spotify Premium", "Discord Nitro", "ChatGPT Plus"],
   },
+];
+
+function slugifyLanding(value: string) {
+  const map: Record<string, string> = {
+    а: "a",
+    б: "b",
+    в: "v",
+    г: "g",
+    д: "d",
+    е: "e",
+    ё: "e",
+    ж: "zh",
+    з: "z",
+    и: "i",
+    й: "y",
+    к: "k",
+    л: "l",
+    м: "m",
+    н: "n",
+    о: "o",
+    п: "p",
+    р: "r",
+    с: "s",
+    т: "t",
+    у: "u",
+    ф: "f",
+    х: "h",
+    ц: "c",
+    ч: "ch",
+    ш: "sh",
+    щ: "sch",
+    ы: "y",
+    э: "e",
+    ю: "yu",
+    я: "ya",
+  };
+
+  return value
+    .toLowerCase()
+    .split("")
+    .map((char) => map[char] || char)
+    .join("")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 72);
+}
+
+function buildProductLandingPages() {
+  const existingSlugs = new Set(manualSeoLandingPages.map((page) => page.slug));
+  return products
+    .map((product): SeoLandingPage => {
+      const slug = `${slugifyLanding(product.name)}-pmr`;
+      return {
+        slug,
+        title: `${product.name} ПМР - купить или пополнить через Ecliptic Store`,
+        description: `${product.name} в ПМР: купить, оформить, пополнить или задонатить через Ecliptic Store.`,
+        h1: `${product.name} ПМР`,
+        intro: `Страница для запросов про ${product.name}, донат, пополнение и цифровые товары в ПМР, Тирасполе и Приднестровье.`,
+        productSlug: product.slug,
+        phrases: [
+          `${product.name} пмр`,
+          `${product.name} донат пмр`,
+          `купить ${product.name} пмр`,
+          `пополнить ${product.name} пмр`,
+          `задонатить в ${product.name} пмр`,
+          `пмр задонатить в ${product.name}`,
+          `донат по мр ${product.name}`,
+          `${product.name} тирасполь`,
+        ],
+        services: [product.name, "донат ПМР", "пополнение ПМР", "цифровые товары"],
+      };
+    })
+    .filter((page) => page.slug && !existingSlugs.has(page.slug));
+}
+
+export const seoLandingPages: SeoLandingPage[] = [
+  ...manualSeoLandingPages,
+  ...buildProductLandingPages(),
 ];
 
 export function landingPageUrl(slug: string) {

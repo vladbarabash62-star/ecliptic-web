@@ -71,12 +71,19 @@ const seoBaseKeywords = [
   "цифровые товары Приднестровье",
   "цифровые товары Тирасполь",
   "донат ПМР",
+  "донат по МР",
+  "донат МР",
   "donat PMR",
   "donate PMR",
   "donat pmr games",
   "game donate PMR",
+  "ПМР задонатить",
+  "ПМР задонатить в игру",
+  "задонатить ПМР",
+  "задонатить МР",
   "купить донат PMR",
   "донат PMR купить",
+  "донат по МР купить",
   "донат Приднестровье",
   "донат Тирасполь",
   "донат игры Тирасполь",
@@ -86,6 +93,20 @@ const seoBaseKeywords = [
   "пополнение игр ПМР",
   "пополнение игр Приднестровье",
   "пополнение игр Тирасполь",
+  "ПМР звезды",
+  "ПМР звёзды",
+  "звёзды Телеграм ПМР",
+  "звезды Телеграм ПМР",
+  "звёзды Telegram ПМР",
+  "звезды Telegram ПМР",
+  "купить звёзды Телеграм",
+  "купить звезды Телеграм",
+  "Телеграм Премиум ПМР",
+  "Telegram Premium ПМР",
+  "Black Russia ПМР",
+  "Black Russia донат ПМР",
+  "Блэк Раша ПМР",
+  "Блэк Раша донат ПМР",
   "покупка подписок ПМР",
   "подписки Приднестровье",
   "подписки Тирасполь",
@@ -120,6 +141,9 @@ const seoActions = [
   "пополнить",
   "пополнение",
   "донат",
+  "задонатить",
+  "задонатить в",
+  "донат по",
   "подписка",
   "цена",
   "магазин",
@@ -205,6 +229,11 @@ export function buildSeoKeywords(limit = 1000) {
     for (const region of seoRegions) {
       keywords.push(`${service} ${region}`);
       keywords.push(`${SITE_NAME} ${service} ${region}`);
+      keywords.push(`донат ${service} ${region}`);
+      keywords.push(`задонатить в ${service} ${region}`);
+      keywords.push(`${region} задонатить в ${service}`);
+      keywords.push(`${service} донат по МР`);
+      keywords.push(`донат по МР ${service}`);
 
       for (const action of seoActions) {
         keywords.push(`${action} ${service} ${region}`);
