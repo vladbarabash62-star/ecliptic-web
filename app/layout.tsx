@@ -9,6 +9,7 @@ import SwipeHomeGesture from "./components/SwipeHomeGesture";
 import TelegramStartRouter from "./components/TelegramStartRouter";
 import UserAuthButton from "./components/UserAuthButton";
 import SpaceScene from "../components/space-scene";
+import { getCustomerUserFromCookies } from "../lib/customerAuth";
 import {
   buildSeoKeywords,
   buildStoreJsonLd,
@@ -149,11 +150,13 @@ const rootJsonLd = [
   ...buildStoreJsonLd(),
 ];
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const initialUser = await getCustomerUserFromCookies().catch(() => null);
+
   return (
     <html
       lang="ru"
@@ -177,7 +180,7 @@ export default function RootLayout({
         {/* КНОПКА */}
         <PageLoader />
         <HomeButton />
-        <UserAuthButton />
+        <UserAuthButton initialUser={initialUser} />
         <FloatingReferralStar />
         <ContactButton />
         <SwipeHomeGesture />

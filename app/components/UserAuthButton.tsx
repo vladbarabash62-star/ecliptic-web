@@ -30,9 +30,13 @@ function cleanReferralCode(value: string | null) {
   return String(value || "").trim().toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 32);
 }
 
-export default function UserAuthButton() {
-  const [user, setUser] = useState<CustomerUser | null>(null);
-  const [isAuthReady, setIsAuthReady] = useState(false);
+type UserAuthButtonProps = {
+  initialUser?: CustomerUser | null;
+};
+
+export default function UserAuthButton({ initialUser = null }: UserAuthButtonProps) {
+  const [user, setUser] = useState<CustomerUser | null>(initialUser);
+  const [isAuthReady, setIsAuthReady] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
   const [status, setStatus] = useState("");
   const [isBusy, setIsBusy] = useState(false);
