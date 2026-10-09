@@ -284,6 +284,16 @@ const ADMIN_HTML = `<!doctype html>
           <div id="chartProductBuys"></div>
         </div>
       </div>
+      <div class="card wide-chart">
+        <h2>Клики «Купить» по неделям</h2>
+        <p class="muted" style="margin-top:6px">Сравнение недель показывает, как меняется количество заявок по товарам.</p>
+        <div id="chartWeeklyBuys"></div>
+      </div>
+      <div class="card wide-chart">
+        <h2>Открытия товаров по неделям</h2>
+        <p class="muted" style="margin-top:6px">Сколько раз люди открывали страницы товаров в каждую неделю.</p>
+        <div id="chartWeeklyProductViews"></div>
+      </div>
     </section>
 
     <div id="floatingWeekTip" class="floating-week-tip"></div>
@@ -1021,6 +1031,8 @@ const ADMIN_HTML = `<!doctype html>
 
       renderPie('chartProducts', topEntries(productCounts, products.length || 100));
       renderPie('chartProductBuys', topEntries(productBuyCountsData, products.length || 100));
+      renderWeekBars('chartWeeklyBuys', chartEvents, 'buy_click', 'кликов');
+      renderWeekBars('chartWeeklyProductViews', chartEvents, 'product_page_view', 'открытий');
       $('chartsUpdatedAt').textContent = 'Обновлено: ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' · открытий товаров: ' + productOpens.length + ' · кликов «Купить»: ' + buyEvents.length;
     }
     function updateAnalyticsTimestamp() {
