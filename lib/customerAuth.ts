@@ -58,7 +58,7 @@ const CUSTOMER_STORE_FALLBACK = "customer-store-v1";
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 180;
 export const REFERRAL_CLAIM_COOLDOWN_MS = 30 * 60 * 1000;
 
-function useSecureCookie() {
+function shouldUseSecureCookie() {
   return Boolean(process.env.VERCEL || process.env.VERCEL_URL);
 }
 
@@ -180,7 +180,7 @@ export function setCustomerSession(response: NextResponse, user: CustomerUser) {
     maxAge: SESSION_MAX_AGE_SECONDS,
     path: "/",
     sameSite: "lax",
-    secure: useSecureCookie(),
+    secure: shouldUseSecureCookie(),
   });
 }
 
@@ -190,7 +190,7 @@ export function clearCustomerSession(response: NextResponse) {
     maxAge: 0,
     path: "/",
     sameSite: "lax",
-    secure: useSecureCookie(),
+    secure: shouldUseSecureCookie(),
   });
 }
 
@@ -527,7 +527,7 @@ export function verifyTelegramLoginData(params: URLSearchParams) {
   if (!id || !authDate || Date.now() / 1000 - authDate > 60 * 60 * 24) return null;
 
   const botToken = process.env.TELEGRAM_BOT_TOKEN || process.env.TELEGRAM_WEBAPP_BOT_TOKEN || "";
-  if (!botToken && useSecureCookie()) return null;
+  if (!botToken && shouldUseSecureCookie()) return null;
   if (!botToken) return { id: Number(id), username, first_name: firstName, last_name: lastName, photo_url: photoUrl };
 
   const checkString = Array.from(params.entries())

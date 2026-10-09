@@ -51,20 +51,25 @@ export default function UserAuthButton() {
   }
 
   useEffect(() => {
-    void refreshUser();
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const fromUrl = cleanReferralCode(params.get("use") || params.get("ref"));
-      const saved = cleanReferralCode(window.localStorage.getItem("ecliptic_referral_code"));
-      const nextCode = fromUrl || saved;
-      if (fromUrl) window.localStorage.setItem("ecliptic_referral_code", fromUrl);
-      if (nextCode) setReferralCode(nextCode);
-    } catch {
-      setReferralCode("");
-    }
+    const startTimer = window.setTimeout(() => {
+      void refreshUser();
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const fromUrl = cleanReferralCode(params.get("use") || params.get("ref"));
+        const saved = cleanReferralCode(window.localStorage.getItem("ecliptic_referral_code"));
+        const nextCode = fromUrl || saved;
+        if (fromUrl) window.localStorage.setItem("ecliptic_referral_code", fromUrl);
+        if (nextCode) setReferralCode(nextCode);
+      } catch {
+        setReferralCode("");
+      }
+    }, 0);
     const handleAuthChange = () => void refreshUser();
     window.addEventListener("ecliptic-auth-changed", handleAuthChange);
-    return () => window.removeEventListener("ecliptic-auth-changed", handleAuthChange);
+    return () => {
+      window.clearTimeout(startTimer);
+      window.removeEventListener("ecliptic-auth-changed", handleAuthChange);
+    };
   }, []);
 
   useEffect(() => {

@@ -5,7 +5,6 @@ import { join } from "node:path";
 const FALLBACK_DIR = join(tmpdir(), "ecliptic-store");
 
 declare global {
-  // eslint-disable-next-line no-var
   var __eclipticAdminFallback: Record<string, unknown> | undefined;
 }
 

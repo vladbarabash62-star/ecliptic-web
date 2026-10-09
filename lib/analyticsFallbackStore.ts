@@ -31,7 +31,6 @@ const FALLBACK_FILE = join(FALLBACK_DIR, "analytics-events-v2.json");
 const ANALYTICS_BLOB = "admin/analytics-events-v2.json";
 
 declare global {
-  // eslint-disable-next-line no-var
   var __eclipticAnalyticsFallback: AnalyticsEvent[] | undefined;
 }
 

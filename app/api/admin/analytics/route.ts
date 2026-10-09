@@ -144,8 +144,8 @@ export async function POST(request: Request) {
       views: events.filter((event) => event.type === "product_open").length,
       buys: totals.buys || events.filter((event) => event.type === "buy_click").length,
       telegram: totals.telegram || events.filter((event) => String(event.type || "").includes("telegram")).length,
-      actions: undefined,
-      products: undefined,
+      actions,
+      products,
     },
   });
 }
