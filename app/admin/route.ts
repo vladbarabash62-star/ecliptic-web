@@ -101,6 +101,7 @@ const STYLE = `
   .week-label { color:var(--muted); font-size:11px; line-height:1.25; text-align:center; }
   .week-value { font-weight:950; text-align:center; line-height:1.2; }
   .week-value small { display:block; margin-top:2px; color:var(--muted); font-size:11px; font-weight:800; }
+  .week-value em { display:block; margin-top:3px; color:#86efac; font-size:12px; font-style:normal; font-weight:950; }
   .week-tip { display:none; }
   .floating-week-tip { position:fixed; left:0; top:0; z-index:99999; width:265px; transform:translate(-50%,-110%); border:1px solid rgba(148,163,184,.34); border-radius:14px; background:rgba(7,16,29,.98); padding:12px; box-shadow:0 22px 58px rgba(0,0,0,.46); opacity:0; pointer-events:none; transition:opacity .12s ease; }
   .floating-week-tip.show { opacity:1; }
@@ -272,6 +273,16 @@ const ADMIN_HTML = `<!doctype html>
         </div>
         <button class="btn secondary" id="reloadChartsBtn" type="button">Обновить диаграммы</button>
       </div>
+      <div class="card wide-chart">
+        <h2>Клики «Купить» по неделям</h2>
+        <p class="muted" style="margin-top:6px">Количество заказов и сумма по каждой неделе.</p>
+        <div id="chartWeeklyBuys"></div>
+      </div>
+      <div class="card wide-chart">
+        <h2>Открытия товаров по неделям</h2>
+        <p class="muted" style="margin-top:6px">Сколько раз люди открывали страницы товаров в каждую неделю.</p>
+        <div id="chartWeeklyProductViews"></div>
+      </div>
       <div class="chart-grid">
         <div class="card chart-card">
           <h2>Сколько раз открыли товар</h2>
@@ -283,16 +294,6 @@ const ADMIN_HTML = `<!doctype html>
           <p class="hint">Считает нажатия «Купить» внутри каждого товара по ссылке /products/....</p>
           <div id="chartProductBuys"></div>
         </div>
-      </div>
-      <div class="card wide-chart">
-        <h2>Клики «Купить» по неделям</h2>
-        <p class="muted" style="margin-top:6px">Сравнение недель показывает, как меняется количество заявок по товарам.</p>
-        <div id="chartWeeklyBuys"></div>
-      </div>
-      <div class="card wide-chart">
-        <h2>Открытия товаров по неделям</h2>
-        <p class="muted" style="margin-top:6px">Сколько раз люди открывали страницы товаров в каждую неделю.</p>
-        <div id="chartWeeklyProductViews"></div>
       </div>
     </section>
 
@@ -851,7 +852,10 @@ const ADMIN_HTML = `<!doctype html>
           ? 'Заказов: ' + row.value + '<br>Сумма: ' + row.sum + ' р'
           : 'Открытий: ' + row.value;
         var tip = '<strong>' + esc(row.label) + '</strong>' + dayRows + '<div class="week-tip-total">' + totalText + '</div>';
-        return '<div class="week-bar" data-week-tip="' + esc(tip) + '"><div class="week-value">' + row.value + '<small>' + esc(unit) + '</small></div><div class="week-fill" style="height:' + height + 'px"></div><div class="week-label">' + esc(row.label) + '</div></div>';
+        var visibleValue = type === 'buy_click'
+          ? row.value + '<small>заказов</small><em>' + row.sum + ' р</em>'
+          : row.value + '<small>' + esc(unit) + '</small>';
+        return '<div class="week-bar" data-week-tip="' + esc(tip) + '"><div class="week-value">' + visibleValue + '</div><div class="week-fill" style="height:' + height + 'px"></div><div class="week-label">' + esc(row.label) + '</div></div>';
       }).join('') + '</div>';
     }
     function showFloatingWeekTip(event, html) {
