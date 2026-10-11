@@ -96,14 +96,18 @@ function openSellerChat(href: string, deepHref: string) {
   window.open(href, "_blank", "noopener,noreferrer");
 }
 
-function handleTelegramOrderClick(event: MouseEvent<HTMLAnchorElement>, message: string) {
+function openTelegramOrderMessage(message: string) {
   const href = sellerChatHref(message);
   const deepHref = sellerChatDeepHref(message);
 
-  event.preventDefault();
   playBuyHaptic();
   void copyOrderText(message);
   openSellerChat(href, deepHref);
+}
+
+function handleTelegramOrderClick(event: MouseEvent<HTMLAnchorElement>, message: string) {
+  event.preventDefault();
+  openTelegramOrderMessage(message);
 }
 
 function saveCustomerOrder(input: {
@@ -169,6 +173,7 @@ function TelegramOrderLink({
   className,
   validate,
   onInvalid,
+  confirmation,
   children,
 }: {
   message: string;
@@ -178,35 +183,113 @@ function TelegramOrderLink({
   className: string;
   validate?: () => string | null;
   onInvalid?: (message: string) => void;
+  confirmation?: {
+    title: string;
+    description: string;
+    confirmLabel: string;
+  };
   children: ReactNode;
 }) {
+  const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
   const href = sellerChatHref(message);
 
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      data-analytics="buy_click"
-      data-haptic-direct="true"
-      data-product={productSlug}
-      data-offer={offer}
-      data-price={Number.isFinite(priceRub) ? String(priceRub) : undefined}
-      onClick={(event) => {
-        const validationMessage = validate?.();
-        if (validationMessage) {
-          event.preventDefault();
-          onInvalid?.(validationMessage);
-          return;
-        }
+  function completeOrder() {
+    saveCustomerOrder({ productSlug, offer, priceRub, message });
+    openTelegramOrderMessage(message);
+  }
 
-        saveCustomerOrder({ productSlug, offer, priceRub, message });
-        handleTelegramOrderClick(event, message);
-      }}
-      className={className}
-    >
-      {children}
-    </a>
+  return (
+    <>
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        data-analytics="buy_click"
+        data-haptic-direct="true"
+        data-product={productSlug}
+        data-offer={offer}
+        data-price={Number.isFinite(priceRub) ? String(priceRub) : undefined}
+        onClick={(event) => {
+          const validationMessage = validate?.();
+          if (validationMessage) {
+            event.preventDefault();
+            onInvalid?.(validationMessage);
+            return;
+          }
+
+          if (confirmation) {
+            event.preventDefault();
+            playBuyHaptic();
+            setIsConfirmationOpen(true);
+            return;
+          }
+
+          saveCustomerOrder({ productSlug, offer, priceRub, message });
+          handleTelegramOrderClick(event, message);
+        }}
+        className={className}
+      >
+        {children}
+      </a>
+      <OrderConfirmationDialog
+        isOpen={isConfirmationOpen}
+        title={confirmation?.title || ""}
+        description={confirmation?.description || ""}
+        confirmLabel={confirmation?.confirmLabel || "Продолжить"}
+        onClose={() => setIsConfirmationOpen(false)}
+        onConfirm={() => {
+          setIsConfirmationOpen(false);
+          completeOrder();
+        }}
+      />
+    </>
+  );
+}
+
+function OrderConfirmationDialog({
+  isOpen,
+  title,
+  description,
+  confirmLabel,
+  onClose,
+  onConfirm,
+}: {
+  isOpen: boolean;
+  title: string;
+  description: string;
+  confirmLabel: string;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  if (!isOpen || typeof document === "undefined") return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-black/72 px-4 py-6 backdrop-blur-sm">
+      <div className="w-[min(92vw,460px)] rounded-3xl border border-cyan-200/24 bg-[#07101d]/98 p-5 text-white shadow-[0_30px_90px_rgba(0,0,0,0.7)]">
+        <div className="mb-4">
+          <p className="text-xs font-black uppercase tracking-[0.12em] text-cyan-200/70">Важное предупреждение</p>
+          <h3 className="mt-2 text-2xl font-black leading-tight">{title}</h3>
+        </div>
+        <p className="text-sm font-semibold leading-relaxed text-white/76">{description}</p>
+        <div className="mt-5 grid gap-2 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-2xl border border-white/14 bg-white/8 px-4 py-3 text-sm font-black text-white/84 transition hover:bg-white/12 active:scale-95"
+          >
+            Отмена
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-black text-white shadow-[0_12px_28px_rgba(16,185,129,0.24)] transition hover:bg-emerald-400 active:scale-95"
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
   );
 }
 
@@ -256,24 +339,30 @@ function codeValue(value: string) {
 
 function spotifyPlanAndPeriod(offerLabel: string) {
   const offer = offerLabel.trim();
-  const planMatch = offer.match(/^(duo|individual)\s+/i);
-  if (!planMatch) return { plan: "", period: offer };
+  const planMatch = offer.match(/(?:^|\s)(premium\s+)?(duo|individual)\b/i);
+  if (!planMatch) return { plan: "", period: offer, region: spotifyRegionName("", offer) };
 
-  const plan = planMatch[1].replace(/^./, (letter) => letter.toUpperCase());
-  const period = offer.slice(planMatch[0].length).trim();
+  const planName = planMatch[2].replace(/^./, (letter) => letter.toUpperCase());
+  const plan = `Premium ${planName}`;
+  const period = offer
+    .replace(/premium\s+/i, "")
+    .replace(/\b(?:duo|individual)\b/i, "")
+    .replace(/\((?:молдова|другой регион|египет|индия)\)/gi, "")
+    .replace(/\b(?:молдова|moldova|другой регион|египет|egypt|индия|india)\b/gi, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
 
-  return { plan, period };
+  return { plan, period, region: spotifyRegionName("", offer) };
 }
 
 function formatKnownPurchaseMessage(productName: string, offerLabel: string, priceRub: number) {
   const offer = offerLabel.trim();
 
   if (productName.toLowerCase().includes("spotify")) {
-    const { plan, period } = spotifyPlanAndPeriod(offer);
-    const service = plan ? `${productName} ${plan}` : productName;
+    const { plan, period, region } = spotifyPlanAndPeriod(offer);
 
     return normalizeOrderMessage(
-      `🛍 Новый заказ\n📦 Сервис: ${service}\n🗓 Период: ${period}\n💰 К оплате: ${priceRub}р`
+      `🛍 Новый заказ\n📦 Сервис: ${productName}\n🎧 Тариф: ${plan || offer}\n🌐 Регион: ${region || "уточнить"}\n🗓 Период: ${period || offer}\n💰 К оплате: ${priceRub}р`
     );
   }
 
@@ -342,9 +431,53 @@ function spotifyOfferLabel(productName: string, offerLabel: string, dividerTitle
 
   const title = dividerTitle.toLowerCase();
   const plan = title.includes("duo") ? "Duo" : title.includes("individual") ? "Individual" : "";
-  if (!plan || offerLabel.toLowerCase().includes(plan.toLowerCase())) return offerLabel;
+  const planLabel = plan && !offerLabel.toLowerCase().includes(plan.toLowerCase()) ? `${plan} ${offerLabel}` : offerLabel;
+  const region = spotifyRegionName(dividerTitle, offerLabel);
+  if (!region || planLabel.toLowerCase().includes(region.toLowerCase())) return planLabel;
 
-  return `${plan} ${offerLabel}`;
+  return `${planLabel} (${region})`;
+}
+
+function isSpotifyProduct(productName: string) {
+  return productName.toLowerCase().includes("spotify");
+}
+
+function spotifyRegionKind(dividerTitle: string, offerLabel = "") {
+  const text = `${dividerTitle} ${offerLabel}`.toLowerCase();
+  if (/(молдов|moldova)/i.test(text)) return "moldova";
+  if (/(друг|егип|egypt|инди|india)/i.test(text)) return "other";
+  return "";
+}
+
+function spotifyRegionName(dividerTitle: string, offerLabel = "") {
+  const text = `${dividerTitle} ${offerLabel}`.toLowerCase();
+  if (/(молдов|moldova)/i.test(text)) return "Молдова";
+  if (/(инди|india)/i.test(text)) return "Индия";
+  if (/(егип|egypt|друг)/i.test(text)) return "другой регион";
+  return "";
+}
+
+function spotifyRegionTooltip(title: string, description?: string) {
+  const kind = spotifyRegionKind(title);
+
+  if (kind === "moldova") {
+    return "Регион оформления: Молдова. Если вы проживаете в Молдове или ПМР, этот способ подходит лучше всего: регион совпадает, поэтому подписка обычно оформляется спокойно и без лишних региональных действий.";
+  }
+
+  if (kind === "other") {
+    return "Регион оформления: другой регион. Если ваш аккаунт находится не в этом регионе, Spotify может попросить сменить регион или использовать VPN. Выбирая этот вариант, вы берёте региональные риски на себя.";
+  }
+
+  return description || "";
+}
+
+function spotifyOtherRegionConfirmation() {
+  return {
+    title: "Spotify Premium для другого региона",
+    description:
+      "Этот вариант оформляется на регион, отличный от Молдовы. Если ваш Spotify-аккаунт находится в другом регионе, могут понадобиться смена региона или VPN. Перед оформлением убедитесь, что вы согласны с возможными региональными ограничениями Spotify; магазин не отвечает за ограничения, которые Spotify может применить к аккаунту из-за региона.",
+    confirmLabel: "Да, оформить",
+  };
 }
 
 function topupServiceName(productName: string) {
@@ -397,12 +530,22 @@ function compactDividerTitle(title: string) {
     "PSN Турция": "PSN",
   };
 
-  return compactTitles[normalizedTitle] || normalizedTitle;
+  return (compactTitles[normalizedTitle] || normalizedTitle)
+    .replace(/\bMoldova\b/i, "Молдова")
+    .replace(/\s{2,}/g, " ");
 }
 
-function RegionInfoBadge({ title, description }: { title: string; description?: string }) {
+function RegionInfoBadge({
+  title,
+  description,
+  animationDelay,
+}: {
+  title: string;
+  description?: string;
+  animationDelay?: string;
+}) {
   const [tooltip, setTooltip] = useState<{ text: string; x: number; y: number } | null>(null);
-  const label = title.replace(/\s*[—-]\s*/g, ": ").replace(/^Регион/i, "Регион");
+  const label = compactDividerTitle(title.replace(/\s*[—-]\s*/g, ": "));
 
   function showTooltip(event: MouseEvent<HTMLElement> | FocusEvent<HTMLElement>) {
     if (!description) return;
@@ -410,12 +553,13 @@ function RegionInfoBadge({ title, description }: { title: string; description?: 
     setTooltip({
       text: description,
       x: rect.left + rect.width / 2,
-      y: rect.top - 8,
+      y: rect.top - 10,
     });
   }
 
   return (
-    <div className="flex justify-center">
+    <div className="category-divider mt-4 first:mt-0" style={{ animationDelay }}>
+      <div className="category-divider__line" />
       <button
         type="button"
         onMouseEnter={showTooltip}
@@ -423,14 +567,14 @@ function RegionInfoBadge({ title, description }: { title: string; description?: 
         onMouseLeave={() => setTooltip(null)}
         onFocus={showTooltip}
         onBlur={() => setTooltip(null)}
-        className="rounded-full border border-sky-300/24 bg-sky-400/10 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.08em] text-sky-100 shadow-[0_10px_28px_rgba(14,165,233,0.12)]"
+        className="category-divider__content w-full cursor-help transition duration-300 hover:border-cyan-200/40 hover:bg-cyan-950/30 focus:outline-none focus:ring-2 focus:ring-cyan-300/40"
       >
-        {label}
+        <h3>{label}</h3>
       </button>
       {tooltip && typeof document !== "undefined"
         ? createPortal(
             <div
-              className="pointer-events-none fixed z-[99999] w-[min(82vw,320px)] -translate-x-1/2 -translate-y-full rounded-2xl border border-sky-300/30 bg-[#07101d]/98 p-3 text-left text-xs font-semibold leading-relaxed text-white/84 shadow-[0_22px_60px_rgba(0,0,0,0.55)] backdrop-blur"
+              className="pointer-events-none fixed z-[99999] w-[min(86vw,390px)] -translate-x-1/2 -translate-y-full rounded-2xl border border-sky-300/35 bg-[#07101d]/98 p-4 text-left text-sm font-semibold leading-relaxed text-white/86 shadow-[0_22px_70px_rgba(0,0,0,0.65)] backdrop-blur"
               style={{ left: tooltip.x, top: Math.max(14, tooltip.y) }}
             >
               {tooltip.text}
@@ -697,8 +841,16 @@ export function ProductOffersWithDetails({
 
       {offers.map((offer, index) => {
         if (offer.type === "divider") {
-          if (/^Регион\b/i.test(offer.title)) {
-            return <RegionInfoBadge key={`${offer.title}-${index}`} title={offer.title} description={offer.description} />;
+          const isSpotifyDivider = isSpotifyProduct(productName);
+          if (isSpotifyDivider || /^Регион\b/i.test(offer.title)) {
+            return (
+              <RegionInfoBadge
+                key={`${offer.title}-${index}`}
+                title={offer.title}
+                description={isSpotifyDivider ? spotifyRegionTooltip(offer.title, offer.description) : offer.description}
+                animationDelay={`${140 + index * 55}ms`}
+              />
+            );
           }
 
           return (
@@ -715,7 +867,8 @@ export function ProductOffersWithDetails({
           );
         }
 
-        const telegramOfferLabel = spotifyOfferLabel(productName, offer.label, offerDividerTitle(offers, index));
+        const dividerTitle = offerDividerTitle(offers, index);
+        const telegramOfferLabel = spotifyOfferLabel(productName, offer.label, dividerTitle);
         const message = formatPurchaseMessage(
           productName,
           telegramOfferLabel,
@@ -745,6 +898,11 @@ export function ProductOffersWithDetails({
               priceRub={offer.priceRub}
               validate={fields.length > 0 ? validateDetails : undefined}
               onInvalid={showNotice}
+              confirmation={
+                isSpotifyProduct(productName) && spotifyRegionKind(dividerTitle, offer.label) === "other"
+                  ? spotifyOtherRegionConfirmation()
+                  : undefined
+              }
               className="shrink-0 rounded-xl bg-emerald-500 px-3 py-2 text-sm font-bold text-white shadow-[0_10px_24px_rgba(16,185,129,0.22)] transition-all duration-300 hover:bg-emerald-400 active:scale-95"
             >
               Купить
