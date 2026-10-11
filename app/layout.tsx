@@ -3,7 +3,6 @@ import AnalyticsTracker from "./components/AnalyticsTracker";
 import ContactButton from "./components/ContactButton";
 import FloatingReferralStar from "./components/FloatingReferralStar";
 import HomeButton from "./components/HomeButton";
-import LoveMessage from "./components/LoveMessage";
 import PageLoader from "./components/PageLoader";
 import SiteFooter from "./components/SiteFooter";
 import SwipeHomeGesture from "./components/SwipeHomeGesture";
@@ -177,7 +176,6 @@ export default async function RootLayout({
 
         {/* ЗВЕЗДЫ */}
         <SpaceScene />
-        <LoveMessage />
 
         {/* КНОПКА */}
         <PageLoader />
