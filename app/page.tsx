@@ -77,6 +77,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             />
           </h1>
 
+          <p className="mt-4 text-3xl font-black uppercase tracking-normal text-white drop-shadow-[0_0_22px_rgba(56,189,248,0.34)] sm:text-5xl md:text-7xl">
+            Яна, я тебя люблю.
+          </p>
+
           {/*
             Ecliptic Store помогает оформить донат, игровые пополнения и
             подписки в Тирасполе, Приднестровье и ПМР: Steam, Telegram Premium,
