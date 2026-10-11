@@ -442,29 +442,68 @@ export const products: Product[] = [
     "offers": [
       {
         "type": "divider",
-        "title": "Individual Premium",
-        "description": "Индивидуальная подписка Spotify Premium."
+        "title": "Регион Молдова · Individual Premium",
+        "description": "Оформление на регион Молдовы. Рекомендуемый вариант для пользователей из Молдовы и ПМР: обычно всё проходит без региональных проблем."
       },
       {
-        "label": "1 месяц",
-        "priceRub": 65
-      },
-      {
-        "label": "3 месяца",
-        "priceRub": 180
-      },
-      {
-        "label": "6 месяцев",
-        "priceRub": 295
-      },
-      {
-        "label": "12 месяцев",
-        "priceRub": 475
+        "label": "Individual 1 месяц (Молдова)",
+        "priceRub": 135
       },
       {
         "type": "divider",
-        "title": "Duo Premium",
-        "description": "Семейный Duo-тариф можно добавить отдельными вариантами в админке."
+        "title": "Регион Молдова · Duo Premium",
+        "description": "Duo на регион Молдовы для двух аккаунтов. Спокойный вариант, если оба аккаунта находятся в одном регионе."
+      },
+      {
+        "label": "Duo 1 месяц (Молдова)",
+        "priceRub": 185
+      },
+      {
+        "type": "divider",
+        "title": "Регион Египет · Individual Premium",
+        "description": "Оформление на регион Египта. Возможны региональные нюансы аккаунта; при проблемах может потребоваться VPN."
+      },
+      {
+        "label": "Individual 1 месяц (Египет)",
+        "priceRub": 75
+      },
+      {
+        "label": "Individual 3 месяца (Египет)",
+        "priceRub": 200
+      },
+      {
+        "label": "Individual 6 месяцев (Египет)",
+        "priceRub": 340
+      },
+      {
+        "label": "Individual 12 месяцев (Египет)",
+        "priceRub": 625
+      },
+      {
+        "type": "divider",
+        "title": "Регион Египет · Duo Premium",
+        "description": "Duo на регион Египта. Вариант дешевле, но при региональных ограничениях Spotify может потребоваться VPN."
+      },
+      {
+        "label": "Duo 3 месяца (Египет)",
+        "priceRub": 280
+      },
+      {
+        "label": "Duo 6 месяцев (Египет)",
+        "priceRub": 460
+      },
+      {
+        "label": "Duo 12 месяцев (Египет)",
+        "priceRub": 860
+      },
+      {
+        "type": "divider",
+        "title": "Регион Индия · Duo Premium",
+        "description": "Duo на регион Индии. Перед покупкой учитывайте возможные региональные ограничения аккаунта."
+      },
+      {
+        "label": "Duo 1 месяц (Индия)",
+        "priceRub": 125
       }
     ]
   },
