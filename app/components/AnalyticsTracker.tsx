@@ -7,9 +7,15 @@ import { playButtonHaptic, playBuyHaptic, playFieldHaptic, playLaunchHaptic, pla
 type AnalyticsEvent = {
   type: string;
   path: string;
+  url?: string;
+  title?: string;
   product?: string;
   offer?: string;
   price?: number;
+  referralCode?: string;
+  authProvider?: string;
+  authUserName?: string;
+  authUsername?: string;
   time: string;
   visitorId?: string;
   sessionId?: string;
@@ -129,6 +135,8 @@ function enrichEvent(event: Omit<AnalyticsEvent, "visitorId" | "sessionId">) {
 
   return {
     ...event,
+    url: event.url || window.location.href,
+    title: event.title || document.title || undefined,
     visitorId: getOrCreateId(VISITOR_KEY),
     sessionId: getOrCreateId(SESSION_KEY),
     referrer: document.referrer || undefined,
@@ -141,6 +149,19 @@ function enrichEvent(event: Omit<AnalyticsEvent, "visitorId" | "sessionId">) {
 function productSlugFromPath(path: string) {
   const match = path.match(/^\/products\/([^/?#]+)/);
   return match ? decodeURIComponent(match[1]) : undefined;
+}
+
+function fullCurrentPath() {
+  return `${window.location.pathname}${window.location.search}${window.location.hash}`;
+}
+
+function cleanReferralCode(value: string | null) {
+  return String(value || "").trim().toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 32);
+}
+
+function referralCodeFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  return cleanReferralCode(params.get("use") || params.get("ref"));
 }
 
 function playClickHaptic(target: HTMLElement) {
@@ -312,6 +333,48 @@ export default function AnalyticsTracker() {
   }, [pathname]);
 
   useEffect(() => {
+    const trackPageContext = () => {
+      try {
+        const fullPath = fullCurrentPath();
+        const referralCode = referralCodeFromUrl();
+
+        if (referralCode && window.location.pathname === "/") {
+          trackEvent(enrichEvent({
+            type: "referral_landing_open",
+            path: fullPath,
+            referralCode,
+            time: new Date().toISOString(),
+          }));
+          return;
+        }
+
+        if (window.location.pathname === "/account" && window.location.hash === "#referral") {
+          trackEvent(enrichEvent({
+            type: "referral_account_open",
+            path: fullPath,
+            time: new Date().toISOString(),
+          }));
+          return;
+        }
+
+        if (window.location.pathname === "/account") {
+          trackEvent(enrichEvent({
+            type: "account_open",
+            path: fullPath,
+            time: new Date().toISOString(),
+          }));
+        }
+      } catch {
+        // Page context analytics is best-effort.
+      }
+    };
+
+    trackPageContext();
+    window.addEventListener("hashchange", trackPageContext);
+    return () => window.removeEventListener("hashchange", trackPageContext);
+  }, [pathname]);
+
+  useEffect(() => {
     const handleClick = (event: MouseEvent) => {
       const target = event.target as HTMLElement | null;
       const element = target?.closest<HTMLElement>("[data-analytics]");
@@ -325,9 +388,14 @@ export default function AnalyticsTracker() {
         trackEvent(enrichEvent({
           type: element.dataset.analytics || "click",
           path,
+          url: href
+            ? new URL(href, window.location.href).toString()
+            : window.location.href,
           product: element.dataset.product || productSlugFromPath(path),
           offer: element.dataset.offer,
           price: element.dataset.price ? Number(element.dataset.price) : undefined,
+          referralCode: element.dataset.referralCode,
+          authProvider: element.dataset.authProvider,
           time: new Date().toISOString(),
         }));
       } catch {
@@ -337,6 +405,34 @@ export default function AnalyticsTracker() {
 
     document.addEventListener("click", handleClick);
     return () => document.removeEventListener("click", handleClick);
+  }, []);
+
+  useEffect(() => {
+    const handleCustomAnalytics = (event: Event) => {
+      const detail = (event as CustomEvent<Partial<AnalyticsEvent>>).detail || {};
+
+      try {
+        trackEvent(enrichEvent({
+          type: String(detail.type || "custom_event").slice(0, 64),
+          path: detail.path || fullCurrentPath(),
+          url: detail.url || window.location.href,
+          title: detail.title || document.title || undefined,
+          product: detail.product,
+          offer: detail.offer,
+          price: detail.price,
+          referralCode: detail.referralCode,
+          authProvider: detail.authProvider,
+          authUserName: detail.authUserName,
+          authUsername: detail.authUsername,
+          time: detail.time || new Date().toISOString(),
+        }));
+      } catch {
+        // Custom analytics is best-effort.
+      }
+    };
+
+    window.addEventListener("ecliptic-track-analytics", handleCustomAnalytics);
+    return () => window.removeEventListener("ecliptic-track-analytics", handleCustomAnalytics);
   }, []);
 
   useEffect(() => {

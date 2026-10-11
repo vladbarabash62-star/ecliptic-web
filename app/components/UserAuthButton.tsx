@@ -30,6 +30,21 @@ function cleanReferralCode(value: string | null) {
   return String(value || "").trim().toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 32);
 }
 
+function trackAuthEvent(type: string, detail: Record<string, string | undefined> = {}) {
+  try {
+    window.dispatchEvent(new CustomEvent("ecliptic-track-analytics", {
+      detail: {
+        type,
+        path: `${window.location.pathname}${window.location.search}${window.location.hash}`,
+        url: window.location.href,
+        ...detail,
+      },
+    }));
+  } catch {
+    // Analytics must never block authorization.
+  }
+}
+
 type UserAuthButtonProps = {
   initialUser?: CustomerUser | null;
 };
@@ -87,14 +102,25 @@ export default function UserAuthButton({ initialUser = null }: UserAuthButtonPro
   useEffect(() => {
     const openAuth = () => {
       if (user) {
+        trackAuthEvent("account_open_from_auth_button", {
+          authProvider: user.provider,
+          authUserName: user.name,
+          authUsername: user.username,
+        });
         window.location.href = "/account";
         return;
       }
+      trackAuthEvent("auth_modal_open", { referralCode });
       setIsOpen(true);
     };
     window.addEventListener("ecliptic-open-auth", openAuth);
     return () => window.removeEventListener("ecliptic-open-auth", openAuth);
-  }, [user]);
+  }, [user, referralCode]);
+
+  function openAuthModal() {
+    trackAuthEvent("auth_modal_open", { referralCode });
+    setIsOpen(true);
+  }
 
   async function authorizeTelegram() {
     const webApp = (window as Window & { Telegram?: { WebApp?: AuthTelegramWebApp } }).Telegram?.WebApp;
@@ -102,6 +128,12 @@ export default function UserAuthButton({ initialUser = null }: UserAuthButtonPro
 
     setIsBusy(true);
     setStatus("Открываю Telegram...");
+    trackAuthEvent("auth_telegram_start", {
+      referralCode,
+      authProvider: "telegram",
+      authUserName: telegramUser?.first_name,
+      authUsername: telegramUser?.username ? `@${telegramUser.username}` : undefined,
+    });
     try {
       if (!telegramUser?.id) {
         const startResponse = await fetch("/api/auth/telegram/start", {
@@ -124,10 +156,20 @@ export default function UserAuthButton({ initialUser = null }: UserAuthButtonPro
       if (!response.ok) throw new Error(data.error || "Telegram вход не прошёл.");
 
       setUser(data.user);
+      trackAuthEvent("auth_telegram_success", {
+        referralCode,
+        authProvider: "telegram",
+        authUserName: data.user?.name,
+        authUsername: data.user?.username,
+      });
       setIsOpen(false);
       setStatus("");
       window.dispatchEvent(new Event("ecliptic-auth-changed"));
     } catch (error) {
+      trackAuthEvent("auth_telegram_error", {
+        referralCode,
+        authProvider: "telegram",
+      });
       setStatus(error instanceof Error ? error.message : "Telegram вход не прошёл.");
     } finally {
       setIsBusy(false);
@@ -162,7 +204,7 @@ export default function UserAuthButton({ initialUser = null }: UserAuthButtonPro
         ) : (
           <button
             type="button"
-            onClick={() => setIsOpen(true)}
+            onClick={openAuthModal}
             className="min-h-11 rounded-full border border-white/12 bg-[#07111f]/92 px-4 py-2 text-sm font-black text-white shadow-[0_18px_44px_rgba(14,165,233,0.16)] backdrop-blur-md transition hover:-translate-y-0.5 hover:border-sky-300/38 hover:bg-[#0a1728] active:scale-95"
           >
             Авторизоваться

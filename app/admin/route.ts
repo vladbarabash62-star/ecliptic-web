@@ -518,6 +518,8 @@ const ADMIN_HTML = `<!doctype html>
     function eventProductLabel(event) {
       var slug = eventProductSlug(event);
       if (slug) return productNameBySlug(slug);
+      if (String(event.type || '').indexOf('auth_') === 0 || String(event.type || '').indexOf('account_') === 0) return 'Авторизация';
+      if (String(event.type || '').indexOf('referral_') === 0) return event.referralCode ? 'Рефералка · ' + event.referralCode : 'Реферальная программа';
       return event.path === '/' ? 'Главная страница' : 'Страница сайта';
     }
     function pageLabel(path) {
@@ -527,11 +529,33 @@ const ADMIN_HTML = `<!doctype html>
       if (value === '/') return '/ · Главная';
       return value;
     }
+    function eventPageUrl(event) {
+      var raw = String(event.url || event.path || '/');
+      try {
+        return new URL(raw, 'https://ecliptic.website').toString();
+      } catch (error) {
+        return 'https://ecliptic.website/';
+      }
+    }
+    function eventPageHtml(event) {
+      var url = eventPageUrl(event);
+      var label = pageLabel(event.path || url.replace(/^https?:\\/\\/[^/]+/i, '') || '/');
+      return '<a href="' + esc(url) + '" target="_blank" rel="noreferrer">' + esc(label) + '</a><div class="row-meta">' + esc(url) + '</div>';
+    }
     function actionLabel(type) {
       var labels = {
         page_view: 'Просмотр страницы',
         product_open: 'Открытие товара',
         buy_click: 'Нажали «Купить»',
+        account_open: 'Открытие личного кабинета',
+        account_open_from_auth_button: 'Открытие профиля',
+        auth_modal_open: 'Открытие окна авторизации',
+        auth_telegram_start: 'Попытка входа через Telegram',
+        auth_telegram_success: 'Успешный вход через Telegram',
+        auth_telegram_error: 'Ошибка входа через Telegram',
+        referral_landing_open: 'Открытие реферальной ссылки',
+        referral_login_click: 'Клик «Войти» по реферальной ссылке',
+        referral_account_open: 'Открытие реферальной программы',
         telegram_contact: 'Переход в Telegram',
         telegram_channel: 'Переход в канал',
         telegram_support: 'Переход к менеджеру',
@@ -571,6 +595,10 @@ const ADMIN_HTML = `<!doctype html>
       } else if (event.ipHash) {
         meta.push('IP-метка: ' + event.ipHash);
       }
+      if (event.authUserName || event.authUsername) {
+        meta.push('Telegram: ' + [event.authUserName, event.authUsername].filter(Boolean).map(cleanText).join(' '));
+      }
+      if (event.referralCode) meta.push('реф.код: ' + event.referralCode);
       if (event.city || event.region || event.country) meta.push([event.city, event.region, event.country].filter(Boolean).map(cleanText).join(', '));
       meta.push(deviceLabel(event.userAgent));
       if (event.screen) meta.push(event.screen);
@@ -600,6 +628,10 @@ const ADMIN_HTML = `<!doctype html>
         event.product || '',
         event.offer || '',
         event.price == null ? '' : event.price,
+        event.url || '',
+        event.referralCode || '',
+        event.authUserName || '',
+        event.authUsername || '',
         event.visitorId || ''
       ].join('|');
     }
@@ -941,7 +973,7 @@ const ADMIN_HTML = `<!doctype html>
       $('statTelegram').textContent = analyticsSummary.telegram || analyticsEvents.filter(function(e) { return String(e.type || '').indexOf('telegram') !== -1; }).length;
       $('eventsTable').innerHTML = analyticsEvents.map(function(event) {
         var time = event.time ? new Date(event.time).toLocaleString('ru-RU') : '';
-        return '<tr><td class="nowrap">' + esc(time) + '</td><td>' + esc(actionLabel(event.type)) + '</td><td>' + esc(eventProductLabel(event)) + '</td><td>' + esc(pageLabel(event.path)) + '</td><td>' + visitorHtml(event) + '</td></tr>';
+        return '<tr><td class="nowrap">' + esc(time) + '</td><td>' + esc(actionLabel(event.type)) + '</td><td>' + esc(eventProductLabel(event)) + '</td><td>' + eventPageHtml(event) + '</td><td>' + visitorHtml(event) + '</td></tr>';
       }).join('') || '<tr><td colspan="5" class="muted">Пока нет событий.</td></tr>';
       $('loadMoreEventsBtn').style.display = analyticsPagination.hasMore ? 'inline-flex' : 'none';
       $('loadMoreEventsBtn').textContent = analyticsPagination.hasMore

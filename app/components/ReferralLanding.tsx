@@ -10,6 +10,18 @@ export default function ReferralLanding({ referralCode }: { referralCode: string
     } catch {
       // localStorage can be unavailable in some privacy modes.
     }
+    try {
+      window.dispatchEvent(new CustomEvent("ecliptic-track-analytics", {
+        detail: {
+          type: "referral_login_click",
+          path: `${window.location.pathname}${window.location.search}${window.location.hash}`,
+          url: window.location.href,
+          referralCode,
+        },
+      }));
+    } catch {
+      // Analytics must never block the login button.
+    }
     window.dispatchEvent(new Event("ecliptic-open-auth"));
   }
 

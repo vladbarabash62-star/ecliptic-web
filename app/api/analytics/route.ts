@@ -15,9 +15,15 @@ const MAX_STORED_EVENTS = 5000;
 type IncomingEvent = {
   type?: string;
   path?: string;
+  url?: string;
+  title?: string;
   product?: string;
   offer?: string;
   price?: number;
+  referralCode?: string;
+  authProvider?: string;
+  authUserName?: string;
+  authUsername?: string;
   time?: string;
   visitorId?: string;
   sessionId?: string;
@@ -74,9 +80,15 @@ export async function POST(request: Request) {
   const event = {
     type,
     path,
+    url: body.url ? String(body.url).slice(0, 600) : undefined,
+    title: body.title ? String(body.title).slice(0, 180) : undefined,
     product,
     offer: body.offer,
     price: Number.isFinite(Number(body.price)) ? Number(body.price) : undefined,
+    referralCode: body.referralCode ? String(body.referralCode).slice(0, 64) : undefined,
+    authProvider: body.authProvider ? String(body.authProvider).slice(0, 40) : undefined,
+    authUserName: body.authUserName ? String(body.authUserName).slice(0, 120) : undefined,
+    authUsername: body.authUsername ? String(body.authUsername).slice(0, 120) : undefined,
     time: body.time || new Date().toISOString(),
     visitorId: body.visitorId,
     sessionId: body.sessionId,
