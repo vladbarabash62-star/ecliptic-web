@@ -1,9 +1,7 @@
-import { buildSitemapXml, sitemapXmlResponse } from "../../lib/sitemapXml";
+import { NextResponse } from "next/server";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-export const revalidate = 300;
+import { SITE_URL } from "../../lib/seo";
 
 export async function GET() {
-  return sitemapXmlResponse(await buildSitemapXml());
+  return NextResponse.redirect(`${SITE_URL}/sitemap.xml`, 308);
 }

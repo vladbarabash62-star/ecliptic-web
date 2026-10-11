@@ -3,32 +3,12 @@ import { products as fallbackProducts } from "./products";
 import { productShouldBeIndexed, SITE_URL } from "./seo";
 import { landingPageUrl, seoLandingPages } from "./seoLandingPages";
 
-type SitemapEntry = {
+export type SitemapEntry = {
   url: string;
   lastModified: Date;
   changeFrequency: "daily" | "weekly" | "monthly";
   priority: number;
 };
-
-function escapeXml(value: string) {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
-}
-
-function sitemapUrl(entry: SitemapEntry) {
-  return [
-    "  <url>",
-    `    <loc>${escapeXml(entry.url)}</loc>`,
-    `    <lastmod>${entry.lastModified.toISOString()}</lastmod>`,
-    `    <changefreq>${entry.changeFrequency}</changefreq>`,
-    `    <priority>${entry.priority}</priority>`,
-    "  </url>",
-  ].join("\n");
-}
 
 async function sitemapProducts() {
   try {
@@ -38,7 +18,7 @@ async function sitemapProducts() {
   }
 }
 
-export async function buildSitemapXml() {
+export async function buildSitemapEntries(): Promise<SitemapEntry[]> {
   const products = await sitemapProducts();
   const now = new Date();
   const entries: SitemapEntry[] = [
@@ -81,24 +61,5 @@ export async function buildSitemapXml() {
       priority: 0.2,
     },
   ];
-  const uniqueEntries = Array.from(new Map(entries.map((entry) => [entry.url, entry])).values());
-
-  return [
-    '<?xml version="1.0" encoding="UTF-8"?>',
-    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
-    uniqueEntries.map(sitemapUrl).join("\n"),
-    "</urlset>",
-    "",
-  ].join("\n");
-}
-
-export function sitemapXmlResponse(xml: string) {
-  return new Response(xml, {
-    headers: {
-      "Content-Type": "application/xml; charset=utf-8",
-      "Cache-Control": "public, max-age=0, s-maxage=300, must-revalidate",
-      "X-Content-Type-Options": "nosniff",
-      "X-Robots-Tag": "index, follow",
-    },
-  });
+  return Array.from(new Map(entries.map((entry) => [entry.url, entry])).values());
 }
