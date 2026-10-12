@@ -10,6 +10,7 @@ import { playBuyHaptic } from "../../components/haptics";
 
 const TELEGRAM_USERNAME = "Ecliptic_Store_PMR";
 const REQUIRED_FIELDS_MESSAGE = "Заполните все поля.";
+const INPUT_LIMIT_HINT_CLASS = "mt-2 text-xs font-bold leading-relaxed text-amber-200/85";
 
 type DetailField = {
   id: string;
@@ -18,6 +19,31 @@ type DetailField = {
   numeric?: boolean;
   options?: string[];
 };
+
+function formatLimitLabel(value: number, unit: string) {
+  return `${value.toLocaleString("ru-RU")} ${unit}`.trim();
+}
+
+function rangeLimitMessage({
+  hasAmount,
+  amount,
+  min,
+  max,
+  unit,
+  subject = "сумма пополнения",
+}: {
+  hasAmount: boolean;
+  amount: number;
+  min: number;
+  max?: number;
+  unit: string;
+  subject?: string;
+}) {
+  if (!hasAmount) return "";
+  if (amount < min) return `Минимальная ${subject} — ${formatLimitLabel(min, unit)}.`;
+  if (typeof max === "number" && amount > max) return `Максимальная ${subject} — ${formatLimitLabel(max, unit)}.`;
+  return "";
+}
 
 function sellerChatHref(message?: string) {
   const text = message?.trim();
@@ -638,9 +664,17 @@ function WorldOfTanksGoldForm({
 }) {
   const [amount, setAmount] = useState("");
   const goldAmount = Math.max(0, Number(amount) || 0);
-  const hasAmount = amount.trim().length > 0 && goldAmount > 0;
+  const hasInput = amount.trim().length > 0;
+  const hasAmount = hasInput && goldAmount > 0;
   const isValidAmount = hasAmount && goldAmount >= 100 && goldAmount <= 100000;
   const priceRub = isValidAmount ? worldOfTanksGoldPrice(goldAmount) : 0;
+  const limitMessage = rangeLimitMessage({
+    hasAmount: hasInput,
+    amount: goldAmount,
+    min: 100,
+    max: 100000,
+    unit: "золота",
+  });
 
   function validateOrder() {
     if (!hasAmount) return "Введите количество золота.";
@@ -656,8 +690,7 @@ function WorldOfTanksGoldForm({
       return;
     }
 
-    const numericValue = Math.min(Number(digits), 100000);
-    setAmount(String(numericValue));
+    setAmount(digits);
   }
 
   const message = useMemo(
@@ -685,6 +718,7 @@ function WorldOfTanksGoldForm({
             placeholder="Введите количество золота, минимум 100, максимум 100 000"
             className="w-full rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-amber-300/45"
           />
+          {limitMessage && <span className={INPUT_LIMIT_HINT_CLASS}>{limitMessage}</span>}
         </label>
         {isValidAmount ? (
           <TelegramOrderLink
@@ -725,9 +759,17 @@ function TikTokCoinsForm({
 }) {
   const [amount, setAmount] = useState("");
   const coinsAmount = Math.max(0, Number(amount) || 0);
-  const hasAmount = amount.trim().length > 0 && coinsAmount > 0;
+  const hasInput = amount.trim().length > 0;
+  const hasAmount = hasInput && coinsAmount > 0;
   const isValidAmount = hasAmount && coinsAmount >= 30 && coinsAmount <= 1000;
   const priceRub = isValidAmount ? tiktokCoinsPrice(coinsAmount) : 0;
+  const limitMessage = rangeLimitMessage({
+    hasAmount: hasInput,
+    amount: coinsAmount,
+    min: 30,
+    max: 1000,
+    unit: "монет",
+  });
 
   function validateOrder() {
     if (!hasAmount) return "Введите количество монет.";
@@ -765,6 +807,7 @@ function TikTokCoinsForm({
             placeholder="Введите количество монет, минимум 30, максимум 1000"
             className="w-full rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-pink-300/45"
           />
+          {limitMessage && <span className={INPUT_LIMIT_HINT_CLASS}>{limitMessage}</span>}
         </label>
         {isValidAmount && (
           <TelegramOrderLink
@@ -790,22 +833,32 @@ export function SteamTopupForm({ productName, productSlug }: { productName: stri
   const { notice, isVisible, showNotice } = useOrderNotice();
   const numericAmount = Math.max(0, Number(amount) || 0);
   const rate = numericAmount >= 100 ? 20 : 21;
-  const priceRub = Math.round(numericAmount * rate);
-  const hasAmount = amount.trim().length > 0 && numericAmount > 0;
+  const hasInput = amount.trim().length > 0;
+  const hasAmount = hasInput && numericAmount > 0;
+  const isValidAmount = hasAmount && numericAmount >= 1;
+  const priceRub = isValidAmount ? Math.round(numericAmount * rate) : 0;
   const hasLogin = login.trim().length > 0;
+  const limitMessage = rangeLimitMessage({
+    hasAmount: hasInput,
+    amount: numericAmount,
+    min: 1,
+    unit: "$",
+  });
 
   function validateOrder() {
-    return hasAmount && hasLogin ? null : REQUIRED_FIELDS_MESSAGE;
+    if (!hasAmount || !hasLogin) return REQUIRED_FIELDS_MESSAGE;
+    if (numericAmount < 1) return "Минимальная сумма пополнения — 1$.";
+    return null;
   }
 
   const message = useMemo(
     () => {
       const serviceName = topupServiceName(productName);
       return normalizeOrderMessage(
-        `🛍 Новый заказ\n📦 Сервис: ${serviceName}\n💵 Сумма: ${hasAmount ? codeValue(`${numericAmount}$`) : "`не указана`"}\n🆔 Steam логин: ${codeValue(login)}\n💰 К оплате: ${hasAmount ? `${priceRub}р` : "уточнить"}`
+        `🛍 Новый заказ\n📦 Сервис: ${serviceName}\n💵 Сумма: ${isValidAmount ? codeValue(`${numericAmount}$`) : "`не указана`"}\n🆔 Steam логин: ${codeValue(login)}\n💰 К оплате: ${isValidAmount ? `${priceRub}р` : "уточнить"}`
       );
     },
-    [hasAmount, login, numericAmount, priceRub, productName]
+    [isValidAmount, login, numericAmount, priceRub, productName]
   );
 
   return (
@@ -822,6 +875,7 @@ export function SteamTopupForm({ productName, productSlug }: { productName: stri
             placeholder="Введите сумму пополнения, минимум 1$"
             className="rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-sky-300/45"
           />
+          {limitMessage && <span className={INPUT_LIMIT_HINT_CLASS}>{limitMessage}</span>}
         </label>
         <label className="grid gap-2">
           <span className="text-sm font-bold text-white/78">Steam логин</span>
@@ -837,12 +891,12 @@ export function SteamTopupForm({ productName, productSlug }: { productName: stri
         message={message}
         productSlug={productSlug}
         offer="steam-topup"
-        priceRub={hasAmount ? priceRub : undefined}
+        priceRub={isValidAmount ? priceRub : undefined}
         validate={validateOrder}
         onInvalid={showNotice}
         className="mt-4 flex w-full items-center justify-center rounded-xl bg-indigo-500 px-3 py-3 text-sm font-bold text-white shadow-[0_10px_24px_rgba(99,102,241,0.24)] transition-all duration-300 hover:bg-indigo-400 active:scale-95"
       >
-        {hasAmount ? `Пополнить за ${formatPriceTag(priceRub)}` : "Пополнить"}
+        {isValidAmount ? `Пополнить за ${formatPriceTag(priceRub)}` : "Пополнить"}
       </TelegramOrderLink>
       </div>
     </>
@@ -853,21 +907,31 @@ export function EpicTopupForm({ productName, productSlug }: { productName: strin
   const [amount, setAmount] = useState("");
   const { notice, isVisible, showNotice } = useOrderNotice();
   const numericAmount = Math.max(0, Number(amount) || 0);
-  const priceRub = Math.round(numericAmount * 21);
-  const hasAmount = amount.trim().length > 0 && numericAmount > 0;
+  const hasInput = amount.trim().length > 0;
+  const hasAmount = hasInput && numericAmount > 0;
+  const isValidAmount = hasAmount && numericAmount >= 1;
+  const priceRub = isValidAmount ? Math.round(numericAmount * 21) : 0;
+  const limitMessage = rangeLimitMessage({
+    hasAmount: hasInput,
+    amount: numericAmount,
+    min: 1,
+    unit: "$",
+  });
 
   function validateOrder() {
-    return hasAmount ? null : REQUIRED_FIELDS_MESSAGE;
+    if (!hasAmount) return REQUIRED_FIELDS_MESSAGE;
+    if (numericAmount < 1) return "Минимальная сумма пополнения — 1$.";
+    return null;
   }
 
   const message = useMemo(
     () => {
       const serviceName = topupServiceName(productName);
       return normalizeOrderMessage(
-        `🛍 Новый заказ\n📦 Сервис: ${serviceName}\n💵 Сумма: ${hasAmount ? codeValue(`${numericAmount}$`) : "`не указана`"}\n💰 К оплате: ${hasAmount ? `${priceRub}р` : "уточнить"}`
+        `🛍 Новый заказ\n📦 Сервис: ${serviceName}\n💵 Сумма: ${isValidAmount ? codeValue(`${numericAmount}$`) : "`не указана`"}\n💰 К оплате: ${isValidAmount ? `${priceRub}р` : "уточнить"}`
       );
     },
-    [hasAmount, numericAmount, priceRub, productName]
+    [isValidAmount, numericAmount, priceRub, productName]
   );
 
   return (
@@ -880,20 +944,21 @@ export function EpicTopupForm({ productName, productSlug }: { productName: strin
           value={amount}
           onChange={(event) => setAmount(event.target.value.replace(/[^\d.]/g, ""))}
           inputMode="decimal"
-          placeholder="Минимум 1$"
+          placeholder="Введите сумму пополнения, минимум 1$"
           className="rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-sky-300/45"
         />
+        {limitMessage && <span className={INPUT_LIMIT_HINT_CLASS}>{limitMessage}</span>}
       </label>
       <TelegramOrderLink
         message={message}
         productSlug={productSlug}
         offer="epic-topup"
-        priceRub={hasAmount ? priceRub : undefined}
+        priceRub={isValidAmount ? priceRub : undefined}
         validate={validateOrder}
         onInvalid={showNotice}
         className="mt-4 flex w-full items-center justify-center rounded-xl bg-indigo-500 px-3 py-3 text-sm font-bold text-white shadow-[0_10px_24px_rgba(99,102,241,0.24)] transition-all duration-300 hover:bg-indigo-400 active:scale-95"
       >
-        {hasAmount ? `Пополнить за ${formatPriceTag(priceRub)}` : "Пополнить"}
+        {isValidAmount ? `Пополнить за ${formatPriceTag(priceRub)}` : "Пополнить"}
       </TelegramOrderLink>
       </div>
     </>
@@ -904,8 +969,16 @@ export function SbpPaymentForm({ productName, productSlug }: { productName: stri
   const [amount, setAmount] = useState("");
   const { notice, isVisible, showNotice } = useOrderNotice();
   const numericAmount = Math.max(0, Number(amount) || 0);
-  const hasAmount = amount.trim().length > 0 && numericAmount > 0;
-  const pricePmr = Math.round(numericAmount * 0.3);
+  const hasInput = amount.trim().length > 0;
+  const hasAmount = hasInput && numericAmount > 0;
+  const isValidAmount = hasAmount && numericAmount >= 100;
+  const pricePmr = isValidAmount ? Math.round(numericAmount * 0.3) : 0;
+  const limitMessage = rangeLimitMessage({
+    hasAmount: hasInput,
+    amount: numericAmount,
+    min: 100,
+    unit: "₽",
+  });
 
   function validateOrder() {
     if (!hasAmount) return REQUIRED_FIELDS_MESSAGE;
@@ -916,9 +989,9 @@ export function SbpPaymentForm({ productName, productSlug }: { productName: stri
   const message = useMemo(
     () =>
       normalizeOrderMessage(
-        `🛍 Новый заказ\n📦 Сервис: ${productName}\n💵 Сумма: ${hasAmount ? codeValue(`${numericAmount}₽ РФ`) : "`не указана`"}\n💰 К оплате: ${hasAmount ? `${pricePmr}р ПМР` : "уточнить"}`
+        `🛍 Новый заказ\n📦 Сервис: ${productName}\n💵 Сумма: ${isValidAmount ? codeValue(`${numericAmount}₽ РФ`) : "`не указана`"}\n💰 К оплате: ${isValidAmount ? `${pricePmr}р ПМР` : "уточнить"}`
       ),
-    [hasAmount, numericAmount, pricePmr, productName]
+    [isValidAmount, numericAmount, pricePmr, productName]
   );
 
   return (
@@ -931,20 +1004,21 @@ export function SbpPaymentForm({ productName, productSlug }: { productName: stri
             value={amount}
             onChange={(event) => setAmount(event.target.value.replace(/[^\d]/g, ""))}
             inputMode="numeric"
-            placeholder="Минимум 100₽"
+            placeholder="Введите сумму пополнения, минимум 100₽"
             className="rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-sky-300/45"
           />
+          {limitMessage && <span className={INPUT_LIMIT_HINT_CLASS}>{limitMessage}</span>}
         </label>
         <TelegramOrderLink
           message={message}
           productSlug={productSlug}
           offer="sbp-payment"
-          priceRub={hasAmount ? pricePmr : undefined}
+          priceRub={isValidAmount ? pricePmr : undefined}
           validate={validateOrder}
           onInvalid={showNotice}
           className="mt-4 flex w-full items-center justify-center rounded-xl bg-indigo-500 px-3 py-3 text-sm font-bold text-white shadow-[0_10px_24px_rgba(99,102,241,0.24)] transition-all duration-300 hover:bg-indigo-400 active:scale-95"
         >
-          {hasAmount ? `Пополнить за ${formatPriceTag(pricePmr)}` : "Пополнить"}
+          {isValidAmount ? `Пополнить за ${formatPriceTag(pricePmr)}` : "Пополнить"}
         </TelegramOrderLink>
       </div>
     </>
@@ -1242,12 +1316,18 @@ export function SiteTopupForm({ productName, productSlug }: { productName: strin
   const { notice, isVisible, showNotice } = useOrderNotice();
   const numericAmount = Number(amount.replace(",", ".")) || 0;
   const hasLink = link.trim().length > 0;
-  const hasAmount = amount.trim().length > 0 && numericAmount > 0;
+  const hasInput = amount.trim().length > 0;
+  const hasAmount = hasInput && numericAmount > 0;
+  const selectedMinimum = SITE_TOPUP_MINIMUMS[currency];
+  const limitMessage =
+    selectedMinimum && hasInput && numericAmount < selectedMinimum.amount
+      ? `Минимальная сумма пополнения — ${selectedMinimum.label}.`
+      : "";
 
   function validateOrder() {
     if (!hasLink || !hasAmount) return REQUIRED_FIELDS_MESSAGE;
 
-    const minimum = SITE_TOPUP_MINIMUMS[currency];
+    const minimum = selectedMinimum;
     if (minimum && numericAmount < minimum.amount) {
       return `Сумма маленькая. Минимальная сумма пополнения: ${minimum.label}`;
     }
@@ -1282,7 +1362,7 @@ export function SiteTopupForm({ productName, productSlug }: { productName: strin
               value={amount}
               onChange={(event) => setAmount(event.target.value.replace(/[^\d.,]/g, ""))}
               inputMode="decimal"
-              placeholder="Введите сумму"
+              placeholder={`Введите сумму, минимум ${selectedMinimum?.label || ""}`.trim()}
               className="w-full rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-sky-300/45"
             />
             <select
@@ -1296,6 +1376,7 @@ export function SiteTopupForm({ productName, productSlug }: { productName: strin
               <option value={CURRENCY_EUR}>{CURRENCY_EUR}</option>
             </select>
           </div>
+          {limitMessage && <span className={INPUT_LIMIT_HINT_CLASS}>{limitMessage}</span>}
         </div>
 
         <TelegramOrderLink
