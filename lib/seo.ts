@@ -7,7 +7,7 @@ export const SITE_NAME = "Ecliptic Store";
 export const SITE_IMAGE = `${SITE_URL}/ecliptic-link-icon-v5.png`;
 export const SITE_LOGO = `${SITE_URL}/google-favicon.png`;
 export const SITE_DESCRIPTION =
-  "Официальный магазин цифровых товаров Ecliptic Store в ПМР. Пополнение Steam, Telegram Premium, Stars, игровые валюты и подписки.";
+  "Ecliptic Store PMR — цифровые товары для ПМР: пополнение Steam, Telegram Premium и Stars, Spotify, YouTube Premium, игровые валюты и подписки.";
 export const SITE_TITLE =
   "Ecliptic Store — Цифровые товары, Telegram Premium и Steam в ПМР";
 export const SITE_KEYWORDS = [
@@ -209,6 +209,54 @@ const seoServiceWords = [
   ...products.map((product) => product.name),
 ];
 
+export const googleSitelinkCandidates = [
+  {
+    name: "Steam",
+    slug: "steam",
+    description: "Пополнение Steam в ПМР: баланс аккаунта, игры, DLC и покупки в Steam.",
+  },
+  {
+    name: "Telegram Stars",
+    slug: "telegram-stars",
+    description: "Telegram Stars в ПМР: покупка звёзд Telegram для подарков, реакций и сервисов.",
+  },
+  {
+    name: "Telegram Premium",
+    slug: "telegram-premium",
+    description: "Telegram Premium в ПМР: оформление подписки Telegram Premium через Ecliptic Store.",
+  },
+  {
+    name: "Spotify Premium",
+    slug: "spotify-premium",
+    description: "Spotify Premium: подписка для региона Молдова и других регионов.",
+  },
+  {
+    name: "YouTube Premium",
+    slug: "youtube-premium",
+    description: "YouTube Premium в ПМР: оформление цифровой подписки YouTube.",
+  },
+  {
+    name: "ChatGPT Plus",
+    slug: "chatgpt-plus",
+    description: "ChatGPT Plus в ПМР: оформление подписки и цифровых сервисов OpenAI.",
+  },
+  {
+    name: "Roblox",
+    slug: "roblox",
+    description: "Roblox в ПМР: Robux, подписки и игровые товары Roblox.",
+  },
+  {
+    name: "Standoff 2",
+    slug: "standoff-2",
+    description: "Standoff 2 в ПМР: пополнение и игровые товары для Standoff 2.",
+  },
+  {
+    name: "Brawl Stars",
+    slug: "brawl-stars",
+    description: "Brawl Stars в ПМР: гемы, Brawl Pass и игровые пополнения.",
+  },
+];
+
 function unique(values: string[]) {
   return Array.from(
     new Set(
@@ -321,17 +369,32 @@ export function buildProductKeywords(product: Product) {
 }
 
 export function buildStoreJsonLd() {
+  const navigationPages = googleSitelinkCandidates.map((item, index) => ({
+    "@type": "WebPage",
+    "@id": `${SITE_URL}/products/${item.slug}#webpage`,
+    name: item.name,
+    url: `${SITE_URL}/products/${item.slug}`,
+    description: item.description,
+    position: index + 1,
+    isPartOf: {
+      "@id": `${SITE_URL}/#website`,
+    },
+  }));
+
   return [
     {
       "@context": "https://schema.org",
       "@type": "WebSite",
+      "@id": `${SITE_URL}/#website`,
       name: SITE_NAME,
       alternateName: seoBrandKeywords,
       url: SITE_URL,
       inLanguage: "ru",
       description: SITE_DESCRIPTION,
+      hasPart: navigationPages,
       publisher: {
         "@type": "Organization",
+        "@id": `${SITE_URL}/#organization`,
         name: SITE_NAME,
         url: SITE_URL,
         logo: SITE_LOGO,
@@ -345,6 +408,7 @@ export function buildStoreJsonLd() {
     {
       "@context": "https://schema.org",
       "@type": "Organization",
+      "@id": `${SITE_URL}/#organization`,
       name: SITE_NAME,
       alternateName: seoBrandKeywords,
       url: SITE_URL,
@@ -366,6 +430,7 @@ export function buildStoreJsonLd() {
     {
       "@context": "https://schema.org",
       "@type": "Store",
+      "@id": `${SITE_URL}/#store`,
       name: SITE_NAME,
       alternateName: seoBrandKeywords,
       url: SITE_URL,
@@ -384,6 +449,27 @@ export function buildStoreJsonLd() {
         "https://t.me/Ecliptic_Store_PMR",
         "https://t.me/Ecliptic_Store_Reviews",
       ],
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "SiteNavigationElement",
+      "@id": `${SITE_URL}/#site-navigation`,
+      name: googleSitelinkCandidates.map((item) => item.name),
+      url: googleSitelinkCandidates.map((item) => `${SITE_URL}/products/${item.slug}`),
+      description: "Основные разделы Ecliptic Store PMR для быстрых ссылок в поиске Google.",
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      "@id": `${SITE_URL}/#google-sitelink-candidates`,
+      name: "Основные разделы Ecliptic Store PMR",
+      itemListElement: googleSitelinkCandidates.map((item, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        name: item.name,
+        description: item.description,
+        url: `${SITE_URL}/products/${item.slug}`,
+      })),
     },
     {
       "@context": "https://schema.org",

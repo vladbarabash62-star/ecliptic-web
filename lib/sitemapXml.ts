@@ -1,6 +1,6 @@
 import { getProducts } from "./productStore";
 import { products as fallbackProducts } from "./products";
-import { productShouldBeIndexed, SITE_URL } from "./seo";
+import { googleSitelinkCandidates, productShouldBeIndexed, SITE_URL } from "./seo";
 import { landingPageUrl, seoLandingPages } from "./seoLandingPages";
 
 export type SitemapEntry = {
@@ -38,6 +38,8 @@ async function sitemapProducts() {
   }
 }
 
+const priorityProductSlugs = new Set(googleSitelinkCandidates.map((item) => item.slug));
+
 export async function buildSitemapEntries(): Promise<SitemapEntry[]> {
   const products = await sitemapProducts();
   const now = new Date();
@@ -54,7 +56,7 @@ export async function buildSitemapEntries(): Promise<SitemapEntry[]> {
         url: `${SITE_URL}/products/${product.slug}`,
         lastModified: now,
         changeFrequency: "weekly" as const,
-        priority: 0.8,
+        priority: priorityProductSlugs.has(product.slug) ? 0.9 : 0.8,
       })),
     ...seoLandingPages.map((page) => ({
       url: landingPageUrl(page.slug),
