@@ -517,12 +517,20 @@ function worldOfTanksGoldPrice(goldAmount: number) {
   return roundUpToFive(goldAmount * 0.048);
 }
 
+function tiktokCoinsPrice(coinsAmount: number) {
+  return roundUpToFive(coinsAmount * (35 / 60));
+}
+
 function isWorldOfTanksGoldDivider(productSlug: string, title: string) {
   return productSlug === "world-of-tanks" && title.trim().toLowerCase() === "золото";
 }
 
 function shouldHideWorldOfTanksGoldOffer(productSlug: string, dividerTitle: string) {
   return productSlug === "world-of-tanks" && dividerTitle.trim().toLowerCase() === "золото";
+}
+
+function isTikTokCoinsProduct(productSlug: string) {
+  return productSlug === "tiktok";
 }
 
 const CURRENCY_RUB = "\u20BD";
@@ -683,6 +691,86 @@ function WorldOfTanksGoldForm({
             message={message}
             productSlug={productSlug}
             offer={`Золото ${goldAmount}`}
+            priceRub={priceRub}
+            validate={validateOrder}
+            onInvalid={onInvalid}
+            className="flex h-[46px] shrink-0 items-center justify-center rounded-xl bg-emerald-500 px-4 text-sm font-bold text-white shadow-[0_10px_24px_rgba(16,185,129,0.22)] transition-all duration-300 hover:bg-emerald-400 active:scale-95"
+          >
+            Купить за {formatPriceTag(priceRub)}
+          </TelegramOrderLink>
+        ) : (
+          <button
+            type="button"
+            disabled
+            className="flex h-[46px] shrink-0 cursor-not-allowed items-center justify-center rounded-xl bg-white/10 px-4 text-sm font-bold text-white/35"
+          >
+            Купить
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function TikTokCoinsForm({
+  productName,
+  productSlug,
+  onInvalid,
+  animationDelay,
+}: {
+  productName: string;
+  productSlug: string;
+  onInvalid: (message: string) => void;
+  animationDelay?: string;
+}) {
+  const [amount, setAmount] = useState("");
+  const coinsAmount = Math.max(0, Number(amount) || 0);
+  const hasAmount = amount.trim().length > 0 && coinsAmount > 0;
+  const isValidAmount = hasAmount && coinsAmount >= 30 && coinsAmount <= 1000;
+  const priceRub = isValidAmount ? tiktokCoinsPrice(coinsAmount) : 0;
+
+  function validateOrder() {
+    if (!hasAmount) return "Введите количество монет.";
+    if (coinsAmount < 30) return "Минимальное количество монет — 30.";
+    if (coinsAmount > 1000) return "Максимальное количество монет — 1000.";
+    return null;
+  }
+
+  function handleAmountChange(value: string) {
+    setAmount(value.replace(/\D/g, ""));
+  }
+
+  const message = useMemo(
+    () =>
+      normalizeOrderMessage(
+        `🛍 Новый заказ\n📦 Сервис: ${productName}\n💎 Товар: TikTok Coins\n💰 Количество монет: ${isValidAmount ? codeValue(String(coinsAmount)) : "`не указано`"}\n💳 К оплате: ${isValidAmount ? `${priceRub}р` : "уточнить"}`
+      ),
+    [coinsAmount, isValidAmount, priceRub, productName]
+  );
+
+  return (
+    <div
+      className="offer-row rounded-2xl border border-pink-300/20 bg-[#0f1420]/90 p-4 transition-all duration-300 hover:border-pink-200/35 hover:bg-[#151b2a]/95"
+      style={{ animationDelay }}
+    >
+      <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+        <label className="grid">
+          <input
+            value={amount}
+            onChange={(event) => handleAmountChange(event.target.value)}
+            inputMode="numeric"
+            pattern="[0-9]*"
+            min={30}
+            max={1000}
+            placeholder="Введите количество монет"
+            className="w-full rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-pink-300/45"
+          />
+        </label>
+        {isValidAmount ? (
+          <TelegramOrderLink
+            message={message}
+            productSlug={productSlug}
+            offer={`TikTok Coins ${coinsAmount}`}
             priceRub={priceRub}
             validate={validateOrder}
             onInvalid={onInvalid}
@@ -942,7 +1030,15 @@ export function ProductOffersWithDetails({
         </div>
       )}
 
-      {offers.map((offer, index) => {
+      {isTikTokCoinsProduct(productSlug) ? (
+        <TikTokCoinsForm
+          productName={productName}
+          productSlug={productSlug}
+          onInvalid={showNotice}
+          animationDelay="140ms"
+        />
+      ) : (
+      offers.map((offer, index) => {
         if (offer.type === "divider") {
           const isSpotifyDivider = isSpotifyProduct(productName);
           if (isSpotifyDivider || /^Регион\b/i.test(offer.title)) {
@@ -1030,7 +1126,8 @@ export function ProductOffersWithDetails({
             </TelegramOrderLink>
           </div>
         );
-      })}
+      })
+      )}
       </div>
     </>
   );
