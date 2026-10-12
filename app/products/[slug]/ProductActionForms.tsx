@@ -509,6 +509,22 @@ function priceTagStyle(priceRub: number) {
   } as CSSProperties;
 }
 
+function roundUpToFive(value: number) {
+  return Math.ceil(value / 5) * 5;
+}
+
+function worldOfTanksGoldPrice(goldAmount: number) {
+  return roundUpToFive(goldAmount * 0.048);
+}
+
+function isWorldOfTanksGoldDivider(productSlug: string, title: string) {
+  return productSlug === "world-of-tanks" && title.trim().toLowerCase() === "золото";
+}
+
+function shouldHideWorldOfTanksGoldOffer(productSlug: string, dividerTitle: string) {
+  return productSlug === "world-of-tanks" && dividerTitle.trim().toLowerCase() === "золото";
+}
+
 const CURRENCY_RUB = "\u20BD";
 const CURRENCY_PMR = "р ПМР";
 const CURRENCY_USD = "$";
@@ -597,6 +613,75 @@ function OfferIcon({ icon, scale = 1 }: { icon?: string; scale?: number }) {
       style={style}
     >
       {icon ? <img src={icon} alt="" loading="lazy" decoding="async" className="offer-icon h-[62%] w-[62%] object-contain" /> : "🛒"}
+    </div>
+  );
+}
+
+function WorldOfTanksGoldForm({
+  productName,
+  productSlug,
+  onInvalid,
+  animationDelay,
+}: {
+  productName: string;
+  productSlug: string;
+  onInvalid: (message: string) => void;
+  animationDelay?: string;
+}) {
+  const [amount, setAmount] = useState("");
+  const goldAmount = Math.max(0, Number(amount) || 0);
+  const hasAmount = amount.trim().length > 0 && goldAmount > 0;
+  const priceRub = hasAmount ? worldOfTanksGoldPrice(goldAmount) : 0;
+
+  function validateOrder() {
+    if (!hasAmount) return "Введите количество золота.";
+    if (goldAmount < 100) return "Минимальное количество золота — 100.";
+    if (goldAmount > 100000) return "Максимальное количество золота — 100 000.";
+    return null;
+  }
+
+  const message = useMemo(
+    () =>
+      normalizeOrderMessage(
+        `🛍 Новый заказ\n🎮 Игра: ${productName}\n💎 Товар: золото\n💰 Количество золота: ${hasAmount ? codeValue(String(goldAmount)) : "`не указано`"}\n💳 К оплате: ${hasAmount ? `${priceRub}р` : "уточнить"}`
+      ),
+    [goldAmount, hasAmount, priceRub, productName]
+  );
+
+  return (
+    <div
+      className="offer-row rounded-2xl border border-amber-300/20 bg-[#0f1420]/90 p-4 transition-all duration-300 hover:border-amber-200/35 hover:bg-[#151b2a]/95"
+      style={{ animationDelay }}
+    >
+      <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+        <label className="grid gap-2">
+          <span className="text-sm font-bold text-white/78">Количество золота</span>
+          <input
+            value={amount}
+            onChange={(event) => setAmount(event.target.value.replace(/\D/g, ""))}
+            inputMode="numeric"
+            pattern="[0-9]*"
+            min={100}
+            max={100000}
+            placeholder="Введите количество золота"
+            className="w-full rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-amber-300/45"
+          />
+        </label>
+        <TelegramOrderLink
+          message={message}
+          productSlug={productSlug}
+          offer={hasAmount ? `Золото ${goldAmount}` : "Золото"}
+          priceRub={hasAmount ? priceRub : undefined}
+          validate={validateOrder}
+          onInvalid={onInvalid}
+          className="flex h-[46px] shrink-0 items-center justify-center rounded-xl bg-emerald-500 px-4 text-sm font-bold text-white shadow-[0_10px_24px_rgba(16,185,129,0.22)] transition-all duration-300 hover:bg-emerald-400 active:scale-95"
+        >
+          {hasAmount ? `Купить за ${formatPriceTag(priceRub)}` : "Купить"}
+        </TelegramOrderLink>
+      </div>
+      <p className="mt-3 text-xs font-bold leading-relaxed text-white/52">
+        От 100 до 100 000 золота. Цена считается по курсу 10 000 золота = 480 р и округляется вверх до ближайших 5 рублей.
+      </p>
     </div>
   );
 }
@@ -853,7 +938,7 @@ export function ProductOffersWithDetails({
             );
           }
 
-          return (
+          const divider = (
             <div
               key={`${offer.title}-${index}`}
               className="category-divider mt-4 first:mt-0"
@@ -865,9 +950,27 @@ export function ProductOffersWithDetails({
               </div>
             </div>
           );
+
+          if (isWorldOfTanksGoldDivider(productSlug, offer.title)) {
+            return (
+              <div key={`${offer.title}-${index}`} className="grid gap-3">
+                {divider}
+                <WorldOfTanksGoldForm
+                  productName={productName}
+                  productSlug={productSlug}
+                  onInvalid={showNotice}
+                  animationDelay={`${180 + index * 55}ms`}
+                />
+              </div>
+            );
+          }
+
+          return divider;
         }
 
         const dividerTitle = offerDividerTitle(offers, index);
+        if (shouldHideWorldOfTanksGoldOffer(productSlug, dividerTitle)) return null;
+
         const telegramOfferLabel = spotifyOfferLabel(productName, offer.label, dividerTitle);
         const message = formatPurchaseMessage(
           productName,
