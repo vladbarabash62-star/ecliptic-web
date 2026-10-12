@@ -682,7 +682,7 @@ function WorldOfTanksGoldForm({
             pattern="[0-9]*"
             min={100}
             max={100000}
-            placeholder="Введите количество золота"
+            placeholder="Введите количество золота, минимум 100, максимум 100 000"
             className="w-full rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-amber-300/45"
           />
         </label>
@@ -762,7 +762,7 @@ function TikTokCoinsForm({
             pattern="[0-9]*"
             min={30}
             max={1000}
-            placeholder="Введите количество монет"
+            placeholder="Введите количество монет, минимум 30, максимум 1000"
             className="w-full rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-pink-300/45"
           />
         </label>
@@ -819,7 +819,7 @@ export function SteamTopupForm({ productName, productSlug }: { productName: stri
             value={amount}
             onChange={(event) => setAmount(event.target.value.replace(/[^\d.]/g, ""))}
             inputMode="decimal"
-            placeholder="Минимум 1$"
+            placeholder="Введите сумму пополнения, минимум 1$"
             className="rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-sky-300/45"
           />
         </label>
