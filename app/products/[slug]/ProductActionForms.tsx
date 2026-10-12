@@ -766,7 +766,7 @@ function TikTokCoinsForm({
             className="w-full rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-pink-300/45"
           />
         </label>
-        {isValidAmount ? (
+        {isValidAmount && (
           <TelegramOrderLink
             message={message}
             productSlug={productSlug}
@@ -778,14 +778,6 @@ function TikTokCoinsForm({
           >
             Купить за {formatPriceTag(priceRub)}
           </TelegramOrderLink>
-        ) : (
-          <button
-            type="button"
-            disabled
-            className="flex h-[46px] shrink-0 cursor-not-allowed items-center justify-center rounded-xl bg-white/10 px-4 text-sm font-bold text-white/35"
-          >
-            Купить
-          </button>
         )}
       </div>
     </div>
