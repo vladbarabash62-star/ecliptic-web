@@ -631,7 +631,8 @@ function WorldOfTanksGoldForm({
   const [amount, setAmount] = useState("");
   const goldAmount = Math.max(0, Number(amount) || 0);
   const hasAmount = amount.trim().length > 0 && goldAmount > 0;
-  const priceRub = hasAmount ? worldOfTanksGoldPrice(goldAmount) : 0;
+  const isValidAmount = hasAmount && goldAmount >= 100 && goldAmount <= 100000;
+  const priceRub = isValidAmount ? worldOfTanksGoldPrice(goldAmount) : 0;
 
   function validateOrder() {
     if (!hasAmount) return "Введите количество золота.";
@@ -640,12 +641,23 @@ function WorldOfTanksGoldForm({
     return null;
   }
 
+  function handleAmountChange(value: string) {
+    const digits = value.replace(/\D/g, "");
+    if (!digits) {
+      setAmount("");
+      return;
+    }
+
+    const numericValue = Math.min(Number(digits), 100000);
+    setAmount(String(numericValue));
+  }
+
   const message = useMemo(
     () =>
       normalizeOrderMessage(
-        `🛍 Новый заказ\n🎮 Игра: ${productName}\n💎 Товар: золото\n💰 Количество золота: ${hasAmount ? codeValue(String(goldAmount)) : "`не указано`"}\n💳 К оплате: ${hasAmount ? `${priceRub}р` : "уточнить"}`
+        `🛍 Новый заказ\n🎮 Игра: ${productName}\n💎 Товар: золото\n💰 Количество золота: ${isValidAmount ? codeValue(String(goldAmount)) : "`не указано`"}\n💳 К оплате: ${isValidAmount ? `${priceRub}р` : "уточнить"}`
       ),
-    [goldAmount, hasAmount, priceRub, productName]
+    [goldAmount, isValidAmount, priceRub, productName]
   );
 
   return (
@@ -654,11 +666,10 @@ function WorldOfTanksGoldForm({
       style={{ animationDelay }}
     >
       <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-        <label className="grid gap-2">
-          <span className="text-sm font-bold text-white/78">Количество золота</span>
+        <label className="grid">
           <input
             value={amount}
-            onChange={(event) => setAmount(event.target.value.replace(/\D/g, ""))}
+            onChange={(event) => handleAmountChange(event.target.value)}
             inputMode="numeric"
             pattern="[0-9]*"
             min={100}
@@ -667,21 +678,28 @@ function WorldOfTanksGoldForm({
             className="w-full rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-amber-300/45"
           />
         </label>
-        <TelegramOrderLink
-          message={message}
-          productSlug={productSlug}
-          offer={hasAmount ? `Золото ${goldAmount}` : "Золото"}
-          priceRub={hasAmount ? priceRub : undefined}
-          validate={validateOrder}
-          onInvalid={onInvalid}
-          className="flex h-[46px] shrink-0 items-center justify-center rounded-xl bg-emerald-500 px-4 text-sm font-bold text-white shadow-[0_10px_24px_rgba(16,185,129,0.22)] transition-all duration-300 hover:bg-emerald-400 active:scale-95"
-        >
-          {hasAmount ? `Купить за ${formatPriceTag(priceRub)}` : "Купить"}
-        </TelegramOrderLink>
+        {isValidAmount ? (
+          <TelegramOrderLink
+            message={message}
+            productSlug={productSlug}
+            offer={`Золото ${goldAmount}`}
+            priceRub={priceRub}
+            validate={validateOrder}
+            onInvalid={onInvalid}
+            className="flex h-[46px] shrink-0 items-center justify-center rounded-xl bg-emerald-500 px-4 text-sm font-bold text-white shadow-[0_10px_24px_rgba(16,185,129,0.22)] transition-all duration-300 hover:bg-emerald-400 active:scale-95"
+          >
+            Купить за {formatPriceTag(priceRub)}
+          </TelegramOrderLink>
+        ) : (
+          <button
+            type="button"
+            disabled
+            className="flex h-[46px] shrink-0 cursor-not-allowed items-center justify-center rounded-xl bg-white/10 px-4 text-sm font-bold text-white/35"
+          >
+            Купить
+          </button>
+        )}
       </div>
-      <p className="mt-3 text-xs font-bold leading-relaxed text-white/52">
-        От 100 до 100 000 золота. Цена считается по курсу 10 000 золота = 480 р и округляется вверх до ближайших 5 рублей.
-      </p>
     </div>
   );
 }
