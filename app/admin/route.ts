@@ -1,4 +1,5 @@
 import { ADMIN_SESSION_COOKIE, getAdminSessionSecret, getAdminSessionValue, safeEqual } from "../../lib/security";
+import { EXCLUDED_ANALYTICS_VISITOR_IDS } from "../../lib/analyticsExclusions";
 
 export const dynamic = "force-dynamic";
 
@@ -657,7 +658,7 @@ const ADMIN_HTML = `<!doctype html>
       });
     }
     function isCountedEvent(event) {
-      return event && event.type && event.type !== 'page_view';
+      return event && event.type && event.type !== 'page_view' && ${JSON.stringify(EXCLUDED_ANALYTICS_VISITOR_IDS)}.indexOf(String(event.visitorId || '').toLowerCase()) === -1;
     }
     function summarizeEvents(events) {
       var rows = (events || []).filter(isCountedEvent);

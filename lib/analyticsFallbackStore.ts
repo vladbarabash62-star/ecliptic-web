@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { readBlobJson, writeBlobJson } from "./blobJsonStore";
 import { LOCAL_ANALYTICS_SEED, readLocalBackupSeed } from "./localBackupSeed";
+import { isExcludedAnalyticsVisitor } from "./analyticsExclusions";
 
 export type AnalyticsEvent = {
   type?: string;
@@ -115,7 +116,7 @@ export function summarizeAnalyticsEvents(events: AnalyticsEvent[]) {
 
   for (const event of events) {
     const type = String(event.type || "unknown");
-    if (type === "page_view") continue;
+    if (type === "page_view" || isExcludedAnalyticsVisitor(event.visitorId)) continue;
     actions[type] = (actions[type] || 0) + 1;
     if (type === "product_open") {
       views += 1;

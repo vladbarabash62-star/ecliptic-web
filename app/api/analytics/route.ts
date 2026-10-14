@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { createHash } from "node:crypto";
 import { addFallbackAnalyticsEvent } from "../../../lib/analyticsFallbackStore";
+import { isExcludedAnalyticsVisitor } from "../../../lib/analyticsExclusions";
 import { checkRateLimit, getRedisConfig, redisPipeline } from "../../../lib/security";
 
 export const runtime = "nodejs";
@@ -56,6 +57,9 @@ export async function POST(request: Request) {
   }
 
   const body = (await request.json().catch(() => ({}))) as IncomingEvent;
+  if (isExcludedAnalyticsVisitor(body.visitorId)) {
+    return NextResponse.json({ ok: true, stored: false, ignored: true, reason: "excluded-visitor" });
+  }
   const headerList = await headers();
   const forwardedFor = headerList.get("x-forwarded-for")?.split(",")[0]?.trim();
   const realIp = headerList.get("x-real-ip") || headerList.get("cf-connecting-ip");
