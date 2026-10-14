@@ -978,11 +978,12 @@ export function SbpPaymentForm({ productName, productSlug }: { productName: stri
     amount: numericAmount,
     min: 100,
     unit: "₽",
+    subject: "сумма оплаты",
   });
 
   function validateOrder() {
     if (!hasAmount) return REQUIRED_FIELDS_MESSAGE;
-    if (numericAmount < 100) return "Минимальная сумма пополнения 100₽.";
+    if (numericAmount < 100) return "Минимальная сумма оплаты — 100₽.";
     return null;
   }
 
@@ -999,12 +1000,12 @@ export function SbpPaymentForm({ productName, productSlug }: { productName: stri
       {notice && <OrderNotice message={notice} isVisible={isVisible} />}
       <div className="rounded-2xl border border-white/15 bg-[#0f1420]/90 p-4">
         <label className="grid gap-2">
-          <span className="text-sm font-bold text-white/78">Сумма пополнения (₽)</span>
+          <span className="text-sm font-bold text-white/78">Сумма оплаты (₽)</span>
           <input
             value={amount}
             onChange={(event) => setAmount(event.target.value.replace(/[^\d]/g, ""))}
             inputMode="numeric"
-            placeholder="Введите сумму пополнения, минимум 100₽"
+            placeholder="Введите сумму оплаты, минимум 100₽"
             className="rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-sky-300/45"
           />
           {limitMessage && <span className={INPUT_LIMIT_HINT_CLASS}>{limitMessage}</span>}
@@ -1018,7 +1019,7 @@ export function SbpPaymentForm({ productName, productSlug }: { productName: stri
           onInvalid={showNotice}
           className="mt-4 flex w-full items-center justify-center rounded-xl bg-indigo-500 px-3 py-3 text-sm font-bold text-white shadow-[0_10px_24px_rgba(99,102,241,0.24)] transition-all duration-300 hover:bg-indigo-400 active:scale-95"
         >
-          {isValidAmount ? `Пополнить за ${formatPriceTag(pricePmr)}` : "Пополнить"}
+          {isValidAmount ? `Оплатить за ${formatPriceTag(pricePmr)}` : "Оплатить"}
         </TelegramOrderLink>
       </div>
     </>
