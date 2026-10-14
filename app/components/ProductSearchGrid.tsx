@@ -21,6 +21,7 @@ const PRODUCT_GROUPS: Array<{ id: ProductGroup; label: string }> = [
 ];
 
 const GAME_SLUGS = new Set([
+  "delta-force",
   "steam",
   "world-of-tanks",
   "brawl-stars",

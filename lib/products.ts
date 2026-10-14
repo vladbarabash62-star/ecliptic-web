@@ -28,6 +28,97 @@ export type Product = {
 
 export const products: Product[] = [
   {
+    "name": "Delta Force",
+    "slug": "delta-force",
+    "icon": "https://cdn.midasbuy.com/images/midas_oversea/fee49e2cf62d1e601a09e868c18b6ff7.png",
+    "offerIcon": "https://cdn.midasbuy.com/images/midas_oversea/09387edd269fbf62857ddd08851d8c3f.png",
+    "offers": [
+      {
+        "type": "divider",
+        "title": "Наборы и боевые пропуски"
+      },
+      {
+        "label": "Припасы «Морфоза»",
+        "priceRub": 20,
+        "icon": "https://cdn.midasbuy.com/images/midas_oversea/fee49e2cf62d1e601a09e868c18b6ff7.png"
+      },
+      {
+        "label": "Припасы «Морфоза» — продвинутые",
+        "priceRub": 45,
+        "icon": "https://cdn.midasbuy.com/images/midas_oversea/fee49e2cf62d1e601a09e868c18b6ff7.png"
+      },
+      {
+        "label": "Боевой пропуск для «Сражений»",
+        "priceRub": 105,
+        "icon": "https://cdn.midasbuy.com/images/midas_oversea/fee49e2cf62d1e601a09e868c18b6ff7.png"
+      },
+      {
+        "label": "Боевой пропуск для «Операций»",
+        "priceRub": 105,
+        "icon": "https://cdn.midasbuy.com/images/midas_oversea/fee49e2cf62d1e601a09e868c18b6ff7.png"
+      },
+      {
+        "label": "Боевой пропуск «Делюкс»",
+        "priceRub": 145,
+        "icon": "https://cdn.midasbuy.com/images/midas_oversea/fee49e2cf62d1e601a09e868c18b6ff7.png"
+      },
+      {
+        "type": "divider",
+        "title": "Монеты"
+      },
+      {
+        "label": "60 монет",
+        "priceRub": 30,
+        "icon": "https://cdn.midasbuy.com/images/midas_oversea/09387edd269fbf62857ddd08851d8c3f.png"
+      },
+      {
+        "label": "320 монет",
+        "priceRub": 100,
+        "icon": "https://cdn.midasbuy.com/images/midas_oversea/09387edd269fbf62857ddd08851d8c3f.png"
+      },
+      {
+        "label": "460 монет",
+        "priceRub": 135,
+        "icon": "https://cdn.midasbuy.com/images/midas_oversea/09387edd269fbf62857ddd08851d8c3f.png"
+      },
+      {
+        "label": "750 монет",
+        "priceRub": 180,
+        "icon": "https://cdn.midasbuy.com/images/midas_oversea/09387edd269fbf62857ddd08851d8c3f.png"
+      },
+      {
+        "label": "1480 монет",
+        "priceRub": 335,
+        "icon": "https://cdn.midasbuy.com/images/midas_oversea/09387edd269fbf62857ddd08851d8c3f.png"
+      },
+      {
+        "label": "1980 монет",
+        "priceRub": 415,
+        "icon": "https://cdn.midasbuy.com/images/midas_oversea/09387edd269fbf62857ddd08851d8c3f.png"
+      },
+      {
+        "label": "3950 монет",
+        "priceRub": 800,
+        "icon": "https://cdn.midasbuy.com/images/midas_oversea/09387edd269fbf62857ddd08851d8c3f.png"
+      },
+      {
+        "label": "8100 монет",
+        "priceRub": 1550,
+        "icon": "https://cdn.midasbuy.com/images/midas_oversea/09387edd269fbf62857ddd08851d8c3f.png"
+      },
+      {
+        "label": "16200 монет",
+        "priceRub": 2999,
+        "icon": "https://cdn.midasbuy.com/images/midas_oversea/09387edd269fbf62857ddd08851d8c3f.png"
+      },
+      {
+        "label": "24300 монет",
+        "priceRub": 4999,
+        "icon": "https://cdn.midasbuy.com/images/midas_oversea/09387edd269fbf62857ddd08851d8c3f.png"
+      }
+    ]
+  },
+  {
     "name": "Steam",
     "icon": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/83/Steam_icon_logo.svg/960px-Steam_icon_logo.svg.png",
     "slug": "steam",

@@ -121,6 +121,11 @@ export default async function ProductPage({ params }: PageProps) {
             { id: "nick", label: "Ник", placeholder: "Введите ваш ник" },
             { id: "server", label: "Сервер", placeholder: "Выберите сервер", options: MAJESTIC_SERVERS },
           ]
+      : product.slug === "delta-force"
+        ? [
+            { id: "playerId", label: "ID игрока", placeholder: "Введите ID игрока", numeric: true },
+            { id: "platform", label: "Платформа", placeholder: "Выберите платформу", options: ["ПК", "Mobile", "Консоль"] },
+          ]
       : product.slug === "pubg-mobile" || product.slug === "free-fire" || product.slug === "standoff-2"
         ? [{ id: "playerId", label: "ID аккаунта", placeholder: "Введите ID аккаунта", numeric: true }]
         : [];
