@@ -434,9 +434,8 @@ main {
   opacity: 0;
   pointer-events: none;
   filter: drop-shadow(0 18px 24px rgba(0, 0, 0, 0.38));
-  animation: referralStarFloat 9s ease-in-out infinite;
   transition: opacity 420ms ease;
-  transform: translate3d(0, 0, 0) rotate(-3deg);
+  transform: translate3d(0, 0, 0);
   will-change: left, top, transform, opacity;
   -webkit-tap-highlight-color: transparent;
 }
@@ -446,6 +445,14 @@ main {
   width: 100%;
   aspect-ratio: 1;
   transition: transform 180ms ease, filter 180ms ease;
+}
+
+.floating-referral-star__free {
+  color: #fff4bd;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: center;
 }
 
 .floating-referral-star__image img {

@@ -206,9 +206,9 @@ export default function AccountTabs({ orders, referral, accountName }: { orders:
       ) : (
         <section className="mt-7 grid gap-4">
           <div className="rounded-3xl border border-sky-300/18 bg-gradient-to-br from-sky-500/14 to-emerald-500/10 p-5">
-            <h2 className="text-2xl font-black text-white">Пригласи 5 друзей и получи подарок</h2>
+            <h2 className="text-2xl font-black leading-tight text-white sm:text-3xl">Пригласи 5 друзей и получи подарок стоимостью 50 Telegram Stars</h2>
             <p className="mt-2 max-w-[720px] text-sm font-semibold leading-relaxed text-white/62">
-              За 5 приглашённых участников можно получить любой подарок стоимостью до 50 Telegram Stars.
+              За 5 приглашённых участников можно получить любой подарок стоимостью 50 Telegram Stars.
             </p>
             <div className="mt-5 grid gap-2 sm:grid-cols-[1fr_auto]">
               <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/24 px-4 py-3 text-sm font-black text-sky-50">

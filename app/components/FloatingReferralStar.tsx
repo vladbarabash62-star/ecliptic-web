@@ -26,6 +26,7 @@ type MotionState = {
   nextTargetAt: number;
   lastRecoveryAt: number;
   lastLaneId: string;
+  lastFrameAt: number;
 };
 
 type SafeLane = {
@@ -193,7 +194,21 @@ function pickSafePosition(
     ) {
       continue;
     }
-    if (isSafePosition(x, y, width, height, blockers)) return { x, y, laneId: lane.id };
+    if (isSafePosition(x, y, width, height, blockers)) {
+      if (previous && isSafePosition(previous.x, previous.y, width, height, blockers)) {
+        const steps = Math.ceil(Math.hypot(x - previous.x, y - previous.y) / 8);
+        let clearPath = true;
+        for (let step = 1; step <= steps; step += 1) {
+          const progress = step / steps;
+          if (!isSafePosition(previous.x + (x - previous.x) * progress, previous.y + (y - previous.y) * progress, width, height, blockers)) {
+            clearPath = false;
+            break;
+          }
+        }
+        if (!clearPath) continue;
+      }
+      return { x, y, laneId: lane.id };
+    }
   }
 
   return null;
@@ -216,6 +231,7 @@ export default function FloatingReferralStar() {
     nextTargetAt: 0,
     lastRecoveryAt: 0,
     lastLaneId: "",
+    lastFrameAt: 0,
   });
   const [user, setUser] = useState<CustomerUser | null>(null);
   const [locationSearch, setLocationSearch] = useState("");
@@ -258,6 +274,7 @@ export default function FloatingReferralStar() {
     let cancelled = false;
     const motion = motionRef.current;
     motion.lastScrollY = window.scrollY;
+    motion.lastFrameAt = 0;
 
     const measure = () => {
       const rect = buttonRef.current?.getBoundingClientRect();
@@ -277,7 +294,7 @@ export default function FloatingReferralStar() {
       const picked = pickSafePosition(
         width,
         height,
-        { x: motion.targetX, y: motion.targetY, laneId: motion.lastLaneId },
+        isReadyRef.current ? { x: motion.x, y: motion.y, laneId: motion.lastLaneId } : undefined,
         laneMode
       );
       if (!picked) {
@@ -321,18 +338,25 @@ export default function FloatingReferralStar() {
       const { width, height } = measure();
       if (!motion.nextTargetAt || time > motion.nextTargetAt) chooseTarget();
 
-      const pull = window.innerWidth < 700 ? 0.026 : 0.02;
-      motion.x += (motion.targetX - motion.x) * pull;
-      motion.y += (motion.targetY - motion.y) * pull;
-      motion.scrollOffsetY *= 0.89;
+      const dt = Math.min(0.04, motion.lastFrameAt ? (time - motion.lastFrameAt) / 1000 : 1 / 60);
+      motion.lastFrameAt = time;
+      const dx = motion.targetX - motion.x;
+      const dy = motion.targetY - motion.y;
+      const distance = Math.hypot(dx, dy);
+      const travel = Math.min(distance, 28 * dt);
+      const nextX = motion.x + (distance ? dx / distance * travel : 0);
+      const nextY = motion.y + (distance ? dy / distance * travel : 0) + clamp(motion.scrollOffsetY, -70, 70) * dt;
+      motion.scrollOffsetY *= Math.exp(-3 * dt);
       if (Math.abs(motion.scrollOffsetY) < 0.25) motion.scrollOffsetY = 0;
 
       const margin = window.innerWidth < 700 ? 10 : 18;
       const bottomInset = window.innerWidth < 700 ? 22 : 18;
-      const renderX = clamp(motion.x, margin, window.innerWidth - width - margin);
-      const renderY = clamp(motion.y + motion.scrollOffsetY, 76, window.innerHeight - height - bottomInset);
+      const renderX = clamp(nextX, margin, window.innerWidth - width - margin);
+      const renderY = clamp(nextY, 76, window.innerHeight - height - bottomInset);
 
       if (isSafePosition(renderX, renderY, width, height)) {
+        motion.x = renderX;
+        motion.y = renderY;
         motion.lastSafeX = renderX;
         motion.lastSafeY = renderY;
         element.style.left = `${Math.round(renderX)}px`;
@@ -344,10 +368,15 @@ export default function FloatingReferralStar() {
           chooseTarget();
           motion.lastRecoveryAt = time;
         }
-        element.style.left = `${Math.round(motion.lastSafeX)}px`;
-        element.style.top = `${Math.round(motion.lastSafeY)}px`;
-        element.style.opacity = isReadyRef.current ? "1" : "0";
-        element.style.pointerEvents = "auto";
+        const currentIsSafe = isSafePosition(motion.x, motion.y, width, height);
+        if (!currentIsSafe) {
+          motion.x = renderX;
+          motion.y = renderY;
+        }
+        element.style.left = `${motion.x}px`;
+        element.style.top = `${motion.y}px`;
+        element.style.opacity = currentIsSafe ? "1" : "0";
+        element.style.pointerEvents = currentIsSafe ? "auto" : "none";
       }
 
       frameRef.current = window.requestAnimationFrame(tick);
@@ -388,12 +417,13 @@ export default function FloatingReferralStar() {
       type="button"
       className="floating-referral-star"
       onClick={openReferral}
-      aria-label="Получить звёзды"
+      aria-label="Получить звёзды бесплатно"
     >
       <span className="floating-referral-star__image">
         <img src="/referral-star.png" alt="" draggable={false} />
       </span>
       <span className="floating-referral-star__label">Получить звёзды</span>
+      <span className="floating-referral-star__free">Бесплатно</span>
     </button>
   );
 }
