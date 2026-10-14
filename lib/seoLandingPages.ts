@@ -448,22 +448,21 @@ const manualSeoLandingPages: SeoLandingPage[] = [
   },
   {
     slug: "gta-rp-donat-pmr",
-    title: "GTA 5 RP донат ПМР - Majestic, Radmir, Amazing",
+    title: "RP донат ПМР - Radmir, Amazing, Black Russia",
     description:
-      "GTA 5 RP донат в ПМР: Majestic RP, Radmir RP, Amazing RP, Black Russia и другие игровые пополнения через Ecliptic Store.",
+      "RP донат в ПМР: Radmir RP, Amazing RP, Black Russia и другие игровые пополнения через Ecliptic Store.",
     h1: "GTA 5 RP донат ПМР",
     intro:
-      "Страница для запросов GTA 5 RP, Majestic RP, Radmir RP, Amazing RP, Black Russia и RP-донат в ПМР.",
-    productSlug: "gta-5-rp-majestic-rp",
+      "Radmir RP, Amazing RP, Black Russia и RP-донат в ПМР.",
+    productSlug: "radmir-rp",
     phrases: [
       "gta 5 rp донат пмр",
-      "majestic rp пмр",
       "radmir rp пмр",
       "amazing rp пмр",
       "black russia донат пмр",
       "гта 5 рп донат пмр",
     ],
-    services: ["GTA 5 RP", "Majestic RP", "Radmir RP", "Amazing RP", "Black Russia"],
+    services: ["Radmir RP", "Amazing RP", "Black Russia"],
   },
   {
     slug: "podpiski-pmr",

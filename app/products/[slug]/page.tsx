@@ -21,6 +21,7 @@ import {
   SiteTopupForm,
   SbpPaymentForm,
   SteamTopupForm,
+  RpTopupForm,
 } from "./ProductActionForms";
 
 export const dynamic = "force-dynamic";
@@ -47,10 +48,9 @@ function numberedServers(count: number) {
   return Array.from({ length: count }, (_, index) => `Сервер ${index + 1}`);
 }
 
-const RADMIR_SERVERS = numberedServers(14);
-const AMAZING_SERVERS = numberedServers(10);
-const BLACK_RUSSIA_SERVERS = numberedServers(91);
-const MAJESTIC_SERVERS = numberedServers(22);
+const RADMIR_SERVERS = numberedServers(21);
+const AMAZING_SERVERS = ["Red", "Yellow", "Green", "Azure", "Silver", "Rose", "Black", "Sky", "Titan", "X", "Fire", "Lime"];
+const BLACK_RUSSIA_SERVERS = numberedServers(92);
 
 export function generateStaticParams() {
   return products.map((product) => ({
@@ -93,6 +93,11 @@ export default async function ProductPage({ params }: PageProps) {
   const needsLinkManager =
     product.slug === "boosty" || product.slug === "twitch";
   const needsMinecraftForm = product.slug === "minecraft";
+  const isGrandProduct = /grand/i.test(product.name) || ["grand-rp", "grand-mobile"].includes(product.slug);
+  const rpServers = product.slug === "radmir-rp" ? RADMIR_SERVERS
+    : product.slug === "amazing-rp" ? AMAZING_SERVERS
+    : product.slug === "black-russia" ? BLACK_RUSSIA_SERVERS : undefined;
+  const needsRpTopup = isGrandProduct || Boolean(rpServers);
   const detailFields =
     product.slug === "mobile-legends"
       ? [
@@ -115,11 +120,6 @@ export default async function ProductPage({ params }: PageProps) {
         ? [
             { id: "nick", label: "Ник", placeholder: "Введите ваш ник" },
             { id: "server", label: "Сервер", placeholder: "Выберите сервер", options: BLACK_RUSSIA_SERVERS },
-          ]
-      : product.slug === "gta-5-rp-majestic-rp"
-        ? [
-            { id: "nick", label: "Ник", placeholder: "Введите ваш ник" },
-            { id: "server", label: "Сервер", placeholder: "Выберите сервер", options: MAJESTIC_SERVERS },
           ]
       : product.slug === "delta-force"
         ? [
@@ -166,7 +166,9 @@ export default async function ProductPage({ params }: PageProps) {
         </div>
 
         <section className="w-full">
-          {needsSteamTopup ? (
+          {needsRpTopup ? (
+            <RpTopupForm productName={product.name} productSlug={product.slug} servers={rpServers} usePlayerId={isGrandProduct} rublesPerPmr={product.slug === "radmir-rp" ? 10 : 10 / 3} />
+          ) : needsSteamTopup ? (
             <SteamTopupForm productName={product.name} productSlug={product.slug} />
           ) : needsEpicTopup ? (
             <EpicTopupForm productName={product.name} productSlug={product.slug} />
@@ -181,9 +183,7 @@ export default async function ProductPage({ params }: PageProps) {
           ) : needsMinecraftForm ? (
             <MinecraftOrderForm productName={product.name} productSlug={product.slug} />
           ) : !hasPurchasableOffers ? (
-            <div className="rounded-2xl border border-white/10 bg-[#0f1420]/92 p-4 text-white/70">
-              Прайс для этого товара пока уточняется. Напишите нам в Telegram, и мы быстро подберём вариант.
-            </div>
+            <ManagerButtonForm productName={product.name} productSlug={product.slug} />
           ) : (
             <ProductOffersWithDetails
               productName={product.name}

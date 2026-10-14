@@ -237,7 +237,6 @@ const supplementalSearchPhrases = [
   "minecraft пмр",
   "майнкрафт пмр",
   "gta 5 rp пмр",
-  "majestic rp пмр",
   "radmir rp пмр",
   "amazing rp пмр",
   "black russia пмр",

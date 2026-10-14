@@ -6,7 +6,6 @@ import { getProductBySlug, getProducts } from "../lib/productStore";
 import { withOptimizedProductsImages } from "../lib/optimizedImages";
 import { getSiteSettings } from "../lib/siteSettings";
 import { defaultSiteSettings } from "../lib/siteSettingsDefaults";
-import { productShouldBeIndexed } from "../lib/seo";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -54,7 +53,6 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     getSiteSettings().catch(() => defaultSiteSettings),
   ]);
   const products = withOptimizedProductsImages(allProducts)
-    .filter(productShouldBeIndexed)
     .map((product) => ({
       name: product.name,
       slug: product.slug,

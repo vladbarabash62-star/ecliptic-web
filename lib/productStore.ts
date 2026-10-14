@@ -348,7 +348,9 @@ export async function getProducts(options: ProductReadOptions = {}) {
     })
     .filter((product): product is Product => Boolean(product));
 
-  const mergedProducts = [...orderedBaseProducts, ...customProducts];
+  const mergedProducts = [...orderedBaseProducts, ...customProducts].filter(
+    (product) => !/majestic/i.test(product.name) && !/majestic/i.test(product.slug)
+  );
   const productOrder = storage.order;
 
   if (!productOrder.length) return mergedProducts;

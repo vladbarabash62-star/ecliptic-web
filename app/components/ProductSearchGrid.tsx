@@ -22,6 +22,9 @@ const PRODUCT_GROUPS: Array<{ id: ProductGroup; label: string }> = [
 
 const GAME_SLUGS = new Set([
   "delta-force",
+  "call-of-duty-mobile",
+  "grand-rp",
+  "grand-mobile",
   "steam",
   "world-of-tanks",
   "brawl-stars",
@@ -65,7 +68,7 @@ function getProductGroup(product: ProductCard): ProductGroup {
   if (
     name.includes("steam") ||
     name.includes("gta") ||
-    name.includes("majestic") ||
+    name.includes("grand") ||
     name.includes("arizona") ||
     name.includes("аризона") ||
     name.includes("epic games") ||
