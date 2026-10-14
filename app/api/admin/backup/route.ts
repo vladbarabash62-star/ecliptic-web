@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import JSZip from "jszip";
 import { createHash } from "node:crypto";
+import { get, list } from "@vercel/blob";
 import { readFallbackAnalyticsEvents, summarizeAnalyticsEvents } from "../../../../lib/analyticsFallbackStore";
 import { buildProductStorage, getProducts } from "../../../../lib/productStore";
 import type { Product, ProductOffer } from "../../../../lib/products";
@@ -49,6 +50,26 @@ async function adminDataBackup() {
       events: analyticsEvents,
     },
   };
+}
+
+async function recoverySnapshot() {
+  const backup = await adminDataBackup();
+  const storage: Record<string, string> = {};
+  let cursor: string | undefined;
+  do {
+    const page = await list({ cursor, limit: 1000 });
+    for (const blob of page.blobs) {
+      const result = await get(blob.url, { access: "private", useCache: false });
+      if (!result || result.statusCode !== 200 || !result.stream) throw new Error("Cannot export " + blob.pathname);
+      storage[blob.pathname] = Buffer.from(await new Response(result.stream).arrayBuffer()).toString("base64");
+    }
+    cursor = page.hasMore ? page.cursor : undefined;
+  } while (cursor);
+  const environment: Record<string, string> = {};
+  for (const key of ["ADMIN_SECRET_PATH", "ADMIN_PIN", "ADMIN_PASSWORD_HASH", "ADMIN_PASSWORD_SALT", "TELEGRAM_BOT_TOKEN", "TELEGRAM_WEBHOOK_SECRET", "NEXT_PUBLIC_TELEGRAM_LOGIN_BOT_USERNAME", "BLOB_STORE_ID", "BLOB_READ_WRITE_TOKEN", "KV_REST_API_URL", "KV_REST_API_TOKEN", "KV_REST_API_READ_ONLY_TOKEN", "REDIS_URL", "KV_URL"]) {
+    if (process.env[key]) environment[key] = process.env[key]!;
+  }
+  return { ...backup, storage, environment };
 }
 
 function restoreReadme() {
@@ -234,6 +255,16 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const type = url.searchParams.get("type") || "admin";
   const stamp = timestampForFile();
+
+  if (type === "recovery") {
+    try {
+      return new Response(JSON.stringify(await recoverySnapshot()), {
+        headers: attachmentHeaders(`ecliptic-recovery-${stamp}.json`, "application/json; charset=utf-8"),
+      });
+    } catch {
+      return NextResponse.json({ ok: false, error: "Recovery export failed" }, { status: 502 });
+    }
+  }
 
   if (type === "site") {
     try {

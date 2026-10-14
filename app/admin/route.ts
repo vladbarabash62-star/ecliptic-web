@@ -72,7 +72,12 @@ const STYLE = `
   .mini-actions { display:flex; flex-wrap:wrap; gap:7px; }
   .mini { border:1px solid var(--line); border-radius:9px; padding:7px 9px; background:rgba(255,255,255,.07); color:#fff; font-size:12px; font-weight:800; }
   .empty { padding:28px; text-align:center; color:var(--muted); }
-  .table { width:100%; min-width:1180px; border-collapse:collapse; margin-top:12px; }
+  .table { width:100%; min-width:1050px; table-layout:fixed; border-collapse:collapse; margin-top:12px; }
+  .table th:nth-child(1) { width:145px; }
+  .table th:nth-child(2) { width:110px; }
+  .table th:nth-child(3) { width:120px; }
+  .table th:nth-child(5) { width:300px; }
+  .table td { overflow-wrap:anywhere; }
   .table th,.table td { padding:10px; border-bottom:1px solid rgba(255,255,255,.08); text-align:left; font-size:13px; }
   .table th { color:rgba(255,255,255,.65); }
   .table td { vertical-align:top; }
@@ -594,6 +599,8 @@ const ADMIN_HTML = `<!doctype html>
         meta.push('IP: ' + event.ipAddress);
       } else if (event.ipHash) {
         meta.push('IP-метка: ' + event.ipHash);
+      } else {
+        meta.push('IP: не сохранён для этого события');
       }
       if (event.authUserName || event.authUsername) {
         meta.push('Telegram: ' + [event.authUserName, event.authUsername].filter(Boolean).map(cleanText).join(' '));
