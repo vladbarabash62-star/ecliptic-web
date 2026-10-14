@@ -717,8 +717,9 @@ function WorldOfTanksGoldForm({
             pattern="[0-9]*"
             min={100}
             max={100000}
-            placeholder="Введите количество золота, минимум 100, максимум 100 000"
-            className="w-full rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-amber-300/45"
+            aria-label="Количество золота, минимум 100, максимум 100 000"
+            placeholder="Золото: от 100 до 100 000"
+            className="w-full min-w-0 rounded-xl border border-white/10 bg-[#07101d] px-3 py-3 text-sm text-white outline-none transition placeholder:text-white/60 focus:border-amber-300/45 sm:px-4 sm:text-base"
           />
           {limitMessage && <span className={INPUT_LIMIT_HINT_CLASS}>{limitMessage}</span>}
         </label>
