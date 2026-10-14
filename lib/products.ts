@@ -28,6 +28,17 @@ export type Product = {
 
 export const products: Product[] = [
   {
+    name: "Netflix",
+    slug: "netflix",
+    icon: "https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg",
+    offerIcon: "https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg",
+    offers: [
+      { label: "Базовый", priceRub: 195 },
+      { label: "Стандартный", priceRub: 245 },
+      { label: "Премиум", priceRub: 295 },
+    ],
+  },
+  {
     "name": "Delta Force",
     "slug": "delta-force",
     "icon": "https://cdn.midasbuy.com/images/midas_oversea/fee49e2cf62d1e601a09e868c18b6ff7.png",
