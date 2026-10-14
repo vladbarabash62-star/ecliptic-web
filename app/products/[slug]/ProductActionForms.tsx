@@ -483,15 +483,18 @@ function spotifyRegionName(dividerTitle: string, offerLabel = "") {
   return "";
 }
 
+const SPOTIFY_MOLDOVA_NOTICE = "Регион оформления подписки — Молдова (Приднестровье). Приложение и сайт Spotify работают в штатном режиме. VPN не требуется.";
+const SPOTIFY_OTHER_REGION_NOTICE = "Регион оформления подписки — Египет/Индия. Приложение работает ТОЛЬКО с использованием VPN. Сайт работает в штатном режиме. ТРЕБУЕТСЯ VPN ДЛЯ ПРИЛОЖЕНИЯ!";
+
 function spotifyRegionTooltip(title: string, description?: string) {
   const kind = spotifyRegionKind(title);
 
   if (kind === "moldova") {
-    return "Регион оформления: Молдова. Если вы проживаете в Молдове или ПМР, этот вариант подойдёт лучше всего: регион аккаунта совпадает с регионом подписки, поэтому оформление проходит без дополнительных требований к смене страны или VPN.";
+    return SPOTIFY_MOLDOVA_NOTICE;
   }
 
   if (kind === "other") {
-    return "Регион оформления: другой регион. Если ваш аккаунт находится не в этом регионе, Spotify может попросить сменить регион или использовать VPN. Выбирая этот вариант, вы берёте региональные риски на себя.";
+    return SPOTIFY_OTHER_REGION_NOTICE;
   }
 
   return description || "";
@@ -499,9 +502,8 @@ function spotifyRegionTooltip(title: string, description?: string) {
 
 function spotifyOtherRegionConfirmation() {
   return {
-    title: "Spotify Premium для другого региона",
-    description:
-      "Этот вариант оформляется на регион, отличный от Молдовы. Если ваш Spotify-аккаунт находится в другом регионе, могут понадобиться смена региона или VPN. Перед оформлением убедитесь, что вы согласны с возможными региональными ограничениями Spotify; магазин не отвечает за ограничения, которые Spotify может применить к аккаунту из-за региона.",
+    title: "Spotify Premium — Египет/Индия",
+    description: SPOTIFY_OTHER_REGION_NOTICE,
     confirmLabel: "Да, оформить",
   };
 }
