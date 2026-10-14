@@ -31,7 +31,8 @@ async function main() {
         if (!match) throw new Error('Unsupported data image');
         bytes = Buffer.from(match[2], 'base64'); extension = match[1].replace('svg+xml', 'svg').replace('jpeg', 'jpg');
       } else {
-        const result = await fetch(value, { headers: { 'user-agent': 'Mozilla/5.0', referer: 'https://ecliptic.website/' }, signal: AbortSignal.timeout(20000) });
+        let result = await fetch(value, { signal: AbortSignal.timeout(20000) });
+        if (!result.ok) result = await fetch(value, { headers: { 'user-agent': 'Mozilla/5.0', referer: 'https://ecliptic.website/' }, signal: AbortSignal.timeout(20000) });
         if (!result.ok) throw new Error('HTTP ' + result.status);
         const type = result.headers.get('content-type') || '';
         if (!type.includes('image')) throw new Error('Not an image');
