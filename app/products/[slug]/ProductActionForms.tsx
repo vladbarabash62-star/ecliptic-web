@@ -200,6 +200,7 @@ function TelegramOrderLink({
   validate,
   onInvalid,
   confirmation,
+  visible = true,
   children,
 }: {
   message: string;
@@ -215,9 +216,11 @@ function TelegramOrderLink({
     confirmLabel: string;
   };
   children: ReactNode;
+  visible?: boolean;
 }) {
   const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
   const href = sellerChatHref(message);
+  if (!visible) return null;
 
   function completeOrder() {
     saveCustomerOrder({ productSlug, offer, priceRub, message });
@@ -844,7 +847,7 @@ export function RpTopupForm({
   const [amount, setAmount] = useState("");
   const { notice, isVisible, showNotice } = useOrderNotice();
   const numericAmount = Number(amount);
-  const validAmount = Number.isSafeInteger(numericAmount) && numericAmount > 0;
+  const validAmount = Number.isSafeInteger(numericAmount) && numericAmount >= 100;
   const priceRub = validAmount ? Math.round(numericAmount / rublesPerPmr * 100) / 100 : 0;
   const identityLabel = usePlayerId ? "ID игрока" : "Никнейм";
   const message = normalizeOrderMessage(
@@ -852,7 +855,7 @@ export function RpTopupForm({
   );
   function validateOrder() {
     if (!identity.trim() || (servers && !servers.includes(server))) return REQUIRED_FIELDS_MESSAGE;
-    if (!validAmount) return "Введите сумму пополнения больше нуля.";
+    if (!validAmount) return "Минимальная сумма пополнения — 100₽.";
     return null;
   }
   return (
@@ -874,10 +877,10 @@ export function RpTopupForm({
         </label>
         <label className="grid gap-2">
           <span className="text-sm font-bold text-white/78">Сумма пополнения (₽)</span>
-          <input value={amount} onChange={(event) => setAmount(event.target.value.replace(/\D/g, ""))} inputMode="numeric" placeholder="Введите сумму пополнения" className="w-full rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white" />
-          {amount && !validAmount && <span className={INPUT_LIMIT_HINT_CLASS}>Введите сумму пополнения больше нуля.</span>}
+          <input value={amount} onChange={(event) => setAmount(event.target.value.replace(/\D/g, ""))} inputMode="numeric" placeholder="Введите сумму пополнения, минимум 100₽" className="w-full rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white" />
+          {amount && !validAmount && <span className={INPUT_LIMIT_HINT_CLASS}>Минимальная сумма пополнения — 100₽.</span>}
         </label>
-        <TelegramOrderLink message={message} productSlug={productSlug} offer={`Пополнение ${numericAmount} ₽`} priceRub={validAmount ? priceRub : undefined} validate={validateOrder} onInvalid={showNotice} className="rounded-xl bg-emerald-500 px-4 py-3 text-center text-sm font-bold text-white">
+        <TelegramOrderLink visible={validAmount} message={message} productSlug={productSlug} offer={`Пополнение ${numericAmount} ₽`} priceRub={validAmount ? priceRub : undefined} validate={validateOrder} onInvalid={showNotice} className="rounded-xl bg-emerald-500 px-4 py-3 text-center text-sm font-bold text-white">
           {validAmount ? `Пополнить за ${formatPriceTag(priceRub)}` : "Пополнить"}
         </TelegramOrderLink>
       </div>
@@ -949,6 +952,7 @@ export function SteamTopupForm({ productName, productSlug }: { productName: stri
         message={message}
         productSlug={productSlug}
         offer="steam-topup"
+        visible={isValidAmount}
         priceRub={isValidAmount ? priceRub : undefined}
         validate={validateOrder}
         onInvalid={showNotice}
@@ -1011,6 +1015,7 @@ export function EpicTopupForm({ productName, productSlug }: { productName: strin
         message={message}
         productSlug={productSlug}
         offer="epic-topup"
+        visible={isValidAmount}
         priceRub={isValidAmount ? priceRub : undefined}
         validate={validateOrder}
         onInvalid={showNotice}
@@ -1072,6 +1077,7 @@ export function SbpPaymentForm({ productName, productSlug }: { productName: stri
           message={message}
           productSlug={productSlug}
           offer="sbp-payment"
+          visible={isValidAmount}
           priceRub={isValidAmount ? pricePmr : undefined}
           validate={validateOrder}
           onInvalid={showNotice}
@@ -1442,6 +1448,7 @@ export function SiteTopupForm({ productName, productSlug }: { productName: strin
           message={message}
           productSlug={productSlug}
           offer="site-topup"
+          visible={hasAmount && numericAmount >= (selectedMinimum?.amount ?? 0)}
           validate={validateOrder}
           onInvalid={showNotice}
           className="rounded-xl bg-emerald-500 px-3 py-3 text-center text-sm font-bold text-white shadow-[0_10px_24px_rgba(16,185,129,0.22)] transition-all duration-300 hover:bg-emerald-400 active:scale-95"
