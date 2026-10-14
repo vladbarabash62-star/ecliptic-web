@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
@@ -30,7 +31,7 @@ async function main() {
         if (!match) throw new Error('Unsupported data image');
         bytes = Buffer.from(match[2], 'base64'); extension = match[1].replace('svg+xml', 'svg').replace('jpeg', 'jpg');
       } else {
-        const result = await fetch(value, { signal: AbortSignal.timeout(20000) });
+        const result = await fetch(value, { headers: { 'user-agent': 'Mozilla/5.0', referer: 'https://ecliptic.website/' }, signal: AbortSignal.timeout(20000) });
         if (!result.ok) throw new Error('HTTP ' + result.status);
         const type = result.headers.get('content-type') || '';
         if (!type.includes('image')) throw new Error('Not an image');
@@ -51,6 +52,11 @@ async function main() {
     for (const offer of product.offers) if (offer.icon) offer.icon = await asset(offer.icon);
   }
   const storage = { ...snapshot.productStorage, order: products.map(p => p.slug), overrides: Object.fromEntries(products.map(p => [p.slug, p])) };
+  for (const file of files.filter(file => /\.(tsx?|jsx?|mjs|cjs)$/.test(file))) {
+    let source = await fs.readFile(path.join(root, file), 'utf8');
+    for (const [url, local] of cache) if (url.startsWith('http')) source = source.replaceAll(url, local);
+    folder.file(file, source);
+  }
   folder.file('backup-data/admin/products-storage.json', JSON.stringify(storage, null, 2));
   folder.file('backup-data/admin/site-settings.json', JSON.stringify(snapshot.settings, null, 2));
   folder.file('backup-data/admin/analytics-events-v2.json', JSON.stringify(snapshot.analytics.events));
