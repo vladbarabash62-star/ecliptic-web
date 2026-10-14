@@ -49,7 +49,7 @@ function numberedServers(count: number) {
 }
 
 const RADMIR_SERVERS = numberedServers(21);
-const AMAZING_SERVERS = ["Red", "Yellow", "Green", "Azure", "Silver", "Rose", "Black", "Sky", "Titan", "X", "Fire", "Lime"];
+const AMAZING_SERVERS = ["RED", "YELLOW", "GREEN", "AZURE", "SILVER", "ROSE", "BLACK", "SKY", "TITAN", "X", "FIRE", "LIME"];
 const BLACK_RUSSIA_SERVERS = numberedServers(92);
 
 export function generateStaticParams() {

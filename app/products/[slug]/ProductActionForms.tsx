@@ -833,6 +833,13 @@ function TikTokCoinsForm({
   );
 }
 
+const AMAZING_SERVER_COLORS: Record<string, string> = {
+  RED: "#ed3029", YELLOW: "#efad28", GREEN: "#34bb54",
+  AZURE: "#5847ff", SILVER: "#a0a0a0", ROSE: "#ff63cb",
+  BLACK: "#000000", SKY: "#30c2df", TITAN: "#75368e",
+  X: "#b70850", FIRE: "#ff6b16", LIME: "#a7ff28",
+};
+
 export function RpTopupForm({
   productName, productSlug, servers, usePlayerId, rublesPerPmr,
 }: {
@@ -865,10 +872,34 @@ export function RpTopupForm({
         {servers && (
           <label className="grid gap-2">
             <span className="text-sm font-bold text-white/78">Сервер</span>
+            {productSlug === "amazing-rp" ? (
+              <details className="relative">
+                <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white">
+                  <span className="flex items-center gap-3">
+                    {server && <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-white/30" style={{ backgroundColor: AMAZING_SERVER_COLORS[server] }} />}
+                    {server || "Выберите сервер"}
+                  </span>
+                  <span aria-hidden="true">▾</span>
+                </summary>
+                <div className="absolute left-0 right-0 top-full z-50 mt-2 max-h-80 overflow-y-auto rounded-xl border border-white/15 bg-[#101722] shadow-xl">
+                  {servers.map((item) => (
+                    <button key={item} type="button" aria-pressed={server === item} onClick={(event) => {
+                      setServer(item);
+                      const menu = event.currentTarget.closest("details");
+                      if (menu) menu.open = false;
+                    }} className="flex min-h-11 w-full items-center gap-3 border-b border-white/10 px-4 py-3 text-left text-sm text-white hover:bg-white/10 focus-visible:bg-white/10">
+                      <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-white/30" style={{ backgroundColor: AMAZING_SERVER_COLORS[item] }} />
+                      {item}
+                    </button>
+                  ))}
+                </div>
+              </details>
+            ) : (
             <select value={server} onChange={(event) => setServer(event.target.value)} className="w-full rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white">
               <option value="">Выберите сервер</option>
               {servers.map((item) => <option key={item} value={item}>{item}</option>)}
             </select>
+            )}
           </label>
         )}
         <label className="grid gap-2">
