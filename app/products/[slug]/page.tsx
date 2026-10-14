@@ -167,7 +167,7 @@ export default async function ProductPage({ params }: PageProps) {
 
         <section className="w-full">
           {needsRpTopup ? (
-            <RpTopupForm productName={product.name} productSlug={product.slug} servers={rpServers} usePlayerId={isGrandProduct} rublesPerPmr={product.slug === "radmir-rp" ? 10 : 10 / 3} />
+            <RpTopupForm productName={product.name} productSlug={product.slug} servers={rpServers} usePlayerId={isGrandProduct} rublesPerPmr={10 / 3} />
           ) : needsSteamTopup ? (
             <SteamTopupForm productName={product.name} productSlug={product.slug} />
           ) : needsEpicTopup ? (
