@@ -1,5 +1,3 @@
-import { products } from "./products";
-
 const LANDING_SITE_URL = "https://ecliptic.website";
 
 export type SeoLandingPage = {
@@ -484,84 +482,8 @@ const manualSeoLandingPages: SeoLandingPage[] = [
   },
 ];
 
-function slugifyLanding(value: string) {
-  const map: Record<string, string> = {
-    а: "a",
-    б: "b",
-    в: "v",
-    г: "g",
-    д: "d",
-    е: "e",
-    ё: "e",
-    ж: "zh",
-    з: "z",
-    и: "i",
-    й: "y",
-    к: "k",
-    л: "l",
-    м: "m",
-    н: "n",
-    о: "o",
-    п: "p",
-    р: "r",
-    с: "s",
-    т: "t",
-    у: "u",
-    ф: "f",
-    х: "h",
-    ц: "c",
-    ч: "ch",
-    ш: "sh",
-    щ: "sch",
-    ы: "y",
-    э: "e",
-    ю: "yu",
-    я: "ya",
-  };
-
-  return value
-    .toLowerCase()
-    .split("")
-    .map((char) => map[char] || char)
-    .join("")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 72);
-}
-
-function buildProductLandingPages() {
-  const existingSlugs = new Set(manualSeoLandingPages.map((page) => page.slug));
-  return products
-    .filter((product) => !/majestic|arizona/i.test(`${product.name} ${product.slug}`))
-    .map((product): SeoLandingPage => {
-      const slug = `${slugifyLanding(product.name)}-pmr`;
-      return {
-        slug,
-        title: `${product.name} ПМР - купить или пополнить через Ecliptic Store`,
-        description: `${product.name} в ПМР: купить, оформить, пополнить или задонатить через Ecliptic Store.`,
-        h1: `${product.name} ПМР`,
-        intro: `Страница для запросов про ${product.name}, донат, пополнение и цифровые товары в ПМР, Тирасполе и Приднестровье.`,
-        productSlug: product.slug,
-        phrases: [
-          `${product.name} пмр`,
-          `${product.name} донат пмр`,
-          `купить ${product.name} пмр`,
-          `пополнить ${product.name} пмр`,
-          `задонатить в ${product.name} пмр`,
-          `пмр задонатить в ${product.name}`,
-          `донат pmr ${product.name}`,
-          `${product.name} donat pmr`,
-          `${product.name} тирасполь`,
-        ],
-        services: [product.name, "донат ПМР", "пополнение ПМР", "цифровые товары"],
-      };
-    })
-    .filter((page) => page.slug && !existingSlugs.has(page.slug));
-}
-
 export const seoLandingPages: SeoLandingPage[] = [
   ...manualSeoLandingPages,
-  ...buildProductLandingPages(),
 ];
 
 export function landingPageUrl(slug: string) {

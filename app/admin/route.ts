@@ -1403,7 +1403,8 @@ const ADMIN_HTML = `<!doctype html>
       renderProductEditor();
     }
     function addProduct() {
-      var base = 'new-product', slug = base, index = 2;
+      // Keep the reserved Grand Mobile migration slug out of new catalog entries.
+      var base = 'custom-product', slug = base, index = 2;
       while (products.some(function(product) { return product.slug === slug; })) slug = base + '-' + index++;
       products.push({ name: 'Новый товар', slug: slug, icon: '/loading-icon.png', iconScale: 1, offers: [], messageTemplate: '' });
       selectedSlug = slug;
