@@ -10,6 +10,11 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
+        source: "/products/new-product",
+        destination: "/products/grand-mobile",
+        permanent: true,
+      },
+      {
         source: "/products/gta-5-rp-majestic-rp",
         destination: "/",
         permanent: true,

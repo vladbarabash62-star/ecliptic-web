@@ -16,6 +16,7 @@ const FALLBACK_ICON =
   "https://static.vecteezy.com/system/resources/previews/023/986/562/non_2x/telegram-logo-telegram-logo-transparent-telegram-icon-transparent-free-free-png.png";
 const PRODUCT_SLUG_ALIASES: Record<string, string> = {
   "tiktok-coins": "tiktok",
+  "new-product": "grand-mobile",
 };
 
 type ProductOverride = Pick<Product, "name" | "icon" | "offers"> & {
