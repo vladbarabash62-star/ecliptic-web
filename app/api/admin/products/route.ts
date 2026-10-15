@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { revalidatePath, revalidateTag } from "next/cache";
-import { getProducts, PRODUCTS_CACHE_TAG, saveProducts } from "../../../../lib/productStore";
+import { getProducts, PRODUCTS_CACHE_TAG, saveProducts, saveProductStorage } from "../../../../lib/productStore";
 import type { Product } from "../../../../lib/products";
 import { validateAdminRequest } from "../../../../lib/security";
 
@@ -15,6 +15,7 @@ type RequestBody = {
   productPatches?: Product[];
   productOrder?: string[];
   deletedSlugs?: string[];
+  productStorage?: unknown;
 };
 
 function hydrateKeptImages(nextProducts: Product[], currentProducts: Product[]) {
@@ -78,7 +79,7 @@ export async function POST(request: Request) {
     } catch {
       return NextResponse.json({ ok: false, saved: false, error: "Products storage unavailable" }, { status: 503 });
     }
-    revalidateTag(PRODUCTS_CACHE_TAG, "max");
+    revalidateTag(PRODUCTS_CACHE_TAG, { expire: 0 });
     revalidatePath("/", "page");
     for (const product of products) {
       revalidatePath(`/products/${product.slug}`, "page");
@@ -93,12 +94,23 @@ export async function POST(request: Request) {
     } catch {
       return NextResponse.json({ ok: false, saved: false, error: "Products storage unavailable" }, { status: 503 });
     }
-    revalidateTag(PRODUCTS_CACHE_TAG, "max");
+    revalidateTag(PRODUCTS_CACHE_TAG, { expire: 0 });
     revalidatePath("/", "page");
     for (const product of products) {
       revalidatePath(`/products/${product.slug}`, "page");
     }
     return NextResponse.json({ ok: true, saved: true });
+  }
+
+  if (body.productStorage && typeof body.productStorage === "object") {
+    try {
+      await saveProductStorage(body.productStorage);
+    } catch {
+      return NextResponse.json({ ok: false, saved: false, error: "Products storage unavailable" }, { status: 503 });
+    }
+    revalidateTag(PRODUCTS_CACHE_TAG, { expire: 0 });
+    revalidatePath("/", "page");
+    return NextResponse.json({ ok: true, saved: true, restored: "product-storage" });
   }
 
   const products = await getProducts();

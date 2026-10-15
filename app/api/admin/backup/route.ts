@@ -3,10 +3,12 @@ import JSZip from "jszip";
 import { createHash } from "node:crypto";
 import { get, list } from "@vercel/blob";
 import { readFallbackAnalyticsEvents, summarizeAnalyticsEvents } from "../../../../lib/analyticsFallbackStore";
+import { hasCloudflareAnalytics, readCloudflareAnalyticsEvents } from "../../../../lib/cloudflareAnalytics";
 import { buildProductStorage, getProducts } from "../../../../lib/productStore";
 import type { Product, ProductOffer } from "../../../../lib/products";
 import { getSiteSettings } from "../../../../lib/siteSettings";
 import { defaultSiteSettings } from "../../../../lib/siteSettingsDefaults";
+import { readCloudflareState } from "../../../../lib/cloudflareStateStore";
 import { validateAdminRequest } from "../../../../lib/security";
 
 export const runtime = "nodejs";
@@ -27,10 +29,13 @@ function attachmentHeaders(filename: string, contentType: string) {
 }
 
 async function adminDataBackup() {
-  const [products, settings, analyticsEvents] = await Promise.all([
+  const [products, settings, analyticsEvents, customerStore, telegramLogin, managerChat] = await Promise.all([
     getProducts(),
     getSiteSettings().catch(() => defaultSiteSettings),
-    readFallbackAnalyticsEvents(),
+    hasCloudflareAnalytics() ? readCloudflareAnalyticsEvents() : readFallbackAnalyticsEvents(),
+    readCloudflareState("customer-store-v1").catch(() => null),
+    readCloudflareState("telegram-login-v1").catch(() => null),
+    readCloudflareState("telegram-manager-chat-v1").catch(() => null),
   ]);
 
   return {
@@ -48,6 +53,11 @@ async function adminDataBackup() {
     analytics: {
       summary: summarizeAnalyticsEvents(analyticsEvents),
       events: analyticsEvents,
+    },
+    customers: {
+      store: customerStore,
+      telegramLogin,
+      managerChat,
     },
   };
 }
@@ -67,6 +77,9 @@ async function recoverySnapshot() {
   } while (cursor);
   const environment: Record<string, string> = {};
   for (const key of ["ADMIN_SECRET_PATH", "ADMIN_PIN", "ADMIN_PASSWORD_HASH", "ADMIN_PASSWORD_SALT", "TELEGRAM_BOT_TOKEN", "TELEGRAM_WEBHOOK_SECRET", "NEXT_PUBLIC_TELEGRAM_LOGIN_BOT_USERNAME", "BLOB_STORE_ID", "BLOB_READ_WRITE_TOKEN", "KV_REST_API_URL", "KV_REST_API_TOKEN", "KV_REST_API_READ_ONLY_TOKEN", "REDIS_URL", "KV_URL"]) {
+    if (process.env[key]) environment[key] = process.env[key]!;
+  }
+  for (const key of ["CLOUDFLARE_ANALYTICS_URL", "CLOUDFLARE_ANALYTICS_SECRET"]) {
     if (process.env[key]) environment[key] = process.env[key]!;
   }
   return { ...backup, storage, environment };
@@ -139,8 +152,8 @@ function hashBuffer(buffer: Buffer) {
   return createHash("sha1").update(buffer).digest("hex").slice(0, 16);
 }
 
-async function addBackupAsset(zip: JSZip, root: string, value: string, cache: Map<string, string>) {
-  if (!value || value.startsWith("/backup-assets/")) return value;
+async function addBackupAsset(zip: JSZip, root: string, value: string, cache: Map<string, string>, origin?: string) {
+  if (!value) return value;
   if (cache.has(value)) return cache.get(value) || value;
 
   try {
@@ -151,6 +164,15 @@ async function addBackupAsset(zip: JSZip, root: string, value: string, cache: Ma
       const base64 = value.replace(/^data:image\/[a-z0-9.+-]+;base64,/i, "");
       buffer = Buffer.from(base64, "base64");
       extension = extensionFromDataUrl(value);
+    } else if (value.startsWith("/backup-assets/") && origin) {
+      const response = await fetch(new URL(value, origin), { cache: "no-store" });
+      if (!response.ok) return value;
+      buffer = Buffer.from(await response.arrayBuffer());
+      extension = value.split(".").pop() || "bin";
+      const existingPath = `${root}public${value}`;
+      zip.file(existingPath, buffer);
+      cache.set(value, value);
+      return value;
     } else if (/^https?:\/\//i.test(value)) {
       const response = await fetch(value, { cache: "no-store" });
       if (!response.ok) return value;
@@ -173,20 +195,20 @@ async function addBackupAsset(zip: JSZip, root: string, value: string, cache: Ma
   }
 }
 
-async function localizeProductAssets(zip: JSZip, root: string, products: Product[]) {
+async function localizeProductAssets(zip: JSZip, root: string, products: Product[], origin?: string) {
   const cache = new Map<string, string>();
   const localized = JSON.parse(JSON.stringify(products)) as Product[];
 
   for (const product of localized) {
-    product.icon = await addBackupAsset(zip, root, product.icon, cache);
+    product.icon = await addBackupAsset(zip, root, product.icon, cache, origin);
     if (product.offerIcon) {
-      product.offerIcon = await addBackupAsset(zip, root, product.offerIcon, cache);
+      product.offerIcon = await addBackupAsset(zip, root, product.offerIcon, cache, origin);
     }
 
     for (const offer of product.offers) {
       if (offer.type === "divider") continue;
       const item = offer as ProductOffer;
-      if (item.icon) item.icon = await addBackupAsset(zip, root, item.icon, cache);
+      if (item.icon) item.icon = await addBackupAsset(zip, root, item.icon, cache, origin);
     }
   }
 
@@ -196,7 +218,7 @@ async function localizeProductAssets(zip: JSZip, root: string, products: Product
   };
 }
 
-async function fullSiteBackupZip(backup: Awaited<ReturnType<typeof adminDataBackup>>) {
+async function fullSiteBackupZip(backup: Awaited<ReturnType<typeof adminDataBackup>>, origin: string) {
   const source = await fetch(SOURCE_ARCHIVE_URL, { cache: "no-store" });
   if (!source.ok) throw new Error("Source archive unavailable");
 
@@ -205,7 +227,7 @@ async function fullSiteBackupZip(backup: Awaited<ReturnType<typeof adminDataBack
   const firstFile = Object.keys(zip.files).find((name) => name.includes("/"));
   const root = firstFile ? firstFile.slice(0, firstFile.indexOf("/") + 1) : "";
   const dataRoot = `${root}backup-data/admin/`;
-  const localized = await localizeProductAssets(zip, root, backup.products);
+  const localized = await localizeProductAssets(zip, root, backup.products, origin);
   const localProductStorage = buildProductStorage(localized.products);
   const localBackup = {
     ...backup,
@@ -220,6 +242,9 @@ async function fullSiteBackupZip(backup: Awaited<ReturnType<typeof adminDataBack
   zip.file(`${dataRoot}products-storage.json`, JSON.stringify(localProductStorage, null, 2));
   zip.file(`${dataRoot}site-settings.json`, JSON.stringify(backup.settings, null, 2));
   zip.file(`${dataRoot}analytics-events-v2.json`, JSON.stringify(backup.analytics.events, null, 2));
+  zip.file(`${root}backup-data/customers/store-v1.json`, JSON.stringify(backup.customers.store, null, 2));
+  zip.file(`${root}backup-data/customers/telegram-login-v1.json`, JSON.stringify(backup.customers.telegramLogin, null, 2));
+  zip.file(`${root}backup-data/customers/telegram-manager-chat-v1.json`, JSON.stringify(backup.customers.managerChat, null, 2));
   zip.file(`${root}BACKUP-MANIFEST.txt`, [
     "Ecliptic Store backup manifest",
     `Generated at: ${backup.generatedAt}`,
@@ -269,7 +294,7 @@ export async function GET(request: Request) {
   if (type === "site") {
     try {
       const backup = await adminDataBackup();
-      const archive = await fullSiteBackupZip(backup);
+      const archive = await fullSiteBackupZip(backup, new URL(request.url).origin);
 
       return new Response(Buffer.from(archive), {
         headers: attachmentHeaders(`ecliptic-full-site-backup-${stamp}.zip`, "application/zip"),

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { createHash } from "node:crypto";
 import { addFallbackAnalyticsEvent } from "../../../lib/analyticsFallbackStore";
 import { isExcludedAnalyticsVisitor } from "../../../lib/analyticsExclusions";
+import { addCloudflareAnalyticsEvent, hasCloudflareAnalytics } from "../../../lib/cloudflareAnalytics";
 import { checkRateLimit, getRedisConfig, redisPipeline } from "../../../lib/security";
 
 export const runtime = "nodejs";
@@ -107,6 +108,15 @@ export async function POST(request: Request) {
     city,
     userAgent,
   };
+
+  if (hasCloudflareAnalytics()) {
+    try {
+      await addCloudflareAnalyticsEvent(event);
+      return NextResponse.json({ ok: true, stored: true, storage: "cloudflare-d1" });
+    } catch {
+      return NextResponse.json({ ok: false, stored: false, error: "Analytics storage unavailable" }, { status: 503 });
+    }
+  }
 
   const commands: unknown[][] = [
     ["LPUSH", ANALYTICS_KEY, JSON.stringify(event)],

@@ -1,0 +1,13 @@
+{
+  "name": "ecliptic-analytics",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-10-14",
+  "account_id": "d64238ddb9c9497affa5a4422d35a05a",
+  "workers_dev": true,
+  "routes": [{ "pattern": "ecliptic.website/_analytics/*", "zone_name": "ecliptic.website" }],
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "ecliptic-analytics",
+    "database_id": "ba000651-90b3-4e01-afeb-edeab1bb4771"
+  }]
+}

@@ -4,6 +4,7 @@ import { createHash, createHmac, randomUUID, timingSafeEqual } from "node:crypto
 import { readAdminFallback, writeAdminFallback } from "./adminFallbackStore";
 import { readBlobJson, writeBlobJson } from "./blobJsonStore";
 import { getAdminSessionSecret } from "./security";
+import { readCloudflareState, writeCloudflareState } from "./cloudflareStateStore";
 
 export type CustomerProvider = "google" | "telegram";
 
@@ -111,6 +112,8 @@ function normalizeStore(value: unknown): CustomerStore {
 }
 
 async function readCustomerStore() {
+  const cloudflare = await readCloudflareState<CustomerStore>(CUSTOMER_STORE_FALLBACK);
+  if (cloudflare) return normalizeStore(cloudflare);
   const blob = await readBlobJson<CustomerStore>(CUSTOMER_STORE_BLOB).catch(() => null);
   if (blob) return normalizeStore(blob);
 
@@ -119,6 +122,10 @@ async function readCustomerStore() {
 }
 
 async function writeCustomerStore(store: CustomerStore) {
+  if (process.env.CLOUDFLARE_ANALYTICS_URL && process.env.CLOUDFLARE_ANALYTICS_SECRET) {
+    await writeCloudflareState(CUSTOMER_STORE_FALLBACK, store);
+    return;
+  }
   await writeAdminFallback(CUSTOMER_STORE_FALLBACK, store);
   await writeBlobJson(CUSTOMER_STORE_BLOB, store).catch(() => undefined);
 }

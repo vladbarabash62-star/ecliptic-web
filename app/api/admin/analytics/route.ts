@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isExcludedAnalyticsVisitor } from "../../../../lib/analyticsExclusions";
+import { clearCloudflareAnalyticsEvents, hasCloudflareAnalytics, readCloudflareAnalyticsEvents } from "../../../../lib/cloudflareAnalytics";
 import {
   clearFallbackAnalyticsEvents,
   readFallbackAnalyticsEvents,
@@ -31,6 +32,21 @@ export async function POST(request: Request) {
   let redisError = "";
   const offset = Math.max(0, Math.floor(Number(body.offset || 0)));
   const limit = Math.min(MAX_EVENTS_LIMIT, Math.max(1, Math.floor(Number(body.limit || DEFAULT_EVENTS_LIMIT))));
+
+  if (hasCloudflareAnalytics()) {
+    try {
+      if (body.reset) await clearCloudflareAnalyticsEvents();
+      const allEvents = body.reset ? [] : (await readCloudflareAnalyticsEvents()).filter((event) => event.type !== "page_view" && !isExcludedAnalyticsVisitor(event.visitorId));
+      const events = allEvents.slice(offset, offset + limit);
+      return NextResponse.json({
+        ok: true, configured: true, storage: "cloudflare-d1", reset: Boolean(body.reset), events,
+        pagination: { offset, limit, loaded: events.length, totalStored: allEvents.length, hasMore: offset + events.length < allEvents.length, nextOffset: offset + events.length },
+        summary: summarizeAnalyticsEvents(allEvents),
+      });
+    } catch {
+      return NextResponse.json({ ok: false, error: "Analytics storage unavailable" }, { status: 503 });
+    }
+  }
 
   try {
     if (body.reset) {
