@@ -1,5 +1,6 @@
 import { readAdminFallback, writeAdminFallback } from "./adminFallbackStore";
 import { readBlobJson, writeBlobJson } from "./blobJsonStore";
+import { hasCloudflareState, readCloudflareState, writeCloudflareState } from "./cloudflareStateStore";
 
 const MANAGER_CHAT_FALLBACK = "telegram-manager-chat-v1";
 const MANAGER_CHAT_BLOB = "customers/telegram-manager-chat-v1.json";
@@ -34,6 +35,10 @@ export async function rememberManagerChat(username: string | undefined, chatId: 
     version: 1,
   } satisfies ManagerChatStore;
 
+  if (hasCloudflareState()) {
+    await writeCloudflareState(MANAGER_CHAT_FALLBACK, nextStore);
+    return true;
+  }
   await writeAdminFallback(MANAGER_CHAT_FALLBACK, nextStore);
   await writeBlobJson(MANAGER_CHAT_BLOB, nextStore).catch(() => undefined);
   return true;
@@ -42,6 +47,11 @@ export async function rememberManagerChat(username: string | undefined, chatId: 
 export async function getManagerChatId() {
   const fromEnv = process.env.REFERRAL_MANAGER_CHAT_ID || process.env.TELEGRAM_MANAGER_CHAT_ID || "";
   if (fromEnv.trim()) return fromEnv.trim();
+
+  if (hasCloudflareState()) {
+    const stateStore = normalize(await readCloudflareState<ManagerChatStore>(MANAGER_CHAT_FALLBACK));
+    if (stateStore.chatId) return String(stateStore.chatId);
+  }
 
   const blobStore = normalize(await readBlobJson<ManagerChatStore>(MANAGER_CHAT_BLOB).catch(() => null));
   if (blobStore.chatId) return String(blobStore.chatId);

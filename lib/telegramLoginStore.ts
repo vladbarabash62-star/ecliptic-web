@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { readAdminFallback, writeAdminFallback } from "./adminFallbackStore";
 import { readBlobJson, writeBlobJson } from "./blobJsonStore";
+import { hasCloudflareState, readCloudflareState, writeCloudflareState } from "./cloudflareStateStore";
 
 type TelegramLoginUser = {
   id?: number;
@@ -44,6 +45,10 @@ function normalizeStore(value: unknown): TelegramLoginStore {
 }
 
 async function readStore() {
+  if (hasCloudflareState()) {
+    const state = await readCloudflareState<TelegramLoginStore>(TELEGRAM_LOGIN_FALLBACK);
+    if (state) return normalizeStore(state);
+  }
   const blob = await readBlobJson<TelegramLoginStore>(TELEGRAM_LOGIN_BLOB).catch(() => null);
   if (blob) return normalizeStore(blob);
 
@@ -52,6 +57,10 @@ async function readStore() {
 }
 
 async function writeStore(store: TelegramLoginStore) {
+  if (hasCloudflareState()) {
+    await writeCloudflareState(TELEGRAM_LOGIN_FALLBACK, store);
+    return;
+  }
   await writeAdminFallback(TELEGRAM_LOGIN_FALLBACK, store);
   await writeBlobJson(TELEGRAM_LOGIN_BLOB, store).catch(() => undefined);
 }

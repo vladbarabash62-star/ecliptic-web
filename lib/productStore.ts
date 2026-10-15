@@ -1,8 +1,10 @@
 import { products, type Product, type ProductOffer } from "./products";
+import { unstable_cache } from "next/cache";
 import { redisPipeline } from "./security";
 import { readAdminFallback, writeAdminFallback } from "./adminFallbackStore";
 import { readBlobJson, writeBlobJson } from "./blobJsonStore";
 import { LOCAL_PRODUCTS_SEED, readLocalBackupSeed } from "./localBackupSeed";
+import { hasCloudflareState, readCloudflareState, writeCloudflareState } from "./cloudflareStateStore";
 
 const PRODUCTS_KEY = "ecliptic:products:overrides";
 const PRODUCTS_FALLBACK_KEY = "products-storage";
@@ -242,7 +244,11 @@ type ProductReadOptions = {
   cached?: boolean;
 };
 
-async function readProductStorage(options: ProductReadOptions = {}): Promise<ProductStorage> {
+async function readProductStorageUncached(options: ProductReadOptions = {}): Promise<ProductStorage> {
+  if (hasCloudflareState()) {
+    const state = await readCloudflareState<ProductStorage>(PRODUCTS_FALLBACK_KEY);
+    if (state) return normalizeProductStorage(state);
+  }
   const blobStorage = await readBlobJson<ProductStorage>(PRODUCTS_BLOB).catch(() => null);
   if (blobStorage) return normalizeProductStorage(blobStorage);
 
@@ -275,17 +281,22 @@ async function readProductStorage(options: ProductReadOptions = {}): Promise<Pro
   }
 }
 
+const readCachedProductStorage = unstable_cache(
+  () => readProductStorageUncached(),
+  ["ecliptic-products-storage-v6-restored"],
+  { tags: [PRODUCTS_CACHE_TAG], revalidate: 600 }
+);
+
+function readProductStorage(options: ProductReadOptions = {}) {
+  return options.cached ? readCachedProductStorage() : readProductStorageUncached();
+}
+
 function shouldPreferCodeAuthoredOffers(storage: ProductStorage, slug: string) {
   return storage.version < PRODUCT_STORAGE_VERSION && CODE_AUTHORED_OFFER_SLUGS.has(slug);
 }
 
 export async function getProducts(options: ProductReadOptions = {}) {
-  const storage = await readProductStorage(options).catch(() => ({
-    hiddenBaseSlugs: [],
-    order: [],
-    overrides: {},
-    version: PRODUCT_STORAGE_VERSION,
-  }));
+  const storage = await readProductStorage(options);
   const hiddenBaseSlugs = new Set(storage.hiddenBaseSlugs);
   const overrides = storage.overrides;
   const usedSlugs = new Set<string>();
@@ -414,6 +425,15 @@ export function buildProductStorage(nextProducts: Product[]): ProductStorage {
 
 export async function saveProducts(nextProducts: Product[]) {
   const storage = buildProductStorage(nextProducts);
+  await saveProductStorage(storage);
+}
+
+export async function saveProductStorage(nextStorage: unknown) {
+  const storage = normalizeProductStorage(nextStorage);
+  if (hasCloudflareState()) {
+    await writeCloudflareState(PRODUCTS_FALLBACK_KEY, storage);
+    return;
+  }
   await writeBlobJson(PRODUCTS_BLOB, storage);
   await writeAdminFallback(PRODUCTS_FALLBACK_KEY, storage);
   void redisPipeline([["SET", PRODUCTS_KEY, JSON.stringify(storage)]], {
