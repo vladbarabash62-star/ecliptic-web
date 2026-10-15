@@ -2,10 +2,6 @@ import { existsSync } from "fs";
 import { join } from "path";
 import type { Product } from "./products";
 
-function isInlineImage(value?: string) {
-  return Boolean(value?.startsWith("data:image/"));
-}
-
 const optimizedPathCache = new Map<string, string>();
 
 const LOCAL_PRODUCT_ICON_OVERRIDES: Record<string, string> = {
@@ -27,8 +23,10 @@ function optimizedIconPath(slug: string, suffix: string) {
 }
 
 function optimizedImage(value: string | undefined, slug: string, suffix: string) {
-  if (isInlineImage(value)) return value;
-  return optimizedIconPath(slug, suffix) || value;
+  // Admin-selected artwork is the source of truth. Optimized files are only
+  // used when a product or offer has no saved image yet.
+  if (value) return value;
+  return optimizedIconPath(slug, suffix);
 }
 
 export function withOptimizedProductImages(product: Product): Product {
@@ -36,7 +34,7 @@ export function withOptimizedProductImages(product: Product): Product {
 
   return {
     ...product,
-    icon: localIcon || optimizedImage(product.icon, product.slug, "icon") || product.icon,
+    icon: optimizedImage(product.icon, product.slug, "icon") || localIcon || product.icon,
     offerIcon: optimizedImage(product.offerIcon, product.slug, "offer-icon"),
     offers: product.offers.map((offer, index) => {
       if (offer.type === "divider") return offer;
