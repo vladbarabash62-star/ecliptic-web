@@ -2,8 +2,50 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  async redirects() {
+    return [
+      {
+        source: "/products/tiktok-coins",
+        destination: "/products/tiktok",
+        permanent: true,
+      },
+      {
+        source: "/products/gta-5-rp-majestic-rp",
+        destination: "/",
+        permanent: true,
+      },
+      {
+        source: "/products/arizona-rp",
+        destination: "/",
+        permanent: true,
+      },
+      {
+        source: "/products/transfers",
+        destination: "/",
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
+      {
+        source: "/",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=0, s-maxage=0, must-revalidate",
+          },
+        ],
+      },
+      {
+        source: "/products/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=0, s-maxage=0, must-revalidate",
+          },
+        ],
+      },
       {
         source: "/(.*)",
         headers: [
