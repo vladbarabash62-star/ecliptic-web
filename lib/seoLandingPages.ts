@@ -532,6 +532,7 @@ function slugifyLanding(value: string) {
 function buildProductLandingPages() {
   const existingSlugs = new Set(manualSeoLandingPages.map((page) => page.slug));
   return products
+    .filter((product) => !/majestic|arizona/i.test(`${product.name} ${product.slug}`))
     .map((product): SeoLandingPage => {
       const slug = `${slugifyLanding(product.name)}-pmr`;
       return {

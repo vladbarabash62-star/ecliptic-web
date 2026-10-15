@@ -24,6 +24,11 @@ const nextConfig: NextConfig = {
         destination: "/",
         permanent: true,
       },
+      {
+        source: "/search/gta-5-rp-majestic-rp-pmr",
+        destination: "/search/gta-rp-donat-pmr",
+        permanent: true,
+      },
     ];
   },
   async headers() {
