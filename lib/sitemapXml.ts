@@ -5,7 +5,6 @@ import { landingPageUrl, seoLandingPages } from "./seoLandingPages";
 
 export type SitemapEntry = {
   url: string;
-  lastModified: Date;
   changeFrequency: "daily" | "weekly" | "monthly";
   priority: number;
 };
@@ -23,7 +22,6 @@ function sitemapUrl(entry: SitemapEntry) {
   return [
     "  <url>",
     `    <loc>${escapeXml(entry.url)}</loc>`,
-    `    <lastmod>${entry.lastModified.toISOString()}</lastmod>`,
     `    <changefreq>${entry.changeFrequency}</changefreq>`,
     `    <priority>${entry.priority}</priority>`,
     "  </url>",
@@ -42,11 +40,9 @@ const priorityProductSlugs = new Set(googleSitelinkCandidates.map((item) => item
 
 export async function buildSitemapEntries(): Promise<SitemapEntry[]> {
   const products = await sitemapProducts();
-  const now = new Date();
   const entries: SitemapEntry[] = [
     {
       url: SITE_URL,
-      lastModified: now,
       changeFrequency: "daily",
       priority: 1,
     },
@@ -54,31 +50,26 @@ export async function buildSitemapEntries(): Promise<SitemapEntry[]> {
       .filter(productShouldBeIndexed)
       .map((product) => ({
         url: `${SITE_URL}/products/${product.slug}`,
-        lastModified: now,
         changeFrequency: "weekly" as const,
         priority: priorityProductSlugs.has(product.slug) ? 0.9 : 0.8,
       })),
     ...seoLandingPages.map((page) => ({
       url: landingPageUrl(page.slug),
-      lastModified: now,
       changeFrequency: "weekly" as const,
       priority: 0.75,
     })),
     {
       url: `${SITE_URL}/policy`,
-      lastModified: now,
       changeFrequency: "monthly",
       priority: 0.2,
     },
     {
       url: `${SITE_URL}/terms`,
-      lastModified: now,
       changeFrequency: "monthly",
       priority: 0.2,
     },
     {
       url: `${SITE_URL}/refund`,
-      lastModified: now,
       changeFrequency: "monthly",
       priority: 0.2,
     },

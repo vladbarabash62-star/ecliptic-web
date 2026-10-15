@@ -8,7 +8,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return entries.map((entry) => ({
     url: entry.url,
-    lastModified: entry.lastModified,
     changeFrequency: entry.changeFrequency,
     priority: entry.priority,
   }));
