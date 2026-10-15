@@ -18,12 +18,6 @@ const PRODUCT_SLUG_ALIASES: Record<string, string> = {
   "tiktok-coins": "tiktok",
   "new-product": "grand-mobile",
 };
-const PRODUCT_ICON_REPAIRS: Record<string, string> = {
-  roblox: "https://media.tenor.com/HO1YAH0_iMcAAAAj/roblox-logo.gif",
-  "clash-of-clans": "https://ggpick.com/wp-content/uploads/2025/06/channels4_profile-1.jpg",
-  "radmir-rp": "https://www.google.com/s2/favicons?sz=128&domain_url=https://radmir.online",
-  oxide: "https://d1x91p7vw3vuq8.cloudfront.net/item-info/20251218/cfw2s8kk1kfdtfv0nj8gno.webp",
-};
 
 type ProductOverride = Pick<Product, "name" | "icon" | "offers"> & {
   baseSlug?: string;
@@ -158,13 +152,6 @@ function safeOptionalIconUrl(value: unknown) {
 
   const icon = safeIconUrl(value);
   return icon === FALLBACK_ICON ? undefined : icon;
-}
-
-function repairKnownProductIcon(product: Product): Product {
-  const icon = PRODUCT_ICON_REPAIRS[product.slug];
-  if (!icon) return product;
-
-  return { ...product, icon };
 }
 
 function safeScale(value: unknown, fallback = 1, min = 0, max = 2) {
@@ -375,7 +362,7 @@ export async function getProducts(options: ProductReadOptions = {}) {
     })
     .filter((product): product is Product => Boolean(product));
 
-  const mergedProducts = [...orderedBaseProducts, ...customProducts].map(repairKnownProductIcon).filter(
+  const mergedProducts = [...orderedBaseProducts, ...customProducts].filter(
     (product) => !/majestic/i.test(product.name) && !/majestic/i.test(product.slug)
   );
   const productOrder = storage.order;
