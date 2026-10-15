@@ -641,7 +641,7 @@ function RegionInfoBadge({
   );
 }
 
-function OfferIcon({ icon, scale = 1 }: { icon?: string; scale?: number }) {
+function OfferIcon({ icon, fallbackIcon, scale = 1 }: { icon?: string; fallbackIcon?: string; scale?: number }) {
   const style = {
     "--offer-icon-scale": scale,
   } as CSSProperties;
@@ -651,7 +651,22 @@ function OfferIcon({ icon, scale = 1 }: { icon?: string; scale?: number }) {
     className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-[#07101d] text-xl shadow-inner"
       style={style}
     >
-      {icon ? <img src={icon} alt="" loading="lazy" decoding="async" className="offer-icon h-[62%] w-[62%] object-contain" /> : "🛒"}
+      {icon || fallbackIcon ? (
+        <img
+          src={icon || fallbackIcon}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          onError={(event) => {
+            if (fallbackIcon && event.currentTarget.src !== new URL(fallbackIcon, window.location.href).href) {
+              event.currentTarget.src = fallbackIcon;
+            } else {
+              event.currentTarget.style.display = "none";
+            }
+          }}
+          className="offer-icon h-[62%] w-[62%] object-contain"
+        />
+      ) : "🛒"}
     </div>
   );
 }
@@ -1119,6 +1134,7 @@ export function ProductOffersWithDetails({
   productSlug,
   offers,
   offerIcon,
+  productIcon,
   productMessageTemplate,
   fields,
 }: {
@@ -1126,6 +1142,7 @@ export function ProductOffersWithDetails({
   productSlug: string;
   offers: ProductItem[];
   offerIcon?: string;
+  productIcon?: string;
   productMessageTemplate?: string;
   fields: DetailField[];
 }) {
@@ -1255,7 +1272,11 @@ export function ProductOffersWithDetails({
             className="offer-row grid w-full grid-cols-[auto_1fr_auto] items-center gap-3 rounded-2xl border border-white/15 bg-[#0f1420]/90 px-3 py-3 transition-all duration-300 hover:border-white/25 hover:bg-[#151b2a]/95"
             style={{ animationDelay: `${140 + index * 55}ms` }}
           >
-            <OfferIcon icon={offer.icon || offerIcon || fallbackOfferIcon(productSlug, offer.label)} scale={offer.iconScale ?? 1} />
+            <OfferIcon
+              icon={offer.icon || offerIcon || fallbackOfferIcon(productSlug, offer.label)}
+              fallbackIcon={productIcon}
+              scale={offer.iconScale ?? 1}
+            />
             <div className="offer-copy flex h-12 min-w-0 flex-col justify-center overflow-hidden">
               <p className="offer-title truncate text-sm font-bold leading-none text-white sm:text-base">{offer.label}</p>
               <p className="offer-price font-black text-emerald-300" style={priceTagStyle(offer.priceRub)}>

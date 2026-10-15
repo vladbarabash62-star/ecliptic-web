@@ -24,8 +24,7 @@ import {
   RpTopupForm,
 } from "./ProductActionForms";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 300;
 
 type PageProps = {
   params: Promise<{
@@ -190,6 +189,7 @@ export default async function ProductPage({ params }: PageProps) {
               productSlug={product.slug}
               offers={offers}
               offerIcon={product.offerIcon}
+              productIcon={product.icon}
               productMessageTemplate={product.messageTemplate}
               fields={detailFields}
             />
