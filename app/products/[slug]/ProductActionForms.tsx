@@ -896,7 +896,7 @@ export function RpTopupForm({
                   <span aria-hidden="true" className="grid h-7 w-7 place-items-center rounded-lg border border-white/10 bg-white/5 text-base text-white/70 transition-transform duration-200 group-open:rotate-180">⌄</span>
                 </summary>
                 <div className="absolute left-0 right-0 top-full z-50 mt-2 max-h-80 overflow-y-auto rounded-2xl border border-sky-300/20 bg-[#0b1220]/98 p-1.5 shadow-[0_18px_50px_rgba(0,0,0,0.45)] ring-1 ring-white/5 backdrop-blur-xl">
-                  {servers.map((item, index) => (
+                  {servers.map((item) => (
                     <button key={item} type="button" aria-pressed={server === item} onClick={(event) => {
                       setServer(item);
                       const menu = event.currentTarget.closest("details");
@@ -904,9 +904,7 @@ export function RpTopupForm({
                     }} className={`flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm text-white transition hover:bg-white/10 focus-visible:bg-sky-300/15 focus-visible:outline-none ${server === item ? "bg-sky-300/15 font-bold shadow-[inset_0_0_0_1px_rgba(125,211,252,0.22)]" : ""}`}>
                       {AMAZING_SERVER_COLORS[item] ? (
                         <span aria-hidden="true" className="h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-white/30" style={{ backgroundColor: AMAZING_SERVER_COLORS[item] }} />
-                      ) : (
-                        <span aria-hidden="true" className="grid h-6 w-6 shrink-0 place-items-center rounded-md border border-white/10 bg-white/5 text-[10px] font-black text-white/55">{String(index + 1).padStart(2, "0")}</span>
-                      )}
+                      ) : null}
                       <span className="truncate">{item}</span>
                       {server === item && <span aria-hidden="true" className="ml-auto text-xs font-black text-sky-200">✓</span>}
                     </button>
