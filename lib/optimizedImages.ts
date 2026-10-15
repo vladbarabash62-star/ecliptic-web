@@ -12,7 +12,7 @@ const LOCAL_PRODUCT_ICON_OVERRIDES: Record<string, string> = {
   "telegram-stars": "/optimized-icons/telegram-stars-offer-0.webp",
   "pubg-mobile": "/catalog-assets/pubg-mobile-icon.svg",
   "free-fire": "/catalog-assets/free-fire-icon.svg",
-  "fortnite": "/backup-assets/74e1fe12e87336151ead62ee.png",
+  "fortnite": "/catalog-assets/fortnite-icon.svg",
 };
 
 function optimizedIconPath(slug: string, suffix: string) {
