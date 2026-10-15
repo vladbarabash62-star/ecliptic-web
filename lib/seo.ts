@@ -319,7 +319,9 @@ export function productHasOrderForm(product: Product) {
 }
 
 export function productShouldBeIndexed(product: Product) {
-  return productHasPricedOffers(product) || productHasOrderForm(product);
+  // A catalog product can be a valid landing page before its first priced offer is added.
+  // Keep current catalog pages indexable; retired routes are removed by redirects and sitemap filters.
+  return productHasPricedOffers(product) || productHasOrderForm(product) || product.slug === "nft";
 }
 
 function productOfferLabels(product: Product) {
