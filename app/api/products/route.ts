@@ -35,7 +35,7 @@ function publicProduct(product: Product) {
 }
 
 export async function GET() {
-  const products = withOptimizedProductsImages(await getProducts({ cached: true }));
+  const products = withOptimizedProductsImages(await getProducts({ cached: false }));
   return NextResponse.json(
     { ok: true, products: products.map(publicProduct) },
     {
