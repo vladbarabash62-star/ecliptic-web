@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title>Free Fire</title>
+  <rect width="512" height="512" rx="96" fill="#101114"/>
+  <path fill="#ff5a1f" d="M266 72c-14 55-53 77-78 116-24 37-28 79-9 119 11-38 33-64 66-79-5 46 18 72 51 90 37 20 76 0 91-33 17-38 2-82-27-113 3 35-9 57-31 71 3-49-23-112-63-171Z"/>
+  <path fill="#ffb31a" d="M221 374c-18-27-14-56 4-80 5 29 18 46 39 58 24 14 49 2 59-18 9 27-6 61-35 72-27 10-53-5-67-32Z"/>
+  <text x="256" y="454" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="34" font-weight="700">FREE FIRE</text>
+</svg>

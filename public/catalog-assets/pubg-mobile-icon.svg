@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title>PUBG Mobile</title>
+  <rect width="512" height="512" rx="96" fill="#f3b43f"/>
+  <rect x="34" y="34" width="444" height="444" rx="76" fill="#172235"/>
+  <path fill="#f3b43f" d="M122 154h208c36 0 60 22 60 56 0 22-12 38-32 47 25 8 40 26 40 51 0 36-26 59-67 59H122V154Zm58 52v47h123c19 0 29-9 29-24 0-15-10-23-29-23H180Zm0 99v50h138c20 0 31-9 31-25s-11-25-31-25H180Z"/>
+  <text x="256" y="414" text-anchor="middle" fill="#fff" font-family="Arial,sans-serif" font-size="32" font-weight="700">MOBILE</text>
+</svg>

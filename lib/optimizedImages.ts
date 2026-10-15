@@ -8,6 +8,13 @@ function isInlineImage(value?: string) {
 
 const optimizedPathCache = new Map<string, string>();
 
+const LOCAL_PRODUCT_ICON_OVERRIDES: Record<string, string> = {
+  "telegram-stars": "/optimized-icons/telegram-stars-offer-0.webp",
+  "pubg-mobile": "/catalog-assets/pubg-mobile-icon.svg",
+  "free-fire": "/catalog-assets/free-fire-icon.svg",
+  "fortnite": "/backup-assets/74e1fe12e87336151ead62ee.png",
+};
+
 function optimizedIconPath(slug: string, suffix: string) {
   const path = `/optimized-icons/${slug}-${suffix}.webp`;
   const cached = optimizedPathCache.get(path);
@@ -25,9 +32,11 @@ function optimizedImage(value: string | undefined, slug: string, suffix: string)
 }
 
 export function withOptimizedProductImages(product: Product): Product {
+  const localIcon = LOCAL_PRODUCT_ICON_OVERRIDES[product.slug];
+
   return {
     ...product,
-    icon: optimizedImage(product.icon, product.slug, "icon") || product.icon,
+    icon: localIcon || optimizedImage(product.icon, product.slug, "icon") || product.icon,
     offerIcon: optimizedImage(product.offerIcon, product.slug, "offer-icon"),
     offers: product.offers.map((offer, index) => {
       if (offer.type === "divider") return offer;
