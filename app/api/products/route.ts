@@ -40,7 +40,7 @@ export async function GET() {
     { ok: true, products: products.map(publicProduct) },
     {
       headers: {
-        "Cache-Control": "public, max-age=60, stale-while-revalidate=300",
+        "Cache-Control": "public, max-age=300, s-maxage=300, stale-while-revalidate=3600",
         "X-Robots-Tag": "noindex, nofollow, noarchive, nosnippet",
       },
     }
