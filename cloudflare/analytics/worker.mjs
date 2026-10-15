@@ -35,6 +35,12 @@ const worker = {
         const row = await env.DB.prepare("SELECT data, updated_at FROM state WHERE key = ?").bind(key).first();
         return json({ ok: true, data: row ? JSON.parse(row.data) : null, updatedAt: row?.updated_at || null });
       }
+      if (request.method === "GET" && path === "/state/history") {
+        const key = new URL(request.url).searchParams.get("key") || "";
+        if (!/^[a-z0-9:_-]{1,80}$/i.test(key)) return json({ error: "Invalid key" }, 400);
+        const result = await env.DB.prepare("SELECT id, data, updated_at FROM state_history WHERE key = ? ORDER BY id DESC LIMIT 10").bind(key).all();
+        return json({ ok: true, history: result.results.map((row) => ({ id: row.id, data: JSON.parse(row.data), updatedAt: row.updated_at })) });
+      }
       if (request.method === "POST" && path === "/state") {
         const body = await request.json();
         const key = typeof body?.key === "string" ? body.key : "";
@@ -42,7 +48,13 @@ const worker = {
         const data = JSON.stringify(body.data);
         if (data.length > 2000000) return json({ error: "State too large" }, 413);
         const updatedAt = new Date().toISOString();
-        await env.DB.prepare("INSERT INTO state (key, data, updated_at) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at").bind(key, data, updatedAt).run();
+        await env.DB.batch([
+          env.DB.prepare("CREATE TABLE IF NOT EXISTS state_history (id INTEGER PRIMARY KEY AUTOINCREMENT, key TEXT NOT NULL, data TEXT NOT NULL, updated_at TEXT NOT NULL)"),
+          env.DB.prepare("CREATE INDEX IF NOT EXISTS state_history_key_id ON state_history(key, id DESC)"),
+          env.DB.prepare("INSERT INTO state_history (key, data, updated_at) SELECT key, data, updated_at FROM state WHERE key = ?").bind(key),
+          env.DB.prepare("INSERT INTO state (key, data, updated_at) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at").bind(key, data, updatedAt),
+          env.DB.prepare("DELETE FROM state_history WHERE key = ? AND id NOT IN (SELECT id FROM state_history WHERE key = ? ORDER BY id DESC LIMIT 10)").bind(key, key),
+        ]);
         return json({ ok: true, updatedAt });
       }
       if (request.method === "POST" && (path === "/event" || path === "/import")) {
