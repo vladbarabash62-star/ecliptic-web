@@ -40,9 +40,15 @@ async function readSiteSettings() {
   }
 }
 
-export const getSiteSettings = unstable_cache(readSiteSettings, ["ecliptic-site-settings-v2"], {
+const readCachedSiteSettings = unstable_cache(readSiteSettings, ["ecliptic-site-settings-v2"], {
   tags: [SITE_SETTINGS_CACHE_TAG], revalidate: 600,
 });
+
+export function getSiteSettings() {
+  // Cloudflare is authoritative after the migration; cached reads can lag
+  // behind an admin save and make the public page look unsynchronized.
+  return hasCloudflareState() ? readSiteSettings() : readCachedSiteSettings();
+}
 
 export async function saveSiteSettings(nextSettings: SiteSettings) {
   const settings = normalizeSiteSettings(nextSettings);

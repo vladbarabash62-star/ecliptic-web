@@ -22,6 +22,7 @@ export async function POST(request: Request) {
       const settings = await saveSiteSettings(body.settings);
       revalidateTag(SITE_SETTINGS_CACHE_TAG, { expire: 0 });
       revalidatePath("/", "page");
+      revalidatePath("/", "layout");
       return NextResponse.json({ ok: true, saved: true, settings });
     } catch {
       return NextResponse.json(

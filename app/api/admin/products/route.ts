@@ -81,6 +81,7 @@ export async function POST(request: Request) {
     }
     revalidateTag(PRODUCTS_CACHE_TAG, { expire: 0 });
     revalidatePath("/", "page");
+    revalidatePath("/", "layout");
     for (const product of products) {
       revalidatePath(`/products/${product.slug}`, "page");
     }
@@ -96,6 +97,7 @@ export async function POST(request: Request) {
     }
     revalidateTag(PRODUCTS_CACHE_TAG, { expire: 0 });
     revalidatePath("/", "page");
+    revalidatePath("/", "layout");
     for (const product of products) {
       revalidatePath(`/products/${product.slug}`, "page");
     }
@@ -110,6 +112,7 @@ export async function POST(request: Request) {
     }
     revalidateTag(PRODUCTS_CACHE_TAG, { expire: 0 });
     revalidatePath("/", "page");
+    revalidatePath("/", "layout");
     return NextResponse.json({ ok: true, saved: true, restored: "product-storage" });
   }
 

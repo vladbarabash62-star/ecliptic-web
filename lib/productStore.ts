@@ -302,7 +302,9 @@ const readCachedProductStorage = unstable_cache(
 );
 
 function readProductStorage(options: ProductReadOptions = {}) {
-  return options.cached ? readCachedProductStorage() : readProductStorageUncached();
+  // Cloudflare is the live source of truth. Do not wrap its no-store read in
+  // Next's data cache or the public catalog can show the previous admin save.
+  return options.cached && !hasCloudflareState() ? readCachedProductStorage() : readProductStorageUncached();
 }
 
 function shouldPreferCodeAuthoredOffers(storage: ProductStorage, slug: string) {
