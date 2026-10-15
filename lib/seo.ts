@@ -319,9 +319,9 @@ export function productHasOrderForm(product: Product) {
 }
 
 export function productShouldBeIndexed(product: Product) {
-  // A catalog product can be a valid landing page before its first priced offer is added.
-  // Keep current catalog pages indexable; retired routes are removed by redirects and sitemap filters.
-  return productHasPricedOffers(product) || productHasOrderForm(product) || product.slug === "nft";
+  // Current catalog pages remain valid landing pages even while offers are being
+  // configured. Retired routes are removed from the catalog and handled by redirects.
+  return Boolean(product.slug);
 }
 
 function productOfferLabels(product: Product) {
