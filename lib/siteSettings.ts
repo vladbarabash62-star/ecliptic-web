@@ -45,9 +45,8 @@ const readCachedSiteSettings = unstable_cache(readSiteSettings, ["ecliptic-site-
 });
 
 export function getSiteSettings() {
-  // Cloudflare is authoritative after the migration; cached reads can lag
-  // behind an admin save and make the public page look unsynchronized.
-  return hasCloudflareState() ? readSiteSettings() : readCachedSiteSettings();
+  // Settings are small and must reflect an admin save immediately.
+  return readSiteSettings();
 }
 
 export async function saveSiteSettings(nextSettings: SiteSettings) {

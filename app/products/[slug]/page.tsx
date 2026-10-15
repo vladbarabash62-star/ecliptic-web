@@ -24,7 +24,7 @@ import {
   RpTopupForm,
 } from "./ProductActionForms";
 
-export const revalidate = 300;
+export const revalidate = 0;
 
 type PageProps = {
   params: Promise<{

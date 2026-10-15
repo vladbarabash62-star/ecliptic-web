@@ -1,55 +1,16 @@
 import ProductSearchGrid from "./components/ProductSearchGrid";
-import ReferralLanding from "./components/ReferralLanding";
+import HomeQueryGate from "./components/HomeQueryGate";
 import Image from "next/image";
-import { redirect } from "next/navigation";
-import { getProductBySlug, getProducts } from "../lib/productStore";
+import { getProducts } from "../lib/productStore";
 import { withOptimizedProductsImages } from "../lib/optimizedImages";
 import { getSiteSettings } from "../lib/siteSettings";
 import { defaultSiteSettings } from "../lib/siteSettingsDefaults";
 
-export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-type HomePageProps = {
-  searchParams?: Promise<Record<string, string | string[] | undefined>>;
-};
-
-function firstSearchParam(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value[0] : value;
-}
-
-function normalizeStartSlug(value: string | undefined) {
-  const slug = (value || "").trim().toLowerCase();
-  return /^[a-z0-9-]{1,80}$/.test(slug) ? slug : "";
-}
-
-function normalizeReferralCode(value: string | undefined) {
-  const code = (value || "").trim().toLowerCase();
-  return /^[a-z0-9_-]{1,32}$/.test(code) ? code : "";
-}
-
-export default async function HomePage({ searchParams }: HomePageProps) {
-  const params: Record<string, string | string[] | undefined> = searchParams
-    ? await searchParams
-    : {};
-  const startSlug = normalizeStartSlug(
-    firstSearchParam(params.tgWebAppStartParam) ||
-      firstSearchParam(params.startapp) ||
-      firstSearchParam(params.start_param)
-  );
-
-  if (startSlug) {
-    const product = await getProductBySlug(startSlug);
-    if (product) redirect(`/products/${product.slug}?app=1`);
-  }
-
-  const referralCode = normalizeReferralCode(firstSearchParam(params.use) || firstSearchParam(params.ref));
-  if (referralCode) {
-    return <ReferralLanding referralCode={referralCode} />;
-  }
-
+export default async function HomePage() {
   const [allProducts, settings] = await Promise.all([
-    getProducts({ cached: true }),
+    getProducts({ cached: false }),
     getSiteSettings().catch(() => defaultSiteSettings),
   ]);
   const products = withOptimizedProductsImages(allProducts)
@@ -61,7 +22,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     }));
 
   return (
-    <main className="relative min-h-screen w-full overflow-x-hidden bg-transparent px-4 py-6 text-white">
+    <HomeQueryGate>
+      <main className="relative min-h-screen w-full overflow-x-hidden bg-transparent px-4 py-6 text-white">
       <div className="mx-auto w-full max-w-[1400px]">
         <div className="home-reveal home-reveal--intro page-intro mb-6 text-center sm:mb-8">
           <h1 className="flex items-center justify-center gap-2 text-4xl font-bold sm:gap-3 sm:text-5xl md:text-7xl">
@@ -101,6 +63,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
         <ProductSearchGrid products={products} />
       </div>
-    </main>
+      </main>
+    </HomeQueryGate>
   );
 }
