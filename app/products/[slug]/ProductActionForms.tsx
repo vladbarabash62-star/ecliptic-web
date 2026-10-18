@@ -870,7 +870,7 @@ export function RpTopupForm({
   const { notice, isVisible, showNotice } = useOrderNotice();
   const isBlackRussia = productSlug === "black-russia";
   const isWeekend = [0, 6].includes(new Date().getDay());
-  const amountUnit = isBlackRussia ? "BC" : productSlug === "grand-mobile" ? "GC" : productSlug === "amazing-rp" ? "AMZ" : "DV";
+  const amountUnit = isBlackRussia ? "BC" : productSlug === "grand-mobile" ? "GC" : productSlug === "amazing-rp" ? "AMZ" : "ДВ";
   const minimumAmount = isBlackRussia && isWeekend ? 200 : 100;
   const pmrPerUnit = isBlackRussia ? (isWeekend ? 0.15 : 0.3) : 1 / rublesPerPmr;
   const numericAmount = Number(amount);
