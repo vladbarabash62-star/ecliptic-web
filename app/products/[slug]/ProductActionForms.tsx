@@ -870,7 +870,8 @@ export function RpTopupForm({
   const { notice, isVisible, showNotice } = useOrderNotice();
   const isBlackRussia = productSlug === "black-russia";
   const isWeekend = [0, 6].includes(new Date().getDay());
-  const amountUnit = isBlackRussia ? "BC" : productSlug === "grand-mobile" ? "GC" : productSlug === "amazing-rp" ? "AMZ" : "ДВ";
+  const amountUnit = isBlackRussia ? "BC" : productSlug === "grand-mobile" ? "GC" : productSlug === "amazing-rp" ? "AMZ" : "DV";
+  const amountLabel = productSlug === "radmir-rp" ? "донат валюта" : amountUnit;
   const minimumAmount = isBlackRussia && isWeekend ? 200 : 100;
   const pmrPerUnit = isBlackRussia ? (isWeekend ? 0.15 : 0.3) : 1 / rublesPerPmr;
   const numericAmount = Number(amount);
@@ -923,7 +924,7 @@ export function RpTopupForm({
           <input value={identity} onChange={(event) => setIdentity(usePlayerId ? event.target.value.replace(/\D/g, "") : event.target.value)} inputMode={usePlayerId ? "numeric" : undefined} placeholder={usePlayerId ? "Укажите ID" : "Введите никнейм"} className="w-full rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white" />
         </label>
         <label className="grid gap-2">
-          <span className="text-sm font-bold text-white/78">Сумма пополнения ({amountUnit})</span>
+          <span className="text-sm font-bold text-white/78">Сумма пополнения ({amountLabel})</span>
           <input value={amount} onChange={(event) => setAmount(event.target.value.replace(/\D/g, ""))} inputMode="numeric" placeholder={`Введите сумму пополнения, минимум ${minimumAmount} ${amountUnit}`} className="w-full rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white" />
           {amount && !validAmount && <span className={INPUT_LIMIT_HINT_CLASS}>Минимальная сумма пополнения — {minimumAmount} {amountUnit}.</span>}
         </label>
