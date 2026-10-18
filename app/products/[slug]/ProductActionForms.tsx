@@ -868,16 +868,21 @@ export function RpTopupForm({
   const [server, setServer] = useState("");
   const [amount, setAmount] = useState("");
   const { notice, isVisible, showNotice } = useOrderNotice();
+  const isBlackRussia = productSlug === "black-russia";
+  const isWeekend = [0, 6].includes(new Date().getDay());
+  const amountUnit = isBlackRussia ? "BC" : productSlug === "grand-mobile" ? "GC" : productSlug === "amazing-rp" ? "AMZ" : "DV";
+  const minimumAmount = isBlackRussia && isWeekend ? 200 : 100;
+  const pmrPerUnit = isBlackRussia ? (isWeekend ? 0.15 : 0.3) : 1 / rublesPerPmr;
   const numericAmount = Number(amount);
-  const validAmount = Number.isSafeInteger(numericAmount) && numericAmount >= 100;
-  const priceRub = validAmount ? Math.round(numericAmount / rublesPerPmr * 100) / 100 : 0;
+  const validAmount = Number.isSafeInteger(numericAmount) && numericAmount >= minimumAmount;
+  const priceRub = validAmount ? Math.round(numericAmount * pmrPerUnit * 100) / 100 : 0;
   const identityLabel = usePlayerId ? "ID игрока" : "Никнейм";
   const message = normalizeOrderMessage(
-    `Новый заказ\nИгра: ${productName}\n${identityLabel}: ${codeValue(identity)}${servers ? `\nСервер: ${codeValue(server)}` : ""}\nСумма пополнения: ${numericAmount} ₽\nК оплате: ${priceRub} р ПМР`
+    `Новый заказ\nИгра: ${productName}\n${identityLabel}: ${codeValue(identity)}${servers ? `\nСервер: ${codeValue(server)}` : ""}\nСумма пополнения: ${numericAmount} ${amountUnit}\nК оплате: ${priceRub} р ПМР`
   );
   function validateOrder() {
     if (!identity.trim() || (servers && !servers.includes(server))) return REQUIRED_FIELDS_MESSAGE;
-    if (!validAmount) return "Минимальная сумма пополнения — 100₽.";
+    if (!validAmount) return `Минимальная сумма пополнения — ${minimumAmount} ${amountUnit}.`;
     return null;
   }
   return (
@@ -918,11 +923,11 @@ export function RpTopupForm({
           <input value={identity} onChange={(event) => setIdentity(usePlayerId ? event.target.value.replace(/\D/g, "") : event.target.value)} inputMode={usePlayerId ? "numeric" : undefined} placeholder={usePlayerId ? "Укажите ID" : "Введите никнейм"} className="w-full rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white" />
         </label>
         <label className="grid gap-2">
-          <span className="text-sm font-bold text-white/78">Сумма пополнения (₽)</span>
-          <input value={amount} onChange={(event) => setAmount(event.target.value.replace(/\D/g, ""))} inputMode="numeric" placeholder="Введите сумму пополнения, минимум 100₽" className="w-full rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white" />
-          {amount && !validAmount && <span className={INPUT_LIMIT_HINT_CLASS}>Минимальная сумма пополнения — 100₽.</span>}
+          <span className="text-sm font-bold text-white/78">Сумма пополнения ({amountUnit})</span>
+          <input value={amount} onChange={(event) => setAmount(event.target.value.replace(/\D/g, ""))} inputMode="numeric" placeholder={`Введите сумму пополнения, минимум ${minimumAmount} ${amountUnit}`} className="w-full rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white" />
+          {amount && !validAmount && <span className={INPUT_LIMIT_HINT_CLASS}>Минимальная сумма пополнения — {minimumAmount} {amountUnit}.</span>}
         </label>
-        <TelegramOrderLink visible={validAmount} message={message} productSlug={productSlug} offer={`Пополнение ${numericAmount} ₽`} priceRub={validAmount ? priceRub : undefined} validate={validateOrder} onInvalid={showNotice} className="rounded-xl bg-emerald-500 px-4 py-3 text-center text-sm font-bold text-white">
+        <TelegramOrderLink visible={validAmount} message={message} productSlug={productSlug} offer={`Пополнение ${numericAmount} ${amountUnit}`} priceRub={validAmount ? priceRub : undefined} validate={validateOrder} onInvalid={showNotice} className="rounded-xl bg-emerald-500 px-4 py-3 text-center text-sm font-bold text-white">
           {validAmount ? `Пополнить за ${formatPriceTag(priceRub)}` : "Пополнить"}
         </TelegramOrderLink>
       </div>
