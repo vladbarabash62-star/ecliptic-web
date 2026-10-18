@@ -1233,6 +1233,53 @@ export const products: Product[] = [
     "icon": "https://cdn-icons-png.flaticon.com/512/3938/3938117.png",
     "slug": "twitch",
     "offers": []
+  },
+  {
+    "name": "Call of Duty Mobile",
+    "icon": "/catalog-assets/call-of-duty-mobile/call-of-duty-mobile-icon.webp",
+    "slug": "call-of-duty-mobile",
+    "offers": [
+      {
+        "label": "80 CP",
+        "priceRub": 35,
+        "icon": "/catalog-assets/call-of-duty-mobile/cp-80.webp"
+      },
+      {
+        "label": "420 CP",
+        "priceRub": 115,
+        "icon": "/catalog-assets/call-of-duty-mobile/cp-420.webp"
+      },
+      {
+        "label": "880 CP",
+        "priceRub": 210,
+        "icon": "/catalog-assets/call-of-duty-mobile/cp-880.webp"
+      },
+      {
+        "label": "2400 CP",
+        "priceRub": 520,
+        "icon": "/catalog-assets/call-of-duty-mobile/cp-2400.webp"
+      },
+      {
+        "label": "5000 CP",
+        "priceRub": 1040,
+        "icon": "/catalog-assets/call-of-duty-mobile/cp-5000.webp"
+      },
+      {
+        "label": "10800 CP",
+        "priceRub": 2030,
+        "icon": "/catalog-assets/call-of-duty-mobile/cp-10800.webp"
+      },
+      {
+        "label": "Еженедельный пропуск снабжения (7 дней)",
+        "priceRub": 65,
+        "icon": "/catalog-assets/call-of-duty-mobile/weekly-supply-pass.webp"
+      },
+      {
+        "label": "Ежемесячный пропуск снабжения (30 дней)",
+        "priceRub": 270,
+        "icon": "/catalog-assets/call-of-duty-mobile/monthly-supply-pass.webp"
+      }
+    ]
   }
 ];
 
