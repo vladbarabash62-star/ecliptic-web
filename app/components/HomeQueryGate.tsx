@@ -17,6 +17,7 @@ export default function HomeQueryGate({ children }: { children: ReactNode }) {
   const [referralCode, setReferralCode] = useState("");
 
   useEffect(() => {
+    let active = true;
     const params = new URLSearchParams(window.location.search);
     const startSlug = cleanSlug(
       params.get("tgWebAppStartParam") || params.get("startapp") || params.get("start_param")
@@ -25,7 +26,27 @@ export default function HomeQueryGate({ children }: { children: ReactNode }) {
       window.location.replace(`/products/${startSlug}?app=1`);
       return;
     }
-    setReferralCode(cleanReferralCode(params.get("use") || params.get("ref")));
+
+    const nextReferralCode = cleanReferralCode(params.get("use") || params.get("ref"));
+    if (!nextReferralCode) return;
+
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload: { user?: unknown } | null) => {
+        if (!active) return;
+        if (payload?.user) {
+          window.location.replace("/account#referral");
+          return;
+        }
+        setReferralCode(nextReferralCode);
+      })
+      .catch(() => {
+        if (active) setReferralCode(nextReferralCode);
+      });
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   return referralCode ? <ReferralLanding referralCode={referralCode} /> : children;
