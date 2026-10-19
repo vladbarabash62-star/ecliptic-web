@@ -422,8 +422,10 @@ export default function FloatingReferralStar() {
       <span className="floating-referral-star__image">
         <img src="/referral-star.png" alt="" draggable={false} />
       </span>
-      <span className="floating-referral-star__label">Получить звёзды</span>
-      <span className="floating-referral-star__free">Бесплатно</span>
+      <span className="floating-referral-star__copy">
+        <span className="floating-referral-star__label">Получить звёзды</span>
+        <span className="floating-referral-star__free">Бесплатно</span>
+      </span>
     </button>
   );
 }
