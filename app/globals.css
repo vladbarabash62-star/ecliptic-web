@@ -448,23 +448,22 @@ main {
 }
 
 .floating-referral-star__free {
-  color: #fff7d6;
+  color: rgba(255, 247, 214, 0.84);
   font-size: 11px;
-  font-weight: 900;
+  font-weight: 800;
   line-height: 1.2;
   text-align: center;
   white-space: nowrap;
-  text-shadow: 0 1px 8px rgba(255, 214, 102, 0.3);
-  padding: 4px 9px 5px;
+  padding: 1px 11px 6px;
 }
 
 .floating-referral-star__copy {
   display: grid;
   overflow: hidden;
-  border: 1px solid rgba(255, 214, 102, 0.3);
-  border-radius: 999px;
-  background: rgba(8, 15, 29, 0.82);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.26);
+  border: 1px solid rgba(255, 214, 102, 0.34);
+  border-radius: 11px;
+  background: linear-gradient(180deg, rgba(20, 29, 49, 0.94), rgba(7, 14, 27, 0.92));
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(10px);
 }
 
@@ -477,8 +476,7 @@ main {
 }
 
 .floating-referral-star__label {
-  border-bottom: 1px solid rgba(255, 214, 102, 0.24);
-  padding: 6px 9px 5px;
+  padding: 6px 11px 1px;
   color: #fff7d6;
   font-size: clamp(10px, 1.1vw, 12px);
   font-weight: 950;
