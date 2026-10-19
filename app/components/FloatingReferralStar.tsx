@@ -28,6 +28,11 @@ type MotionState = {
   lastLaneId: string;
   lastFrameAt: number;
   isDragging: boolean;
+  inertiaX: number;
+  inertiaY: number;
+  lastDragX: number;
+  lastDragY: number;
+  lastDragAt: number;
 };
 
 type SafeLane = {
@@ -45,16 +50,6 @@ const BLOCKER_SELECTOR = [
   ".desktop-trust-panel",
   ".page-intro",
   ".home-reveal--filters",
-  ".product-page-enter .product-icon-stage",
-  ".product-page-enter h1",
-  ".product-page-enter .offer-row",
-  ".product-page-enter .category-divider",
-  ".product-page-enter input",
-  ".product-page-enter textarea",
-  ".product-page-enter select",
-  ".product-page-enter button",
-  ".product-page-enter summary",
-  ".product-page-enter a",
   ".contact-float",
 ].join(",");
 
@@ -246,6 +241,11 @@ export default function FloatingReferralStar() {
     lastLaneId: "",
     lastFrameAt: 0,
     isDragging: false,
+    inertiaX: 0,
+    inertiaY: 0,
+    lastDragX: 0,
+    lastDragY: 0,
+    lastDragAt: 0,
   });
   const dragOffsetRef = useRef({ x: 0, y: 0 });
   const dragPointerIdRef = useRef<number | null>(null);
@@ -295,6 +295,8 @@ export default function FloatingReferralStar() {
     motion.lastLaneId = "";
     motion.nextTargetAt = 0;
     motion.isDragging = false;
+    motion.inertiaX = 0;
+    motion.inertiaY = 0;
     if (buttonRef.current) {
       buttonRef.current.style.opacity = "0";
       buttonRef.current.style.pointerEvents = "none";
@@ -378,13 +380,26 @@ export default function FloatingReferralStar() {
       const dy = motion.targetY - motion.y;
       const distance = Math.hypot(dx, dy);
       const travel = Math.min(distance, 28 * dt);
-      const nextX = motion.x + (distance ? dx / distance * travel : 0);
-      const nextY = motion.y + (distance ? dy / distance * travel : 0) + clamp(motion.scrollOffsetY, -70, 70) * dt;
+      const margin = window.innerWidth < 700 ? 10 : 18;
+      const bottomInset = window.innerWidth < 700 ? 22 : 18;
+      const nextX = motion.x + (distance ? dx / distance * travel : 0) + motion.inertiaX * dt;
+      let nextY = motion.y + (distance ? dy / distance * travel : 0) + motion.inertiaY * dt + clamp(motion.scrollOffsetY, -70, 70) * dt;
+      const minY = 76;
+      const maxY = window.innerHeight - height - bottomInset;
+      if (nextY <= minY && motion.inertiaY < 0) {
+        nextY = minY;
+        motion.inertiaY = Math.abs(motion.inertiaY) * 0.42;
+      } else if (nextY >= maxY && motion.inertiaY > 0) {
+        nextY = maxY;
+        motion.inertiaY = -Math.abs(motion.inertiaY) * 0.42;
+      }
+      if (nextX <= margin && motion.inertiaX < 0) motion.inertiaX = Math.abs(motion.inertiaX) * 0.42;
+      if (nextX >= window.innerWidth - width - margin && motion.inertiaX > 0) motion.inertiaX = -Math.abs(motion.inertiaX) * 0.42;
+      motion.inertiaX *= Math.exp(-3.8 * dt);
+      motion.inertiaY *= Math.exp(-3.2 * dt);
       motion.scrollOffsetY *= Math.exp(-3 * dt);
       if (Math.abs(motion.scrollOffsetY) < 0.25) motion.scrollOffsetY = 0;
 
-      const margin = window.innerWidth < 700 ? 10 : 18;
-      const bottomInset = window.innerWidth < 700 ? 22 : 18;
       const renderX = clamp(nextX, margin, window.innerWidth - width - margin);
       const renderY = clamp(nextY, 76, window.innerHeight - height - bottomInset);
 
@@ -448,6 +463,11 @@ export default function FloatingReferralStar() {
     motion.targetX = motion.x;
     motion.targetY = motion.y;
     motion.nextTargetAt = Number.POSITIVE_INFINITY;
+    motion.inertiaX = 0;
+    motion.inertiaY = 0;
+    motion.lastDragX = event.clientX;
+    motion.lastDragY = event.clientY;
+    motion.lastDragAt = performance.now();
     dragOffsetRef.current = {
       x: event.clientX - rect.left,
       y: event.clientY - rect.top,
@@ -471,6 +491,13 @@ export default function FloatingReferralStar() {
     const motion = motionRef.current;
     if (!isSafePosition(nextX, nextY, width, height)) return;
 
+    const now = performance.now();
+    const dragSeconds = Math.max(0.008, (now - motion.lastDragAt) / 1000);
+    motion.inertiaX = (nextX - motion.lastDragX) / dragSeconds;
+    motion.inertiaY = (nextY - motion.lastDragY) / dragSeconds;
+    motion.lastDragX = event.clientX;
+    motion.lastDragY = event.clientY;
+    motion.lastDragAt = now;
     if (Math.abs(nextX - motion.x) > 2 || Math.abs(nextY - motion.y) > 2) draggedRef.current = true;
     motion.x = nextX;
     motion.y = nextY;

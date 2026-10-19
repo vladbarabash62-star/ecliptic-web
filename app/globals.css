@@ -331,6 +331,14 @@ html {
   animation: none !important;
 }
 
+.swipe-home-transition .site-content .home-reveal,
+.swipe-home-transition .site-content .product-page-enter,
+.swipe-home-transition .site-content .offer-row,
+.swipe-home-transition .site-content .category-divider {
+  animation: none !important;
+  animation-delay: 0s !important;
+}
+
 .swipe-home-dragging .site-content,
 .swipe-home-dragging .contact-float,
 .swipe-home-dragging .site-home-button,
@@ -549,11 +557,15 @@ main {
   }
 }
 
-@media (max-width: 700px) {
-  .site-auth-float {
-    top: max(8px, env(safe-area-inset-top));
-  }
+.site-auth-float {
+  position: fixed !important;
+  top: max(8px, env(safe-area-inset-top)) !important;
+  right: max(12px, env(safe-area-inset-right)) !important;
+  z-index: 1000 !important;
+  transform: none !important;
+}
 
+@media (max-width: 700px) {
   .page-intro {
     padding-top: 54px;
   }
