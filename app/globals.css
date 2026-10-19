@@ -375,11 +375,11 @@ html {
   }
   72% {
     opacity: 1;
-    transform: translateX(92vw) scale(0.992);
+    transform: translateX(calc(92vw * var(--swipe-home-direction, 1))) scale(0.992);
   }
   100% {
     opacity: 0;
-    transform: translateX(128vw) scale(0.992);
+    transform: translateX(calc(128vw * var(--swipe-home-direction, 1))) scale(0.992);
   }
 }
 
@@ -570,6 +570,9 @@ main {
   right: max(12px, env(safe-area-inset-right)) !important;
   z-index: 1000 !important;
   transform: none !important;
+  isolation: isolate;
+  contain: layout paint;
+  will-change: top, right;
 }
 
 @media (max-width: 700px) {

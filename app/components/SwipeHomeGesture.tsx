@@ -41,6 +41,7 @@ export default function SwipeHomeGesture() {
 
     const clearDragStyle = () => {
       document.documentElement.style.removeProperty("--swipe-home-delta");
+      document.documentElement.style.removeProperty("--swipe-home-direction");
       document.documentElement.classList.remove("swipe-home-dragging", "swipe-home-cancel");
     };
 
@@ -60,14 +61,18 @@ export default function SwipeHomeGesture() {
       if (!startTime || event.touches.length !== 1 || isEditableTarget(event.target)) return;
 
       const touch = event.touches[0];
-      const deltaX = Math.max(0, touch.clientX - startX);
+      const deltaX = touch.clientX - startX;
       const deltaY = Math.abs(touch.clientY - startY);
-      if (deltaX < 8 || deltaX < deltaY) return;
+      if (Math.abs(deltaX) < 8 || Math.abs(deltaX) < deltaY) return;
 
       event.preventDefault();
       document.documentElement.classList.add("swipe-home-dragging");
       document.documentElement.classList.remove("swipe-home-cancel");
-      document.documentElement.style.setProperty("--swipe-home-delta", `${Math.min(deltaX, window.innerWidth)}px`);
+      document.documentElement.style.setProperty("--swipe-home-direction", deltaX < 0 ? "-1" : "1");
+      document.documentElement.style.setProperty(
+        "--swipe-home-delta",
+        `${Math.sign(deltaX) * Math.min(Math.abs(deltaX), window.innerWidth)}px`
+      );
     };
 
     const handleTouchEnd = (event: TouchEvent) => {
@@ -79,9 +84,13 @@ export default function SwipeHomeGesture() {
       const elapsed = Date.now() - startTime;
       startTime = 0;
 
-      const shouldNavigate = deltaX > Math.min(180, window.innerWidth * 0.28) && deltaY < 96 && elapsed < 1400;
+      const shouldNavigate = Math.abs(deltaX) > Math.min(180, window.innerWidth * 0.28) && deltaY < 96 && elapsed < 1400;
       if (shouldNavigate) {
-        document.documentElement.style.setProperty("--swipe-home-delta", `${window.innerWidth}px`);
+        document.documentElement.style.setProperty("--swipe-home-direction", deltaX < 0 ? "-1" : "1");
+        document.documentElement.style.setProperty(
+          "--swipe-home-delta",
+          `${Math.sign(deltaX) * window.innerWidth}px`
+        );
         document.documentElement.classList.remove("swipe-home-dragging");
         document.documentElement.classList.add("swipe-home-transition");
         markSwipeHomeLoaderSkip();

@@ -493,13 +493,9 @@ export default function FloatingReferralStar() {
     const motion = motionRef.current;
     if (!isSafePosition(nextX, nextY, width, height)) return;
 
-    const now = performance.now();
-    const dragSeconds = Math.max(0.008, (now - motion.lastDragAt) / 1000);
-    motion.inertiaX = (nextX - motion.lastDragX) / dragSeconds;
-    motion.inertiaY = (nextY - motion.lastDragY) / dragSeconds;
-    motion.lastDragX = event.clientX;
-    motion.lastDragY = event.clientY;
-    motion.lastDragAt = now;
+    // Dragging follows the finger exactly; releasing must not launch the star.
+    motion.inertiaX = 0;
+    motion.inertiaY = 0;
     if (Math.abs(nextX - motion.x) > 2 || Math.abs(nextY - motion.y) > 2) draggedRef.current = true;
     motion.x = nextX;
     motion.y = nextY;
@@ -517,6 +513,8 @@ export default function FloatingReferralStar() {
     const element = buttonRef.current;
     const wasDragged = draggedRef.current;
     motionRef.current.isDragging = false;
+    motionRef.current.inertiaX = 0;
+    motionRef.current.inertiaY = 0;
     motionRef.current.nextTargetAt = performance.now() + 2500;
     dragPointerIdRef.current = null;
     if (element?.hasPointerCapture?.(event.pointerId)) element.releasePointerCapture(event.pointerId);
