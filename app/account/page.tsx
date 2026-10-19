@@ -4,6 +4,7 @@ import { getCustomerOrders, getCustomerReferralInfo, getCustomerUserFromCookies 
 import { getProducts } from "../../lib/productStore";
 import { SITE_URL } from "../../lib/seo";
 import AccountTabs from "./AccountTabs";
+import AccountLoginPrompt from "./AccountLoginPrompt";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -52,9 +53,7 @@ export default async function AccountPage() {
           </div>
 
           {!user ? (
-            <div className="mt-7 rounded-2xl border border-sky-300/18 bg-sky-500/10 p-5 text-sm font-semibold leading-relaxed text-white/72">
-              Войдите через кнопку “Авторизоваться” справа сверху, и после этого заказы начнут появляться в этом кабинете.
-            </div>
+            <AccountLoginPrompt />
           ) : (
             <AccountTabs orders={accountOrders} referral={referral} accountName={user.name || user.username || user.email || "Аккаунт"} />
           )}
