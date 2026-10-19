@@ -297,6 +297,26 @@ html {
   contain-intrinsic-size: 720px;
 }
 
+.swipe-home-preview {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  overflow-y: auto;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 260ms ease;
+}
+
+.swipe-home-dragging .swipe-home-preview,
+.swipe-home-transition .swipe-home-preview {
+  opacity: 1;
+}
+
+.swipe-home-cancel .swipe-home-preview {
+  opacity: 0;
+}
+
 .swipe-home-transition .site-content,
 .swipe-home-transition .contact-float,
 .swipe-home-transition .site-home-button,

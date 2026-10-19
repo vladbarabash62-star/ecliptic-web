@@ -5,6 +5,7 @@ import FloatingReferralStar from "./components/FloatingReferralStar";
 import HomeButton from "./components/HomeButton";
 import PageLoader from "./components/PageLoader";
 import SiteFooter from "./components/SiteFooter";
+import SwipeHomePreview from "./components/SwipeHomePreview";
 import SwipeHomeGesture from "./components/SwipeHomeGesture";
 import TelegramStartRouter from "./components/TelegramStartRouter";
 import UserAuthButton from "./components/UserAuthButton";
@@ -185,6 +186,7 @@ export default async function RootLayout({
         <ContactButton />
         <SwipeHomeGesture />
         <TelegramStartRouter />
+        <SwipeHomePreview />
         <AnalyticsTracker />
 
         {/* КОНТЕНТ */}
