@@ -9,7 +9,7 @@ export default function AccountLoginPrompt() {
       </p>
       <button
         type="button"
-        onClick={() => window.dispatchEvent(new Event("ecliptic-open-auth"))}
+        onClick={() => window.dispatchEvent(new Event("ecliptic-open-telegram-auth"))}
         className="mt-6 w-full rounded-2xl border border-sky-200/30 bg-sky-400 px-6 py-4 text-base font-black text-[#06111f] shadow-[0_14px_34px_rgba(56,189,248,0.24)] transition hover:-translate-y-0.5 hover:bg-sky-300 active:translate-y-0"
       >
         Авторизоваться

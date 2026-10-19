@@ -51,7 +51,7 @@ type UserAuthButtonProps = {
 
 export default function UserAuthButton({ initialUser = null }: UserAuthButtonProps) {
   const [user, setUser] = useState<CustomerUser | null>(initialUser);
-  const [isAuthReady, setIsAuthReady] = useState(true);
+  const [isAuthReady, setIsAuthReady] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [status, setStatus] = useState("");
   const [isBusy, setIsBusy] = useState(false);
@@ -115,6 +115,14 @@ export default function UserAuthButton({ initialUser = null }: UserAuthButtonPro
     };
     window.addEventListener("ecliptic-open-auth", openAuth);
     return () => window.removeEventListener("ecliptic-open-auth", openAuth);
+  }, [user, referralCode]);
+
+  useEffect(() => {
+    const openTelegramAuth = () => {
+      if (!user) void authorizeTelegram();
+    };
+    window.addEventListener("ecliptic-open-telegram-auth", openTelegramAuth);
+    return () => window.removeEventListener("ecliptic-open-telegram-auth", openTelegramAuth);
   }, [user, referralCode]);
 
   function openAuthModal() {
