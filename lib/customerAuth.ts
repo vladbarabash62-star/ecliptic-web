@@ -175,6 +175,17 @@ function findUserByReferralCode(store: CustomerStore, code: string) {
   return Object.values(store.users).find((user) => cleanReferralCode(user.referralCode) === cleanCode) || null;
 }
 
+export async function getCustomerReferrerByCode(code: string) {
+  const store = await readCustomerStore();
+  const referrer = findUserByReferralCode(store, code);
+  if (!referrer) return null;
+
+  return {
+    name: referrer.name || referrer.username || "Участник Ecliptic Store",
+    username: referrer.username || "",
+  };
+}
+
 export async function getCustomerUserFromCookies() {
   const cookieStore = await cookies();
   const session = verifySessionCookie(cookieStore.get(CUSTOMER_SESSION_COOKIE)?.value || "");

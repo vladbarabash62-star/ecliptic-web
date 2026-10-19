@@ -2,8 +2,32 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+
+type ReferrerInfo = {
+  name: string;
+  username: string;
+};
 
 export default function ReferralLanding({ referralCode }: { referralCode: string }) {
+  const [referrer, setReferrer] = useState<ReferrerInfo | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    fetch(`/api/referrals/referrer?code=${encodeURIComponent(referralCode)}`, { cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((payload: { referrer?: ReferrerInfo | null } | null) => {
+        if (active) setReferrer(payload?.referrer || null);
+      })
+      .catch(() => {
+        if (active) setReferrer(null);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [referralCode]);
+
   function openLogin() {
     try {
       window.localStorage.setItem("ecliptic_referral_code", referralCode);
@@ -22,7 +46,7 @@ export default function ReferralLanding({ referralCode }: { referralCode: string
     } catch {
       // Analytics must never block the login button.
     }
-    window.dispatchEvent(new Event("ecliptic-open-auth"));
+    window.dispatchEvent(new Event("ecliptic-open-telegram-auth"));
   }
 
   return (
@@ -31,17 +55,20 @@ export default function ReferralLanding({ referralCode }: { referralCode: string
         <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl border border-sky-300/20 bg-sky-500/12">
           <Image src="/loading-icon.png" alt="" width={48} height={48} className="h-12 w-12 object-contain" />
         </div>
-        <h1 className="mt-5 text-4xl font-black sm:text-5xl">Ecliptic Store</h1>
-        <p className="mx-auto mt-3 max-w-[500px] text-sm font-semibold leading-relaxed text-white/62">
-          Вас пригласили в Ecliptic Store. Войдите через Telegram, чтобы приглашение закрепилось за аккаунтом,
-          а дальше можно будет смотреть товары, заказы и реферальную программу в личном кабинете.
+        <p className="mt-5 text-sm font-bold uppercase tracking-[0.16em] text-white/48">Ecliptic Store</p>
+        <h1 className="mt-3 text-3xl font-black leading-tight sm:text-5xl">
+          Вас пригласил
+          <span className="mt-2 block text-sky-100">{referrer?.name || "участник магазина"}</span>
+        </h1>
+        <p className="mx-auto mt-4 max-w-[500px] text-sm font-semibold leading-relaxed text-white/62">
+          Авторизуйтесь, чтобы принять приглашение и получить доступ к бонусу.
         </p>
         <button
           type="button"
           onClick={openLogin}
-          className="mt-7 min-h-12 w-full rounded-2xl border border-sky-300/28 bg-sky-500/16 px-5 py-3 text-sm font-black text-sky-50 transition hover:bg-sky-500/22 active:scale-[0.99]"
+          className="mt-7 min-h-14 w-full rounded-2xl border border-white/80 bg-white px-6 py-4 text-base font-black text-slate-950 shadow-[0_12px_34px_rgba(255,255,255,0.12)] transition hover:bg-sky-50 active:scale-[0.99]"
         >
-          Войти в аккаунт
+          Авторизоваться
         </button>
         <Link
           href="/"
