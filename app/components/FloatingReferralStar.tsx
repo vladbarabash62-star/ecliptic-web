@@ -83,15 +83,16 @@ function visibleRects(selector: string) {
     .filter((rect) => rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.top < window.innerHeight);
 }
 
-function isSafePosition(left: number, top: number, width: number, height: number, blockers = visibleRects(BLOCKER_SELECTOR)) {
+function isSafePosition(left: number, top: number, width: number, height: number, blockers?: DOMRect[]) {
   const margin = window.innerWidth < 700 ? 10 : 18;
   const bottomInset = window.innerWidth < 700 ? 22 : 18;
+  const effectiveBlockers = window.innerWidth < 760 ? [] : blockers || visibleRects(BLOCKER_SELECTOR);
 
   if (left < margin || top < 76) return false;
   if (left + width > window.innerWidth - margin) return false;
   if (top + height > window.innerHeight - bottomInset) return false;
 
-  return blockers.every((rect) => !overlaps(left, top, width, height, rect));
+  return effectiveBlockers.every((rect) => !overlaps(left, top, width, height, rect));
 }
 
 function randomBetween(min: number, max: number) {
@@ -132,6 +133,18 @@ function rectCandidates(width: number, height: number) {
   const gap = vw < 700 ? 12 : 30;
   const top = vw < 700 ? 78 : 86;
   const bottom = Math.max(top, vh - height - (vw < 700 ? 18 : 20));
+
+  if (vw < 760) {
+    return [{
+      id: "mobile-free",
+      left: margin,
+      right: vw - width - margin,
+      top,
+      bottom,
+      weight: 1,
+    }];
+  }
+
   const contentRects = visibleRects(CONTENT_SELECTOR);
   const contentLeft = contentRects.length ? Math.min(...contentRects.map((rect) => rect.left)) : vw * 0.24;
   const contentRight = contentRects.length ? Math.max(...contentRects.map((rect) => rect.right)) : vw * 0.76;
@@ -156,10 +169,6 @@ function rectCandidates(width: number, height: number) {
     addSplitLanes(lanes, "bottom", margin, vw - width - margin, bottomTop, bottom, 2);
   }
 
-  if (vw < 760) {
-    lanes.push({ id: "mobile-free", left: margin, right: vw - width - margin, top, bottom, weight: 1 });
-  }
-
   return lanes;
 }
 
@@ -169,7 +178,7 @@ function pickSafePosition(
   previous?: StarPosition,
   mode: "any" | "same-root" | "different-root" = "any"
 ): StarPosition | null {
-  const blockers = visibleRects(BLOCKER_SELECTOR);
+  const blockers = window.innerWidth < 760 ? [] : visibleRects(BLOCKER_SELECTOR);
   const lanes = rectCandidates(width, height);
   const previousRoot = previous?.laneId ? laneRoot(previous.laneId) : "";
   let laneChoices = lanes;
