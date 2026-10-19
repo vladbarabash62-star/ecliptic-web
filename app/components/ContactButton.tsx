@@ -5,7 +5,7 @@ import type { MouseEvent } from "react";
 import { playButtonHaptic } from "./haptics";
 
 const TELEGRAM_USERNAME = "Ecliptic_Store_PMR";
-const QUESTION_MESSAGE = "Здравствуйте, хочу задать вопрос по Ecliptic Store.";
+const QUESTION_MESSAGE = "Здравствуйте, хочу задать вопрос.";
 
 function sellerChatHref(message?: string) {
   const text = message?.trim();
