@@ -7,7 +7,7 @@ const SWIPE_HOME_LOADER_SKIP_KEY = "ecliptic:skip-loader-after-swipe-home";
 
 function isEditableTarget(target: EventTarget | null) {
   const element = target instanceof HTMLElement ? target : null;
-  return Boolean(element?.closest("input, textarea, select, [contenteditable='true']"));
+  return Boolean(element?.closest("input, textarea, select, [contenteditable='true'], .floating-referral-star"));
 }
 
 function markSwipeHomeLoaderSkip() {

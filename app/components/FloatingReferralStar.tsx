@@ -291,6 +291,14 @@ export default function FloatingReferralStar() {
 
     let cancelled = false;
     const motion = motionRef.current;
+    isReadyRef.current = false;
+    motion.lastLaneId = "";
+    motion.nextTargetAt = 0;
+    motion.isDragging = false;
+    if (buttonRef.current) {
+      buttonRef.current.style.opacity = "0";
+      buttonRef.current.style.pointerEvents = "none";
+    }
     motion.lastScrollY = window.scrollY;
     motion.lastFrameAt = 0;
 
@@ -429,6 +437,8 @@ export default function FloatingReferralStar() {
 
   function handlePointerDown(event: ReactPointerEvent<HTMLButtonElement>) {
     if (window.innerWidth >= 701 || event.pointerType === "mouse") return;
+    event.preventDefault();
+    event.stopPropagation();
     const element = buttonRef.current;
     if (!element) return;
 
@@ -449,6 +459,8 @@ export default function FloatingReferralStar() {
 
   function handlePointerMove(event: ReactPointerEvent<HTMLButtonElement>) {
     if (!motionRef.current.isDragging || dragPointerIdRef.current !== event.pointerId) return;
+    event.preventDefault();
+    event.stopPropagation();
     const element = buttonRef.current;
     if (!element) return;
 
@@ -472,6 +484,7 @@ export default function FloatingReferralStar() {
 
   function handlePointerUp(event: ReactPointerEvent<HTMLButtonElement>) {
     if (dragPointerIdRef.current !== event.pointerId) return;
+    event.stopPropagation();
     const element = buttonRef.current;
     const wasDragged = draggedRef.current;
     motionRef.current.isDragging = false;

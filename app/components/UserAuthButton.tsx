@@ -208,7 +208,7 @@ export default function UserAuthButton({ initialUser = null }: UserAuthButtonPro
                 draggable={false}
               />
             </span>
-            <span className="hidden max-w-[150px] truncate sm:block">{displayName}</span>
+            <span className="whitespace-nowrap text-xs sm:text-sm">{displayName}</span>
           </Link>
         ) : (
           <button

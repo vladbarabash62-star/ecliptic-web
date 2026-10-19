@@ -299,7 +299,8 @@ html {
 
 .swipe-home-transition .site-content,
 .swipe-home-transition .contact-float,
-.swipe-home-transition .site-home-button {
+.swipe-home-transition .site-home-button,
+.swipe-home-transition .floating-referral-star {
   pointer-events: none;
   transform-origin: center center;
   animation: swipeBackToHome 430ms cubic-bezier(0.2, 0.78, 0.24, 1) both !important;
@@ -312,7 +313,8 @@ html {
 
 .swipe-home-dragging .site-content,
 .swipe-home-dragging .contact-float,
-.swipe-home-dragging .site-home-button {
+.swipe-home-dragging .site-home-button,
+.swipe-home-dragging .floating-referral-star {
   transform: translate3d(var(--swipe-home-delta, 0px), 0, 0);
   transition: none !important;
   will-change: transform;
@@ -320,7 +322,8 @@ html {
 
 .swipe-home-cancel .site-content,
 .swipe-home-cancel .contact-float,
-.swipe-home-cancel .site-home-button {
+.swipe-home-cancel .site-home-button,
+.swipe-home-cancel .floating-referral-star {
   transform: translate3d(0, 0, 0);
   transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1) !important;
   will-change: transform;
