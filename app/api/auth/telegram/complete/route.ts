@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   }
 
   const customer = await telegramUserToCustomer(telegramUser, login?.referrerCode);
-  const response = NextResponse.redirect(new URL("/account", request.url), 302);
+  const response = NextResponse.redirect(new URL("/account#referral", request.url), 302);
   setCustomerSession(response, customer);
   return response;
 }

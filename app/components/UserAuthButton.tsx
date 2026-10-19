@@ -173,6 +173,7 @@ export default function UserAuthButton({ initialUser = null }: UserAuthButtonPro
       setIsOpen(false);
       setStatus("");
       window.dispatchEvent(new Event("ecliptic-auth-changed"));
+      window.location.href = "/account#referral";
     } catch (error) {
       trackAuthEvent("auth_telegram_error", {
         referralCode,
