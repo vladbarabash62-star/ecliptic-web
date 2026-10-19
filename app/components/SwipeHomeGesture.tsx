@@ -12,6 +12,7 @@ function isEditableTarget(target: EventTarget | null) {
 
 function markSwipeHomeLoaderSkip() {
   document.documentElement.classList.add("swipe-home-loader-suppressed");
+  document.documentElement.classList.add("swipe-home-instant");
   document.documentElement.dataset.pageLoaderSkip = "swipe-home";
 
   try {
@@ -38,6 +39,7 @@ export default function SwipeHomeGesture() {
     let navigationTimer = 0;
     let cleanupTimer = 0;
     let cancelTimer = 0;
+    let instantTimer = 0;
 
     const clearDragStyle = () => {
       document.documentElement.style.removeProperty("--swipe-home-delta");
@@ -99,7 +101,10 @@ export default function SwipeHomeGesture() {
           clearDragStyle();
           document.documentElement.classList.remove("swipe-home-transition");
           clearSwipeHomeLoaderSkipMarker();
-        }, 1200);
+        }, 1400);
+        instantTimer = window.setTimeout(() => {
+          document.documentElement.classList.remove("swipe-home-instant");
+        }, 1800);
       } else if (document.documentElement.classList.contains("swipe-home-dragging")) {
         document.documentElement.classList.remove("swipe-home-dragging");
         document.documentElement.classList.add("swipe-home-cancel");
@@ -123,6 +128,7 @@ export default function SwipeHomeGesture() {
       window.clearTimeout(navigationTimer);
       window.clearTimeout(cleanupTimer);
       window.clearTimeout(cancelTimer);
+      window.clearTimeout(instantTimer);
       clearDragStyle();
       document.documentElement.classList.remove("swipe-home-transition");
       clearSwipeHomeLoaderSkipMarker();

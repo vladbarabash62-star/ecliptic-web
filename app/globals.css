@@ -323,7 +323,9 @@ html {
 .swipe-home-transition .floating-referral-star {
   pointer-events: none;
   transform-origin: center center;
-  animation: swipeBackToHome 430ms cubic-bezier(0.2, 0.78, 0.24, 1) both !important;
+  animation: none !important;
+  opacity: 0;
+  transform: translate3d(var(--swipe-home-delta, 100vw), 0, 0) !important;
   will-change: transform, opacity;
 }
 
@@ -344,6 +346,13 @@ html {
 .swipe-home-transition .swipe-home-preview * {
   animation: none !important;
   animation-delay: 0s !important;
+}
+
+.swipe-home-instant .site-content *,
+.swipe-home-instant .swipe-home-preview * {
+  animation: none !important;
+  animation-delay: 0s !important;
+  transition: none !important;
 }
 
 .swipe-home-dragging .site-content,
@@ -568,7 +577,7 @@ main {
   position: fixed !important;
   top: max(8px, env(safe-area-inset-top)) !important;
   right: max(12px, env(safe-area-inset-right)) !important;
-  z-index: 1000 !important;
+  z-index: 1001 !important;
   transform: none !important;
   isolation: isolate;
   contain: layout paint;
