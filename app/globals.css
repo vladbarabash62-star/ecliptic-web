@@ -300,7 +300,7 @@ html {
 .swipe-home-preview {
   position: fixed;
   inset: 0;
-  z-index: 1;
+  z-index: 9;
   overflow-y: auto;
   background: #000;
   opacity: 0;
@@ -335,6 +335,13 @@ html {
 .swipe-home-transition .site-content .product-page-enter,
 .swipe-home-transition .site-content .offer-row,
 .swipe-home-transition .site-content .category-divider {
+  animation: none !important;
+  animation-delay: 0s !important;
+}
+
+.swipe-home-transition .site-content *,
+.swipe-home-transition .swipe-home-preview,
+.swipe-home-transition .swipe-home-preview * {
   animation: none !important;
   animation-delay: 0s !important;
 }

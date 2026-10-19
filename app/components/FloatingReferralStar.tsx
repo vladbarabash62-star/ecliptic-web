@@ -336,7 +336,8 @@ export default function FloatingReferralStar() {
       motion.targetX = picked.x;
       motion.targetY = picked.y;
       motion.lastLaneId = picked.laneId;
-      motion.nextTargetAt = performance.now() + 5600 + Math.random() * 4600;
+      // Keep the motion obvious on a short mobile visit without teleporting the button.
+      motion.nextTargetAt = performance.now() + 3000 + Math.random() * 2800;
       if (!isReadyRef.current) {
         motion.x = picked.x;
         motion.y = picked.y;
@@ -379,7 +380,7 @@ export default function FloatingReferralStar() {
       const dx = motion.targetX - motion.x;
       const dy = motion.targetY - motion.y;
       const distance = Math.hypot(dx, dy);
-      const travel = Math.min(distance, 28 * dt);
+      const travel = Math.min(distance, 52 * dt);
       const margin = window.innerWidth < 700 ? 10 : 18;
       const bottomInset = window.innerWidth < 700 ? 22 : 18;
       const nextX = motion.x + (distance ? dx / distance * travel : 0) + motion.inertiaX * dt;
