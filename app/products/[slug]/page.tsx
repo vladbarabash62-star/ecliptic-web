@@ -37,6 +37,7 @@ function isManagerButtonOnlyProduct(product: { name: string; slug: string }) {
 
   return (
     product.slug === "transfers" ||
+    product.slug === "ton" ||
     product.slug.startsWith("card-withdrawal") ||
     name === "переводы" ||
     name.includes("вывод с карты")

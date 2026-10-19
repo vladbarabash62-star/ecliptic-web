@@ -1107,6 +1107,13 @@ export const products: Product[] = [
     "offers": []
   },
   {
+    "name": "TON",
+    "icon": "/catalog-assets/ton/ton-logo.png",
+    "slug": "ton",
+    "iconScale": 1.08,
+    "offers": []
+  },
+  {
     "name": "PlayStation",
     "icon": "https://www.pngkey.com/png/full/7-74293_la-siguiente-playstation-playstation-4-logo-png.png",
     "slug": "playstation",
