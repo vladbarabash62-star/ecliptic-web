@@ -44,12 +44,7 @@ type SafeLane = {
   weight: number;
 };
 
-const BLOCKER_SELECTOR = [
-  ".desktop-trust-panel",
-  ".page-intro",
-  ".home-reveal--filters",
-  ".contact-float",
-].join(",");
+const BLOCKER_SELECTOR = ".contact-float";
 
 const CONTENT_SELECTOR = [
   ".products-grid",
@@ -63,7 +58,6 @@ const CONTENT_SELECTOR = [
 ].join(",");
 
 function shouldShowOnCurrentPage(path: string, params: URLSearchParams) {
-  if (params.get("use") || params.get("ref")) return false;
   return path === "/" || path.startsWith("/products/");
 }
 
@@ -227,7 +221,15 @@ function pickSafePosition(
     }
   }
 
-  return null;
+  // Never hide the referral control when a page has no free lane.
+  const margin = window.innerWidth < 700 ? 10 : 18;
+  const top = window.innerWidth < 700 ? 78 : 86;
+  const bottomInset = window.innerWidth < 700 ? 22 : 18;
+  return {
+    x: margin,
+    y: Math.max(top, window.innerHeight - height - bottomInset),
+    laneId: "fallback-visible",
+  };
 }
 
 export default function FloatingReferralStar() {
