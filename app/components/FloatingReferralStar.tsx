@@ -80,6 +80,7 @@ function overlaps(left: number, top: number, width: number, height: number, rect
 
 function visibleRects(selector: string) {
   return Array.from(document.querySelectorAll(selector))
+    .filter((element) => !element.closest(".swipe-home-preview"))
     .map((element) => element.getBoundingClientRect())
     .filter((rect) => rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.top < window.innerHeight);
 }
