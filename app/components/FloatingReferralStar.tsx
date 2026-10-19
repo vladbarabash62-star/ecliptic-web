@@ -491,7 +491,6 @@ export default function FloatingReferralStar() {
     const nextX = clamp(event.clientX - dragOffsetRef.current.x, 10, window.innerWidth - width - 10);
     const nextY = clamp(event.clientY - dragOffsetRef.current.y, 86, window.innerHeight - height - 22);
     const motion = motionRef.current;
-    if (!isSafePosition(nextX, nextY, width, height)) return;
 
     // Dragging follows the finger exactly; releasing must not launch the star.
     motion.inertiaX = 0;
