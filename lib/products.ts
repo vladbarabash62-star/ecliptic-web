@@ -1108,9 +1108,9 @@ export const products: Product[] = [
   },
   {
     "name": "TON",
-    "icon": "/catalog-assets/ton/ton-logo.png",
+    "icon": "/catalog-assets/ton/ton-logo-v2.png",
     "slug": "ton",
-    "iconScale": 1.08,
+    "iconScale": 1.3,
     "offers": []
   },
   {
