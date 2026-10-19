@@ -45,8 +45,6 @@ type SafeLane = {
 };
 
 const BLOCKER_SELECTOR = [
-  ".product-card",
-  ".products-grid",
   ".desktop-trust-panel",
   ".page-intro",
   ".home-reveal--filters",

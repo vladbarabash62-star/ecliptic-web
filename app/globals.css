@@ -585,6 +585,10 @@ main {
 }
 
 @media (max-width: 700px) {
+  .product-page-shell {
+    padding-top: 92px !important;
+  }
+
   .page-intro {
     padding-top: 54px;
   }
@@ -592,7 +596,7 @@ main {
   .floating-referral-star {
     width: 68px;
     z-index: 36;
-    transition: opacity 360ms ease;
+    transition: opacity 900ms ease;
   }
 
   .floating-referral-star__label {

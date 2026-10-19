@@ -135,7 +135,7 @@ export default async function ProductPage({ params }: PageProps) {
   const productJsonLd = buildProductJsonLd(product);
 
   return (
-    <main className="product-page-enter relative min-h-screen w-full overflow-x-hidden bg-transparent px-3 py-6 text-white sm:px-4 sm:py-12">
+    <main className="product-page-enter product-page-shell relative min-h-screen w-full overflow-x-hidden bg-transparent px-3 py-6 text-white sm:px-4 sm:py-12">
       {productJsonLd ? (
         <script
           type="application/ld+json"
