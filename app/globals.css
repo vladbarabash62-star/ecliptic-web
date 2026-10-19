@@ -574,7 +574,7 @@ main {
 }
 
 .site-auth-float {
-  position: fixed !important;
+  position: absolute !important;
   top: max(8px, env(safe-area-inset-top)) !important;
   right: max(12px, env(safe-area-inset-right)) !important;
   z-index: 1001 !important;
