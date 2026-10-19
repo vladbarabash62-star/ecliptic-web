@@ -187,7 +187,7 @@ export default function UserAuthButton({ initialUser = null }: UserAuthButtonPro
 
   return (
     <>
-      <div className="fixed right-3 top-3 z-50 sm:right-5 sm:top-5">
+      <div className="site-auth-float fixed right-3 top-3 z-50 sm:right-5 sm:top-5">
         {!isAuthReady ? (
           <div
             className="h-11 w-[148px] animate-pulse rounded-full border border-white/10 bg-[#07111f]/80 shadow-[0_18px_44px_rgba(14,165,233,0.12)] backdrop-blur-md sm:w-[164px]"

@@ -37,6 +37,12 @@ export default function SwipeHomeGesture() {
     let startTime = 0;
     let navigationTimer = 0;
     let cleanupTimer = 0;
+    let cancelTimer = 0;
+
+    const clearDragStyle = () => {
+      document.documentElement.style.removeProperty("--swipe-home-delta");
+      document.documentElement.classList.remove("swipe-home-dragging", "swipe-home-cancel");
+    };
 
     router.prefetch("/");
 
@@ -50,6 +56,20 @@ export default function SwipeHomeGesture() {
       router.prefetch("/");
     };
 
+    const handleTouchMove = (event: TouchEvent) => {
+      if (!startTime || event.touches.length !== 1 || isEditableTarget(event.target)) return;
+
+      const touch = event.touches[0];
+      const deltaX = Math.max(0, touch.clientX - startX);
+      const deltaY = Math.abs(touch.clientY - startY);
+      if (deltaX < 8 || deltaX < deltaY) return;
+
+      event.preventDefault();
+      document.documentElement.classList.add("swipe-home-dragging");
+      document.documentElement.classList.remove("swipe-home-cancel");
+      document.documentElement.style.setProperty("--swipe-home-delta", `${Math.min(deltaX, window.innerWidth)}px`);
+    };
+
     const handleTouchEnd = (event: TouchEvent) => {
       if (!startTime || event.changedTouches.length !== 1 || isEditableTarget(event.target)) return;
 
@@ -59,27 +79,48 @@ export default function SwipeHomeGesture() {
       const elapsed = Date.now() - startTime;
       startTime = 0;
 
-      if (deltaX > 14 && deltaY < 72 && elapsed < 1200) {
+      const shouldNavigate = deltaX > Math.min(180, window.innerWidth * 0.28) && deltaY < 96 && elapsed < 1400;
+      if (shouldNavigate) {
+        document.documentElement.style.setProperty("--swipe-home-delta", `${window.innerWidth}px`);
+        document.documentElement.classList.remove("swipe-home-dragging");
         document.documentElement.classList.add("swipe-home-transition");
         markSwipeHomeLoaderSkip();
         navigationTimer = window.setTimeout(() => router.push("/"), 180);
         cleanupTimer = window.setTimeout(() => {
+          clearDragStyle();
           document.documentElement.classList.remove("swipe-home-transition");
           clearSwipeHomeLoaderSkipMarker();
         }, 1200);
+      } else if (document.documentElement.classList.contains("swipe-home-dragging")) {
+        document.documentElement.classList.remove("swipe-home-dragging");
+        document.documentElement.classList.add("swipe-home-cancel");
+        cancelTimer = window.setTimeout(clearDragStyle, 280);
       }
     };
 
+    const handleTouchCancel = () => {
+      startTime = 0;
+      document.documentElement.classList.remove("swipe-home-dragging");
+      document.documentElement.classList.add("swipe-home-cancel");
+      cancelTimer = window.setTimeout(clearDragStyle, 280);
+    };
+
     window.addEventListener("touchstart", handleTouchStart, { passive: true });
+    window.addEventListener("touchmove", handleTouchMove, { passive: false });
     window.addEventListener("touchend", handleTouchEnd, { passive: true });
+    window.addEventListener("touchcancel", handleTouchCancel, { passive: true });
 
     return () => {
       window.clearTimeout(navigationTimer);
       window.clearTimeout(cleanupTimer);
+      window.clearTimeout(cancelTimer);
+      clearDragStyle();
       document.documentElement.classList.remove("swipe-home-transition");
       clearSwipeHomeLoaderSkipMarker();
       window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchmove", handleTouchMove);
       window.removeEventListener("touchend", handleTouchEnd);
+      window.removeEventListener("touchcancel", handleTouchCancel);
     };
   }, [pathname, router]);
 

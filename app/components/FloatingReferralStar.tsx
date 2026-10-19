@@ -2,7 +2,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 
 type CustomerUser = {
   id: string;
@@ -27,6 +27,7 @@ type MotionState = {
   lastRecoveryAt: number;
   lastLaneId: string;
   lastFrameAt: number;
+  isDragging: boolean;
 };
 
 type SafeLane = {
@@ -44,7 +45,16 @@ const BLOCKER_SELECTOR = [
   ".desktop-trust-panel",
   ".page-intro",
   ".home-reveal--filters",
-  ".product-page-enter > div",
+  ".product-page-enter .product-icon-stage",
+  ".product-page-enter h1",
+  ".product-page-enter .offer-row",
+  ".product-page-enter .category-divider",
+  ".product-page-enter input",
+  ".product-page-enter textarea",
+  ".product-page-enter select",
+  ".product-page-enter button",
+  ".product-page-enter summary",
+  ".product-page-enter a",
   ".contact-float",
 ].join(",");
 
@@ -53,7 +63,10 @@ const CONTENT_SELECTOR = [
   ".desktop-trust-panel",
   ".page-intro",
   ".home-reveal--filters",
-  ".product-page-enter > div",
+  ".product-page-enter .product-icon-stage",
+  ".product-page-enter h1",
+  ".product-page-enter .offer-row",
+  ".product-page-enter .category-divider",
 ].join(",");
 
 function shouldShowOnCurrentPage(path: string, params: URLSearchParams) {
@@ -232,7 +245,12 @@ export default function FloatingReferralStar() {
     lastRecoveryAt: 0,
     lastLaneId: "",
     lastFrameAt: 0,
+    isDragging: false,
   });
+  const dragOffsetRef = useRef({ x: 0, y: 0 });
+  const dragPointerIdRef = useRef<number | null>(null);
+  const draggedRef = useRef(false);
+  const suppressClickRef = useRef(false);
   const [user, setUser] = useState<CustomerUser | null>(null);
   const [locationSearch, setLocationSearch] = useState("");
   const [isLocationReady, setIsLocationReady] = useState(false);
@@ -335,6 +353,14 @@ export default function FloatingReferralStar() {
         return;
       }
 
+      if (motion.isDragging) {
+        element.style.left = `${Math.round(motion.x)}px`;
+        element.style.top = `${Math.round(motion.y)}px`;
+        element.style.opacity = "1";
+        frameRef.current = window.requestAnimationFrame(tick);
+        return;
+      }
+
       const { width, height } = measure();
       if (!motion.nextTargetAt || time > motion.nextTargetAt) chooseTarget();
 
@@ -401,6 +427,65 @@ export default function FloatingReferralStar() {
     };
   }, [isVisible, pathname, locationSearch]);
 
+  function handlePointerDown(event: ReactPointerEvent<HTMLButtonElement>) {
+    if (window.innerWidth >= 701 || event.pointerType === "mouse") return;
+    const element = buttonRef.current;
+    if (!element) return;
+
+    const rect = element.getBoundingClientRect();
+    const motion = motionRef.current;
+    motion.isDragging = true;
+    motion.targetX = motion.x;
+    motion.targetY = motion.y;
+    motion.nextTargetAt = Number.POSITIVE_INFINITY;
+    dragOffsetRef.current = {
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+    };
+    dragPointerIdRef.current = event.pointerId;
+    draggedRef.current = false;
+    element.setPointerCapture?.(event.pointerId);
+  }
+
+  function handlePointerMove(event: ReactPointerEvent<HTMLButtonElement>) {
+    if (!motionRef.current.isDragging || dragPointerIdRef.current !== event.pointerId) return;
+    const element = buttonRef.current;
+    if (!element) return;
+
+    const width = element.offsetWidth;
+    const height = element.offsetHeight;
+    const nextX = clamp(event.clientX - dragOffsetRef.current.x, 10, window.innerWidth - width - 10);
+    const nextY = clamp(event.clientY - dragOffsetRef.current.y, 86, window.innerHeight - height - 22);
+    const motion = motionRef.current;
+    if (!isSafePosition(nextX, nextY, width, height)) return;
+
+    if (Math.abs(nextX - motion.x) > 2 || Math.abs(nextY - motion.y) > 2) draggedRef.current = true;
+    motion.x = nextX;
+    motion.y = nextY;
+    motion.targetX = nextX;
+    motion.targetY = nextY;
+    motion.lastSafeX = nextX;
+    motion.lastSafeY = nextY;
+    element.style.left = `${Math.round(nextX)}px`;
+    element.style.top = `${Math.round(nextY)}px`;
+  }
+
+  function handlePointerUp(event: ReactPointerEvent<HTMLButtonElement>) {
+    if (dragPointerIdRef.current !== event.pointerId) return;
+    const element = buttonRef.current;
+    const wasDragged = draggedRef.current;
+    motionRef.current.isDragging = false;
+    motionRef.current.nextTargetAt = performance.now() + 2500;
+    dragPointerIdRef.current = null;
+    if (element?.hasPointerCapture?.(event.pointerId)) element.releasePointerCapture(event.pointerId);
+    if (wasDragged) {
+      suppressClickRef.current = true;
+      window.setTimeout(() => {
+        suppressClickRef.current = false;
+      }, 300);
+    }
+  }
+
   function openReferral() {
     if (user) {
       window.location.href = "/account#referral";
@@ -416,7 +501,14 @@ export default function FloatingReferralStar() {
       ref={buttonRef}
       type="button"
       className="floating-referral-star"
-      onClick={openReferral}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+      onClick={() => {
+        if (suppressClickRef.current) return;
+        openReferral();
+      }}
       aria-label="Получить звёзды бесплатно"
     >
       <span className="floating-referral-star__image">
