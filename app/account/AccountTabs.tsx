@@ -45,13 +45,16 @@ type ReferralInfo = {
 const REFERRAL_CLAIM_COOLDOWN_MS = 30 * 60 * 1000;
 
 function formatDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Дата не указана";
+
   return new Intl.DateTimeFormat("ru-RU", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-  }).format(new Date(value));
+  }).format(date);
 }
 
 function formatClaimWait(ms: number) {
@@ -179,7 +182,8 @@ export default function AccountTabs({ orders, referral, accountName }: { orders:
           <section className="mt-7 grid gap-3">
             <h2 className="text-xl font-black text-white">Мои заказы</h2>
             {orders.map((order) => {
-              const visibleOffer = ["manager-button", "manager-link"].includes(order.offer.trim()) ? "" : order.offer.trim();
+              const rawOffer = typeof order.offer === "string" ? order.offer.trim() : "";
+              const visibleOffer = ["manager-button", "manager-link"].includes(rawOffer) ? "" : rawOffer;
 
               return (
                 <article
