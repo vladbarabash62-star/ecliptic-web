@@ -238,6 +238,7 @@ const ADMIN_HTML = `<!doctype html>
     <nav class="card tabs">
       <button class="tab active" type="button" data-tab="analytics">Аналитика</button>
       <button class="tab" type="button" data-tab="charts">Диаграммы</button>
+      <button class="tab" type="button" data-tab="visitors">Посещения</button>
       <button class="tab" type="button" data-tab="products">Товары</button>
       <button class="tab" type="button" data-tab="settings">Главная</button>
       <button class="tab" type="button" data-tab="referrals">Реферальная программа</button>
@@ -300,6 +301,24 @@ const ADMIN_HTML = `<!doctype html>
           <p class="hint">Считает нажатия «Купить» внутри каждого товара по ссылке /products/....</p>
           <div id="chartProductBuys"></div>
         </div>
+      </div>
+    </section>
+
+    <section id="visitors" class="section">
+      <div class="toolbar" style="justify-content:space-between;margin-bottom:12px">
+        <div>
+          <h2>Уникальные посещения</h2>
+          <p class="muted" id="visitorsUpdatedAt" style="margin-top:6px">Данные загружаются...</p>
+        </div>
+        <button class="btn secondary" id="reloadVisitorsBtn" type="button">Обновить посещения</button>
+      </div>
+      <div class="card wide-chart">
+        <h2>Индивидуальные пользователи по неделям</h2>
+        <p class="muted" style="margin-top:6px">В каждой неделе один пользователь считается один раз. Наведите на столбец, чтобы увидеть разбивку по дням.</p>
+        <div id="chartWeeklyUniqueVisitors"></div>
+      </div>
+      <div class="card panel" style="margin-top:14px">
+        <p class="hint">Посещения считаются по анонимному постоянному visitorId браузера. MAC-адрес браузер не передаёт, поэтому он не используется и не сохраняется.</p>
       </div>
     </section>
 
@@ -898,6 +917,47 @@ const ADMIN_HTML = `<!doctype html>
         return '<div class="week-bar" data-week-tip="' + esc(tip) + '"><div class="week-value">' + visibleValue + '</div><div class="week-fill" style="height:' + height + 'px"></div><div class="week-label">' + esc(row.label) + '</div></div>';
       }).join('') + '</div>';
     }
+    function uniqueVisitorId(event) {
+      return String(event && (event.visitorId || event.sessionId) || '').trim();
+    }
+    function renderUniqueVisitorWeekBars(id, events) {
+      var visitEvents = (events || []).filter(function(event) { return event.type === 'site_visit' && uniqueVisitorId(event) && event.time; });
+      var ranges = weekRanges(visitEvents);
+      if (!ranges.length) {
+        $(id).innerHTML = '<div class="chart-empty">Пока нет данных о посещениях. Новые визиты появятся после первого открытия сайта.</div>';
+        return;
+      }
+      var rows = ranges.map(function(range) {
+        var days = [];
+        for (var index = 0; index < 7; index += 1) {
+          var day = new Date(range.start);
+          day.setDate(day.getDate() + index);
+          days.push({ date: day, visitors: new Set() });
+        }
+        return { label: range.label, start: range.start, end: range.end, visitors: new Set(), days: days };
+      });
+      visitEvents.forEach(function(event) {
+        var date = new Date(event.time);
+        if (Number.isNaN(date.getTime())) return;
+        var row = rows.find(function(item) { return date >= item.start && date <= item.end; });
+        if (!row) return;
+        var key = uniqueVisitorId(event);
+        if (!key) return;
+        row.visitors.add(key);
+        var day = row.days.find(function(item) { return dayStamp(item.date) === dayStamp(date); });
+        if (day) day.visitors.add(key);
+      });
+      var max = Math.max(1, ...rows.map(function(row) { return row.visitors.size; }));
+      $(id).innerHTML = '<div class="week-bars">' + rows.map(function(row) {
+        var height = Math.max(8, Math.round(row.visitors.size / max * 150));
+        var activeDays = row.days.filter(function(day) { return day.visitors.size > 0; });
+        var dayRows = activeDays.map(function(day) {
+          return '<div class="week-tip-row"><span>' + esc(formatDayName(day.date)) + '</span><b>' + day.visitors.size + '</b></div>';
+        }).join('') || '<div class="week-tip-row"><span>Нет посещений</span><b>-</b></div>';
+        var tip = '<strong>' + esc(row.label) + '</strong>' + dayRows + '<div class="week-tip-total">Уникальных пользователей: ' + row.visitors.size + '</div>';
+        return '<div class="week-bar" data-week-tip="' + esc(tip) + '"><div class="week-value">' + row.visitors.size + '<small>пользователей</small></div><div class="week-fill" style="height:' + height + 'px"></div><div class="week-label">' + esc(row.label) + '</div></div>';
+      }).join('') + '</div>';
+    }
     function showFloatingWeekTip(event, html) {
       var tip = $('floatingWeekTip');
       tip.innerHTML = html;
@@ -1077,7 +1137,9 @@ const ADMIN_HTML = `<!doctype html>
       renderPie('chartProductBuys', topEntries(productBuyCountsData, products.length || 100));
       renderWeekBars('chartWeeklyBuys', chartEvents, 'buy_click', 'кликов');
       renderWeekBars('chartWeeklyProductViews', chartEvents, 'product_page_view', 'открытий');
+      renderUniqueVisitorWeekBars('chartWeeklyUniqueVisitors', chartEvents);
       $('chartsUpdatedAt').textContent = 'Обновлено: ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' · открытий товаров: ' + productOpens.length + ' · кликов «Купить»: ' + buyEvents.length;
+      if ($('visitorsUpdatedAt')) $('visitorsUpdatedAt').textContent = 'Обновлено: ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' · уникальных пользователей: ' + new Set(chartEvents.filter(function(event) { return event.type === 'site_visit' && uniqueVisitorId(event); }).map(uniqueVisitorId)).size;
     }
     function updateAnalyticsTimestamp() {
       $('analyticsUpdatedAt').textContent = 'Обновлено: ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -1700,6 +1762,9 @@ const ADMIN_HTML = `<!doctype html>
       if (target === 'charts' && analyticsPagination.hasMore) {
         loadFullAnalyticsForCharts();
       }
+      if (target === 'visitors' && analyticsPagination.hasMore) {
+        loadFullAnalyticsForCharts();
+      }
       if (target === 'referrals' && !referralUsers.length) {
         loadReferrals();
       }
@@ -1718,6 +1783,7 @@ const ADMIN_HTML = `<!doctype html>
     $('reloadAnalyticsBtn').addEventListener('click', function() { loadAnalytics(0); });
     $('loadMoreEventsBtn').addEventListener('click', function() { loadAnalytics(analyticsPagination.nextOffset || analyticsEvents.length); });
     $('reloadChartsBtn').addEventListener('click', loadFullAnalyticsForCharts);
+    $('reloadVisitorsBtn').addEventListener('click', loadFullAnalyticsForCharts);
     $('reloadReferralsBtn').addEventListener('click', loadReferrals);
     $('referralUsers').addEventListener('click', function(event) {
       var button = event.target.closest('[data-referral-user]');

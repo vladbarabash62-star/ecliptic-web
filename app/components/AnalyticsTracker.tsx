@@ -28,6 +28,7 @@ type AnalyticsEvent = {
 const STORAGE_KEY = "ecliptic_analytics_events_v2";
 const VISITOR_KEY = "ecliptic_visitor_id";
 const SESSION_KEY = "ecliptic_session_id";
+const SITE_VISIT_KEY = "ecliptic_site_visit_recorded_v1";
 const RECOVERY_KEY = "ecliptic_recovered_runtime_error";
 
 declare global {
@@ -300,6 +301,22 @@ export default function AnalyticsTracker() {
       window.clearTimeout(timer);
       window.removeEventListener("pageshow", handlePageShow);
     };
+  }, [pathname]);
+
+  useEffect(() => {
+    if (pathname.startsWith("/admin")) return;
+
+    try {
+      if (sessionStorage.getItem(SITE_VISIT_KEY) === "1") return;
+      sessionStorage.setItem(SITE_VISIT_KEY, "1");
+      trackEvent(enrichEvent({
+        type: "site_visit",
+        path: fullCurrentPath(),
+        time: new Date().toISOString(),
+      }));
+    } catch {
+      // Visit analytics is best-effort and must never block the storefront.
+    }
   }, [pathname]);
 
   useEffect(() => {
