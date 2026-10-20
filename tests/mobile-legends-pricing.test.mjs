@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 const rootDir = dirname(dirname(fileURLToPath(import.meta.url)));
 const source = readFileSync(join(rootDir, "lib", "products.ts"), "utf8");
 
-const mobileLegendsBlock = source.match(/name: "Mobile Legends"[\s\S]*?slug: "clash-of-clans"/)?.[0] || "";
+const mobileLegendsBlock = source.match(/"name": "Mobile Legends"[\s\S]*?"slug": "mobile-legends"[\s\S]*?\n  \},/)?.[0] || "";
 
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -32,11 +32,11 @@ const removedOffers = ['"72 алмаза"', '"257 алмазов"', '"429 алм
 for (const [label, price] of expectedOffers) {
   assert.match(
     mobileLegendsBlock,
-    new RegExp(`label: ${escapeRegExp(label)}, priceRub: ${price}`),
+    new RegExp(`"label": ${escapeRegExp(label)}[\\s\\S]*?"priceRub": ${price}`),
     `${label} should cost ${price} rubles`
   );
 }
 
 for (const label of removedOffers) {
-  assert.equal(mobileLegendsBlock.includes(`label: ${label}`), false, `${label} should not remain in Mobile Legends pricing`);
+  assert.equal(mobileLegendsBlock.includes(`"label": ${label}`), false, `${label} should not remain in Mobile Legends pricing`);
 }

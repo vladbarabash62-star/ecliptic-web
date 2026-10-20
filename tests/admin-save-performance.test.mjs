@@ -10,11 +10,11 @@ const optimizedImagesSource = readFileSync(join(rootDir, "lib", "optimizedImages
 const productStoreSource = readFileSync(join(rootDir, "lib", "productStore.ts"), "utf8");
 
 assert.match(adminSource, /async function postJson\(url, body, timeoutMs\)/);
-assert.match(adminSource, /postJson\('\/api\/admin\/products', \{ products: products \}, 120000\)/);
-assert.match(adminSource, /postJson\('\/api\/admin\/settings', \{ settings: settings \}, 60000\)/);
+assert.match(adminSource, /postJson\('\/api\/admin\/products', compactDirtyProductsForSave\(\), 12000\)/);
+assert.match(adminSource, /postJson\('\/api\/admin\/settings', \{ settings: settings \}, 12000\)/);
 assert.doesNotMatch(adminSource, /visibilitychange/);
 assert.doesNotMatch(adminSource, /setInterval\(function\(\) \{\s*if \(!document\.hidden\) loadAnalytics\(\);\s*\}, 30000\)/);
-assert.match(apiSource, /revalidatePath\("\/shop", "page"\)/);
-assert.match(apiSource, /revalidatePath\("\/tags", "page"\)/);
+assert.match(apiSource, /revalidatePath\("\/", "page"\)/);
+assert.match(apiSource, /revalidatePath\("\/", "layout"\)/);
 assert.match(optimizedImagesSource, /const optimizedPathCache = new Map<string, string>\(\);/);
-assert.match(productStoreSource, /timeoutMs: 20000/);
+assert.match(productStoreSource, /timeoutMs: 500/);

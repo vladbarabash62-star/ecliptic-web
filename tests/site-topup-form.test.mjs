@@ -13,7 +13,7 @@ assert.match(formSource, /Введите ссылку на сайт, котор�
 assert.match(formSource, /Сумма пополнения/);
 assert.match(formSource, /Введите сумму/);
 assert.match(formSource, /CURRENCY_RUB = "\\u20BD"/);
-assert.match(formSource, /CURRENCY_PMR = "Р ПМР"/);
+assert.match(formSource, /CURRENCY_PMR = "р ПМР"/);
 assert.match(formSource, /CURRENCY_USD = "\$"/);
 assert.match(formSource, /CURRENCY_EUR = "\\u20AC"/);
 assert.match(formSource, /100р РФ/);

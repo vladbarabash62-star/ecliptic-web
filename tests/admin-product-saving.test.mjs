@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 const rootDir = dirname(dirname(fileURLToPath(import.meta.url)));
 const source = readFileSync(join(rootDir, "lib", "productStore.ts"), "utf8");
 
-assert.match(source, /const PRODUCT_STORAGE_VERSION = 3;/);
+assert.match(source, /const PRODUCT_STORAGE_VERSION = 4;/);
 assert.match(source, /version: PRODUCT_STORAGE_VERSION/);
 assert.match(
   source,

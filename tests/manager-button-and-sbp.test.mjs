@@ -11,8 +11,8 @@ const productsSource = readFileSync(join(rootDir, "lib", "products.ts"), "utf8")
 assert.match(formSource, /export function ManagerButtonForm/);
 assert.match(formSource, /Написать менеджеру/);
 assert.match(formSource, /export function SbpPaymentForm/);
-assert.match(formSource, /Сумма пополнения \(₽\)/);
-assert.match(formSource, /Минимальная сумма пополнения 100₽\./);
+assert.match(formSource, /Сумма пополнения \(\{amountLabel\}\)/);
+assert.match(formSource, /Минимальная сумма пополнения — \$\{minimumAmount\} \$\{amountUnit\}\./);
 const sbpFormBlock = formSource.match(/export function SbpPaymentForm[\s\S]*?export function ProductOffersWithDetails/);
 
 assert.ok(sbpFormBlock, "Should find the SBP payment form block");
