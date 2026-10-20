@@ -178,25 +178,26 @@ export default function AccountTabs({ orders, referral, accountName }: { orders:
         orders.length ? (
           <section className="mt-7 grid gap-3">
             <h2 className="text-xl font-black text-white">Мои заказы</h2>
-            {orders.map((order) => (
-              <article
-                key={order.id}
-                className="rounded-2xl border border-white/10 bg-[#0f1420]/86 p-4 shadow-[0_16px_40px_rgba(0,0,0,0.18)]"
-              >
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <div className="text-lg font-black text-white">{order.productName}</div>
-                    <div className="mt-1 text-sm font-semibold text-white/58">{order.offer}</div>
-                  </div>
-                  <div className="text-left sm:text-right">
-                    <div className="text-sm font-black text-emerald-200">
-                      {Number.isFinite(order.priceRub) ? `${order.priceRub} р` : "Цена уточняется"}
+            {orders.map((order) => {
+              const visibleOffer = ["manager-button", "manager-link"].includes(order.offer.trim()) ? "" : order.offer.trim();
+
+              return (
+                <article
+                  key={order.id}
+                  className="rounded-2xl border border-white/10 bg-[#0f1420]/86 p-4 shadow-[0_16px_40px_rgba(0,0,0,0.18)]"
+                >
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <div className="text-lg font-black text-white">{order.productName}</div>
+                      {visibleOffer ? <div className="mt-1 text-sm font-semibold text-white/58">{visibleOffer}</div> : null}
                     </div>
-                    <div className="mt-1 text-xs font-semibold text-white/44">{formatDate(order.createdAt)}</div>
+                    <div className="text-left sm:text-right">
+                      <div className="mt-1 text-xs font-semibold text-white/44">{formatDate(order.createdAt)}</div>
+                    </div>
                   </div>
-                </div>
-              </article>
-            ))}
+                </article>
+              );
+            })}
           </section>
         ) : (
           <div className="mt-7 rounded-2xl border border-white/10 bg-white/[0.045] p-5 text-sm font-semibold leading-relaxed text-white/62">
