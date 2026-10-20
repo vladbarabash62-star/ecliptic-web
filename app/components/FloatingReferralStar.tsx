@@ -57,7 +57,7 @@ const CONTENT_SELECTOR = [
   ".product-page-enter .category-divider",
 ].join(",");
 
-function shouldShowOnCurrentPage(path: string, params: URLSearchParams) {
+function shouldShowOnCurrentPage(path: string) {
   return path === "/" || path.startsWith("/products/");
 }
 
@@ -266,7 +266,7 @@ export default function FloatingReferralStar() {
   const [isLocationReady, setIsLocationReady] = useState(false);
   const isVisible = useMemo(() => {
     if (!isLocationReady) return false;
-    return shouldShowOnCurrentPage(pathname || "/", new URLSearchParams(locationSearch));
+    return shouldShowOnCurrentPage(pathname || "/");
   }, [isLocationReady, pathname, locationSearch]);
 
   async function refreshUser() {

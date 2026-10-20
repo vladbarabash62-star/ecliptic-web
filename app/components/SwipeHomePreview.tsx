@@ -20,8 +20,8 @@ export default function SwipeHomePreview() {
 
   useEffect(() => {
     if (isProductPage) {
-      setIsMounted(true);
-      return;
+      const timer = window.setTimeout(() => setIsMounted(true), 0);
+      return () => window.clearTimeout(timer);
     }
 
     const timer = window.setTimeout(() => setIsMounted(false), 720);
