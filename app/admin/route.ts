@@ -921,7 +921,7 @@ const ADMIN_HTML = `<!doctype html>
       return String(event && (event.visitorId || event.sessionId) || '').trim();
     }
     function renderUniqueVisitorWeekBars(id, events) {
-      var visitEvents = (events || []).filter(function(event) { return event.type === 'site_visit' && uniqueVisitorId(event) && event.time; });
+      var visitEvents = (events || []).filter(function(event) { return event.type !== 'page_view' && uniqueVisitorId(event) && event.time; });
       var ranges = weekRanges(visitEvents);
       if (!ranges.length) {
         $(id).innerHTML = '<div class="chart-empty">Пока нет данных о посещениях. Новые визиты появятся после первого открытия сайта.</div>';
@@ -1139,7 +1139,7 @@ const ADMIN_HTML = `<!doctype html>
       renderWeekBars('chartWeeklyProductViews', chartEvents, 'product_page_view', 'открытий');
       renderUniqueVisitorWeekBars('chartWeeklyUniqueVisitors', chartEvents);
       $('chartsUpdatedAt').textContent = 'Обновлено: ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' · открытий товаров: ' + productOpens.length + ' · кликов «Купить»: ' + buyEvents.length;
-      if ($('visitorsUpdatedAt')) $('visitorsUpdatedAt').textContent = 'Обновлено: ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' · уникальных пользователей: ' + new Set(chartEvents.filter(function(event) { return event.type === 'site_visit' && uniqueVisitorId(event); }).map(uniqueVisitorId)).size;
+      if ($('visitorsUpdatedAt')) $('visitorsUpdatedAt').textContent = 'Обновлено: ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' · уникальных пользователей: ' + new Set(chartEvents.filter(function(event) { return uniqueVisitorId(event); }).map(uniqueVisitorId)).size;
     }
     function updateAnalyticsTimestamp() {
       $('analyticsUpdatedAt').textContent = 'Обновлено: ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
