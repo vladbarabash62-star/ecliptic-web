@@ -286,12 +286,15 @@ export async function getCustomerReferralInfo(userIdValue: string, siteUrl = "ht
       username: item.username || "",
       joinedAt: item.referredAt || item.createdAt,
     }));
+  const orderCount = store.orders.filter((order) => order.userId === user.id).length;
 
   return {
     code: referralCode,
     link: `${siteUrl.replace(/\/$/, "")}/?use=${encodeURIComponent(referralCode)}`,
     invited,
     invitedCount: invited.length,
+    orderCount,
+    hasPurchase: orderCount > 0,
     referrer: referrer ? {
       id: referrer.id,
       name: referrer.name || referrer.username || "Пользователь",
@@ -312,7 +315,10 @@ export async function createCustomerReferralClaim(userIdValue: string, status: C
   if (!user) throw new Error("Пользователь не найден.");
 
   const invitedCount = Object.values(store.users).filter((item) => item.referredByUserId === user.id).length;
-  if (invitedCount < 5) throw new Error("Для подарка нужно пригласить минимум 5 друзей.");
+  const hasPurchase = store.orders.some((order) => order.userId === user.id);
+  if (invitedCount < 5 || !hasPurchase) {
+    throw new Error("Для подарка нужно пригласить 5 друзей и оформить хотя бы один заказ.");
+  }
 
   const rewardedClaim = store.referralClaims
     .filter((claim) => claim.userId === user.id && claim.status === "rewarded")
@@ -360,7 +366,10 @@ export async function markCustomerReferralRewarded(userIdValue: string) {
   if (!user) throw new Error("Пользователь не найден.");
 
   const invitedCount = Object.values(store.users).filter((item) => item.referredByUserId === user.id).length;
-  if (invitedCount < 5) throw new Error("У пользователя меньше 5 приглашённых участников.");
+  const hasPurchase = store.orders.some((order) => order.userId === user.id);
+  if (invitedCount < 5 || !hasPurchase) {
+    throw new Error("Для выдачи подарка нужны 5 приглашённых друзей и хотя бы один заказ.");
+  }
 
   const userClaims = store.referralClaims
     .map((claim, index) => ({ claim, index }))

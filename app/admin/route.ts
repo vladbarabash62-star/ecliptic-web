@@ -1070,7 +1070,7 @@ const ADMIN_HTML = `<!doctype html>
       var invitedCount = (user.invited || []).length;
       if (ordersCount > 50) return 'ref-vip';
       if (ordersCount > 10) return 'ref-hot';
-      if (invitedCount >= 5) return 'ref-good';
+      if (invitedCount >= 5 && (user.orders || []).length > 0) return 'ref-good';
       return '';
     }
     function renderReferrals() {
@@ -1103,7 +1103,7 @@ const ADMIN_HTML = `<!doctype html>
         : 'Никем не приглашён';
       var latestClaim = user.lastClaim || null;
       var rewardClaim = user.rewardClaim || (latestClaim && latestClaim.status === 'rewarded' ? latestClaim : null);
-      var canMarkRewarded = (user.invited || []).length >= 5 && !rewardClaim;
+      var canMarkRewarded = (user.invited || []).length >= 5 && (user.orders || []).length > 0 && !rewardClaim;
       $('referralDetails').className = '';
       $('referralDetails').innerHTML =
         '<div class="toolbar" style="justify-content:space-between;align-items:flex-start">' +

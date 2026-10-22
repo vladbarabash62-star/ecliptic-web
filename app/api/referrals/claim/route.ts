@@ -89,7 +89,7 @@ export async function POST() {
     [
       "🎁 <b>Реферальная программа</b>",
       "",
-      `Пользователь выполнил условия и просит подарок до <b>50 Telegram Stars</b>.`,
+      `Пользователь выполнил условия: 5 приглашённых друзей и хотя бы один заказ. Просит подарок до <b>50 Telegram Stars</b>.`,
       `Имя: <b>${escapeHtml(user.name || "не указано")}</b>`,
       `Telegram: <b>${escapeHtml(user.username || "не указан")}</b>`,
       `Приглашено участников: <b>${result.invitedCount}</b>`,

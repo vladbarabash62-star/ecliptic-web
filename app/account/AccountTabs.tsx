@@ -23,6 +23,8 @@ type ReferralInfo = {
   link: string;
   invited: InvitedFriend[];
   invitedCount: number;
+  orderCount: number;
+  hasPurchase: boolean;
   referrer?: {
     id: string;
     name: string;
@@ -82,7 +84,8 @@ export default function AccountTabs({ orders, referral, accountName }: { orders:
   const [lastClaimAt, setLastClaimAt] = useState(referral?.lastClaim?.createdAt || "");
   const [now, setNow] = useState(() => Date.now());
   const invitedCount = referral?.invitedCount || 0;
-  const canClaimGift = invitedCount >= 5;
+  const orderCount = referral?.orderCount || 0;
+  const canClaimGift = invitedCount >= 5 && orderCount > 0;
   const rewardReceived = Boolean(referral?.rewardClaim || referral?.lastClaim?.status === "rewarded");
   const claimCooldownMs = lastClaimAt
     ? Math.max(0, REFERRAL_CLAIM_COOLDOWN_MS - (now - new Date(lastClaimAt).getTime()))
@@ -211,7 +214,9 @@ export default function AccountTabs({ orders, referral, accountName }: { orders:
       ) : (
         <section className="mt-7 grid gap-4">
           <div className="rounded-3xl border border-sky-300/18 bg-gradient-to-br from-sky-500/14 to-emerald-500/10 p-5">
-            <h2 className="text-2xl font-black leading-tight text-white sm:text-3xl">Пригласи 5 друзей и получи подарок стоимостью 50 Telegram Stars</h2>
+            <h2 className="text-2xl font-black leading-tight text-white sm:text-3xl">
+              Пригласи 5 друзей, соверши любую покупку в магазине и получи подарок стоимостью 50 Telegram Stars
+            </h2>
             <div className="mt-5 grid gap-2 sm:grid-cols-[1fr_auto]">
               <div className="overflow-hidden rounded-2xl border border-white/10 bg-black/24 px-4 py-3 text-sm font-black text-sky-50">
                 <span className="block truncate">{referral?.link || "Ссылка появится после входа"}</span>
@@ -228,6 +233,9 @@ export default function AccountTabs({ orders, referral, accountName }: { orders:
             <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.055] p-4">
               <div className="text-sm font-bold text-white/58">Приглашено участников</div>
               <div className="mt-1 text-4xl font-black text-white">{invitedCount} / 5</div>
+            </div>
+            <div className="mt-3 rounded-2xl border border-white/10 bg-white/[0.055] p-4 text-sm font-bold text-white/68">
+              Покупок: <span className="text-white">{orderCount}</span> · для подарка нужен хотя бы один заказ
             </div>
             <div className="mt-4 rounded-2xl border border-sky-300/18 bg-sky-500/10 p-4 text-left">
               <div className="text-xs font-black uppercase tracking-[0.1em] text-sky-100/60">Кто пригласил вас</div>
@@ -290,7 +298,7 @@ export default function AccountTabs({ orders, referral, accountName }: { orders:
 
           {!canClaimGift ? (
             <div className="rounded-2xl border border-white/10 bg-white/[0.035] px-5 py-4 text-center text-sm font-bold text-white/48">
-              Кнопка заявки появится после 5 приглашённых участников.
+              Кнопка заявки появится после 5 приглашённых участников и первой покупки.
             </div>
           ) : null}
         </section>
