@@ -24,3 +24,6 @@ assert.match(globals, /content-visibility: auto;/);
 assert.match(globals, /contain-intrinsic-size: 720px;/);
 assert.match(nextConfig, /X-DNS-Prefetch-Control[\s\S]*?value: "on"/);
 assert.match(nextConfig, /Cache-Control[\s\S]*?max-age=31536000, immutable/);
+assert.doesNotMatch(readFileSync(join(rootDir, "app", "admin", "route.ts"), "utf8"), /data-tab="visitors"/);
+assert.match(readFileSync(join(rootDir, "app", "admin", "route.ts"), "utf8"), /chartWeeklyRegistrations/);
+assert.match(readFileSync(join(rootDir, "app", "admin", "route.ts"), "utf8"), /function renderRegistrationWeekBars/);

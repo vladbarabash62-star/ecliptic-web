@@ -238,7 +238,6 @@ const ADMIN_HTML = `<!doctype html>
     <nav class="card tabs">
       <button class="tab active" type="button" data-tab="analytics">Аналитика</button>
       <button class="tab" type="button" data-tab="charts">Диаграммы</button>
-      <button class="tab" type="button" data-tab="visitors">Посещения</button>
       <button class="tab" type="button" data-tab="products">Товары</button>
       <button class="tab" type="button" data-tab="settings">Главная</button>
       <button class="tab" type="button" data-tab="referrals">Реферальная программа</button>
@@ -290,6 +289,16 @@ const ADMIN_HTML = `<!doctype html>
         <p class="muted" style="margin-top:6px">Сколько раз люди открывали страницы товаров в каждую неделю.</p>
         <div id="chartWeeklyProductViews"></div>
       </div>
+      <div class="card wide-chart">
+        <h2>Уникальные посещения по неделям</h2>
+        <p class="muted" style="margin-top:6px">Один пользователь считается один раз в неделю. Наведите на столбец, чтобы увидеть разбивку по дням.</p>
+        <div id="chartWeeklyUniqueVisitors"></div>
+      </div>
+      <div class="card wide-chart">
+        <h2>Регистрации новых пользователей по неделям</h2>
+        <p class="muted" style="margin-top:6px">Количество новых регистраций по неделям. Наведите на столбец, чтобы увидеть каждый день.</p>
+        <div id="chartWeeklyRegistrations"></div>
+      </div>
       <div class="chart-grid">
         <div class="card chart-card">
           <h2>Сколько раз открыли товар</h2>
@@ -301,24 +310,6 @@ const ADMIN_HTML = `<!doctype html>
           <p class="hint">Считает нажатия «Купить» внутри каждого товара по ссылке /products/....</p>
           <div id="chartProductBuys"></div>
         </div>
-      </div>
-    </section>
-
-    <section id="visitors" class="section">
-      <div class="toolbar" style="justify-content:space-between;margin-bottom:12px">
-        <div>
-          <h2>Уникальные посещения</h2>
-          <p class="muted" id="visitorsUpdatedAt" style="margin-top:6px">Данные загружаются...</p>
-        </div>
-        <button class="btn secondary" id="reloadVisitorsBtn" type="button">Обновить посещения</button>
-      </div>
-      <div class="card wide-chart">
-        <h2>Индивидуальные пользователи по неделям</h2>
-        <p class="muted" style="margin-top:6px">В каждой неделе один пользователь считается один раз. Наведите на столбец, чтобы увидеть разбивку по дням.</p>
-        <div id="chartWeeklyUniqueVisitors"></div>
-      </div>
-      <div class="card panel" style="margin-top:14px">
-        <p class="hint">Посещения считаются по анонимному постоянному visitorId браузера. MAC-адрес браузер не передаёт, поэтому он не используется и не сохраняется.</p>
       </div>
     </section>
 
@@ -958,6 +949,43 @@ const ADMIN_HTML = `<!doctype html>
         return '<div class="week-bar" data-week-tip="' + esc(tip) + '"><div class="week-value">' + row.visitors.size + '<small>пользователей</small></div><div class="week-fill" style="height:' + height + 'px"></div><div class="week-label">' + esc(row.label) + '</div></div>';
       }).join('') + '</div>';
     }
+    function renderRegistrationWeekBars(id, users) {
+      var registrationEvents = (users || []).filter(function(user) { return user && user.createdAt; }).map(function(user) {
+        return { time: user.createdAt };
+      });
+      var ranges = weekRanges(registrationEvents);
+      if (!ranges.length) {
+        $(id).innerHTML = '<div class="chart-empty">Пока нет зарегистрированных пользователей.</div>';
+        return;
+      }
+      var rows = ranges.map(function(range) {
+        var days = [];
+        for (var index = 0; index < 7; index += 1) {
+          var day = new Date(range.start);
+          day.setDate(day.getDate() + index);
+          days.push({ date: day, value: 0 });
+        }
+        return { label: range.label, start: range.start, end: range.end, value: 0, days: days };
+      });
+      registrationEvents.forEach(function(event) {
+        var date = new Date(event.time);
+        if (Number.isNaN(date.getTime())) return;
+        var row = rows.find(function(item) { return date >= item.start && date <= item.end; });
+        if (!row) return;
+        row.value += 1;
+        var day = row.days.find(function(item) { return dayStamp(item.date) === dayStamp(date); });
+        if (day) day.value += 1;
+      });
+      var max = Math.max(1, ...rows.map(function(row) { return row.value; }));
+      $(id).innerHTML = '<div class="week-bars">' + rows.map(function(row) {
+        var height = Math.max(8, Math.round(row.value / max * 150));
+        var dayRows = row.days.filter(function(day) { return day.value > 0; }).map(function(day) {
+          return '<div class="week-tip-row"><span>' + esc(formatDayName(day.date)) + '</span><b>' + day.value + '</b></div>';
+        }).join('') || '<div class="week-tip-row"><span>Нет регистраций</span><b>-</b></div>';
+        var tip = '<strong>' + esc(row.label) + '</strong>' + dayRows + '<div class="week-tip-total">Новых пользователей: ' + row.value + '</div>';
+        return '<div class="week-bar" data-week-tip="' + esc(tip) + '"><div class="week-value">' + row.value + '<small>регистраций</small></div><div class="week-fill" style="height:' + height + 'px"></div><div class="week-label">' + esc(row.label) + '</div></div>';
+      }).join('') + '</div>';
+    }
     function showFloatingWeekTip(event, html) {
       var tip = $('floatingWeekTip');
       tip.innerHTML = html;
@@ -1138,8 +1166,8 @@ const ADMIN_HTML = `<!doctype html>
       renderWeekBars('chartWeeklyBuys', chartEvents, 'buy_click', 'кликов');
       renderWeekBars('chartWeeklyProductViews', chartEvents, 'product_page_view', 'открытий');
       renderUniqueVisitorWeekBars('chartWeeklyUniqueVisitors', chartEvents);
+      renderRegistrationWeekBars('chartWeeklyRegistrations', referralUsers);
       $('chartsUpdatedAt').textContent = 'Обновлено: ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' · открытий товаров: ' + productOpens.length + ' · кликов «Купить»: ' + buyEvents.length;
-      if ($('visitorsUpdatedAt')) $('visitorsUpdatedAt').textContent = 'Обновлено: ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' · уникальных пользователей: ' + new Set(chartEvents.filter(function(event) { return uniqueVisitorId(event); }).map(uniqueVisitorId)).size;
     }
     function updateAnalyticsTimestamp() {
       $('analyticsUpdatedAt').textContent = 'Обновлено: ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -1611,6 +1639,7 @@ const ADMIN_HTML = `<!doctype html>
           selectedReferralUserId = referralUsers[0] ? referralUsers[0].id : '';
         }
         renderReferrals();
+        renderCharts();
         $('referralsUpdatedAt').textContent = 'Обновлено: ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' · пользователей: ' + referralUsers.length;
       } catch (error) {
         $('referralsUpdatedAt').textContent = 'Не удалось загрузить пользователей';
@@ -1762,9 +1791,7 @@ const ADMIN_HTML = `<!doctype html>
       if (target === 'charts' && analyticsPagination.hasMore) {
         loadFullAnalyticsForCharts();
       }
-      if (target === 'visitors' && analyticsPagination.hasMore) {
-        loadFullAnalyticsForCharts();
-      }
+      if (target === 'charts' && !referralUsers.length) loadReferrals();
       if (target === 'referrals' && !referralUsers.length) {
         loadReferrals();
       }
@@ -1783,7 +1810,6 @@ const ADMIN_HTML = `<!doctype html>
     $('reloadAnalyticsBtn').addEventListener('click', function() { loadAnalytics(0); });
     $('loadMoreEventsBtn').addEventListener('click', function() { loadAnalytics(analyticsPagination.nextOffset || analyticsEvents.length); });
     $('reloadChartsBtn').addEventListener('click', loadFullAnalyticsForCharts);
-    $('reloadVisitorsBtn').addEventListener('click', loadFullAnalyticsForCharts);
     $('reloadReferralsBtn').addEventListener('click', loadReferrals);
     $('referralUsers').addEventListener('click', function(event) {
       var button = event.target.closest('[data-referral-user]');
