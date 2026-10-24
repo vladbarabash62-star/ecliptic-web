@@ -56,7 +56,15 @@ export async function POST() {
     return NextResponse.json({ ok: false, error: "Войдите в аккаунт через Telegram." }, { status: 401 });
   }
 
-  const result = await createCustomerReferralClaim(user.id, "pending_manager");
+  let result;
+  try {
+    result = await createCustomerReferralClaim(user.id, "pending_manager");
+  } catch (error) {
+    return NextResponse.json(
+      { ok: false, error: error instanceof Error ? error.message : "Не удалось проверить условия реферальной программы." },
+      { status: 400 },
+    );
+  }
   const claim = result.claim;
 
   if (result.rewarded) {

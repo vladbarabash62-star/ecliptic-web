@@ -76,8 +76,9 @@ function tabFromHash(value: string): AccountTab {
   return "profile";
 }
 
-export default function AccountTabs({ orders, referral, accountName }: { orders: AccountOrder[]; referral: ReferralInfo | null; accountName: string }) {
+export default function AccountTabs({ orders, referral: initialReferral, accountName }: { orders: AccountOrder[]; referral: ReferralInfo | null; accountName: string }) {
   const [tab, setTab] = useState<AccountTab>("profile");
+  const [referral, setReferral] = useState<ReferralInfo | null>(initialReferral);
   const [copyText, setCopyText] = useState("Скопировать");
   const [claimText, setClaimText] = useState("");
   const [isClaiming, setIsClaiming] = useState(false);
@@ -98,6 +99,26 @@ export default function AccountTabs({ orders, referral, accountName }: { orders:
     window.addEventListener("hashchange", syncFromHash);
     return () => window.removeEventListener("hashchange", syncFromHash);
   }, []);
+
+  useEffect(() => {
+    if (tab !== "referral") return;
+    let active = true;
+    const refreshReferral = async () => {
+      const response = await fetch("/api/referrals/status", { cache: "no-store" }).catch(() => null);
+      if (!response?.ok) return;
+      const data = await response.json().catch(() => ({}));
+      if (active && data?.referral) {
+        setReferral(data.referral);
+        setLastClaimAt(data.referral.lastClaim?.createdAt || "");
+      }
+    };
+    void refreshReferral();
+    const interval = window.setInterval(() => void refreshReferral(), 10000);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [tab]);
 
   useEffect(() => {
     if (!canClaimGift || !lastClaimAt) return;
@@ -128,6 +149,14 @@ export default function AccountTabs({ orders, referral, accountName }: { orders:
       const data = await response.json().catch(() => ({}));
       if (!response.ok || !data.ok) throw new Error(data.error || "Не удалось отправить заявку.");
       if (data.claim?.createdAt) setLastClaimAt(data.claim.createdAt);
+      const refreshed = await fetch("/api/referrals/status", { cache: "no-store" }).catch(() => null);
+      if (refreshed?.ok) {
+        const refreshedData = await refreshed.json().catch(() => ({}));
+        if (refreshedData?.referral) {
+          setReferral(refreshedData.referral);
+          setLastClaimAt(refreshedData.referral.lastClaim?.createdAt || data.claim?.createdAt || "");
+        }
+      }
       setNow(Date.now());
       setClaimText(data.message || "Заявка отправлена менеджеру.");
     } catch (error) {

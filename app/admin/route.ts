@@ -299,6 +299,11 @@ const ADMIN_HTML = `<!doctype html>
         <p class="muted" style="margin-top:6px">Количество новых регистраций по неделям. Наведите на столбец, чтобы увидеть каждый день.</p>
         <div id="chartWeeklyRegistrations"></div>
       </div>
+      <div class="card wide-chart">
+        <h2>Выполнение реферальной программы по неделям</h2>
+        <p class="muted" style="margin-top:6px">Сколько участников выполнили оба условия: 5 приглашённых друзей и хотя бы один заказ.</p>
+        <div id="chartWeeklyReferralCompletions"></div>
+      </div>
       <div class="chart-grid">
         <div class="card chart-card">
           <h2>Сколько раз открыли товар</h2>
@@ -986,6 +991,43 @@ const ADMIN_HTML = `<!doctype html>
         return '<div class="week-bar" data-week-tip="' + esc(tip) + '"><div class="week-value">' + row.value + '<small>регистраций</small></div><div class="week-fill" style="height:' + height + 'px"></div><div class="week-label">' + esc(row.label) + '</div></div>';
       }).join('') + '</div>';
     }
+    function renderReferralCompletionWeekBars(id, users) {
+      var completionEvents = (users || []).filter(function(user) { return user && user.referralCompletedAt; }).map(function(user) {
+        return { time: user.referralCompletedAt };
+      });
+      var ranges = weekRanges(completionEvents);
+      if (!ranges.length) {
+        $(id).innerHTML = '<div class="chart-empty">Пока никто не выполнил оба условия программы.</div>';
+        return;
+      }
+      var rows = ranges.map(function(range) {
+        var days = [];
+        for (var index = 0; index < 7; index += 1) {
+          var day = new Date(range.start);
+          day.setDate(day.getDate() + index);
+          days.push({ date: day, value: 0 });
+        }
+        return { label: range.label, start: range.start, end: range.end, value: 0, days: days };
+      });
+      completionEvents.forEach(function(event) {
+        var date = new Date(event.time);
+        if (Number.isNaN(date.getTime())) return;
+        var row = rows.find(function(item) { return date >= item.start && date <= item.end; });
+        if (!row) return;
+        row.value += 1;
+        var day = row.days.find(function(item) { return dayStamp(item.date) === dayStamp(date); });
+        if (day) day.value += 1;
+      });
+      var max = Math.max(1, ...rows.map(function(row) { return row.value; }));
+      $(id).innerHTML = '<div class="week-bars">' + rows.map(function(row) {
+        var height = Math.max(8, Math.round(row.value / max * 150));
+        var dayRows = row.days.filter(function(day) { return day.value > 0; }).map(function(day) {
+          return '<div class="week-tip-row"><span>' + esc(formatDayName(day.date)) + '</span><b>' + day.value + '</b></div>';
+        }).join('') || '<div class="week-tip-row"><span>Нет выполнений</span><b>-</b></div>';
+        var tip = '<strong>' + esc(row.label) + '</strong>' + dayRows + '<div class="week-tip-total">Выполнили условия: ' + row.value + '</div>';
+        return '<div class="week-bar" data-week-tip="' + esc(tip) + '"><div class="week-value">' + row.value + '<small>участников</small></div><div class="week-fill" style="height:' + height + 'px"></div><div class="week-label">' + esc(row.label) + '</div></div>';
+      }).join('') + '</div>';
+    }
     function showFloatingWeekTip(event, html) {
       var tip = $('floatingWeekTip');
       tip.innerHTML = html;
@@ -1096,9 +1138,9 @@ const ADMIN_HTML = `<!doctype html>
     function referralUserTierClass(user) {
       var ordersCount = (user.orders || []).length;
       var invitedCount = (user.invited || []).length;
+      if (invitedCount >= 5 && (user.orders || []).length > 0) return 'ref-good';
       if (ordersCount > 50) return 'ref-vip';
       if (ordersCount > 10) return 'ref-hot';
-      if (invitedCount >= 5 && (user.orders || []).length > 0) return 'ref-good';
       return '';
     }
     function renderReferrals() {
@@ -1167,6 +1209,7 @@ const ADMIN_HTML = `<!doctype html>
       renderWeekBars('chartWeeklyProductViews', chartEvents, 'product_page_view', 'открытий');
       renderUniqueVisitorWeekBars('chartWeeklyUniqueVisitors', chartEvents);
       renderRegistrationWeekBars('chartWeeklyRegistrations', referralUsers);
+      renderReferralCompletionWeekBars('chartWeeklyReferralCompletions', referralUsers);
       $('chartsUpdatedAt').textContent = 'Обновлено: ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' · открытий товаров: ' + productOpens.length + ' · кликов «Купить»: ' + buyEvents.length;
     }
     function updateAnalyticsTimestamp() {

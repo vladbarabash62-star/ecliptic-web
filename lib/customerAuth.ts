@@ -19,6 +19,7 @@ export type CustomerUser = {
   referralCode?: string;
   referredByUserId?: string;
   referredAt?: string;
+  referralCompletedAt?: string;
   createdAt: string;
 };
 
@@ -175,6 +176,34 @@ function findUserByReferralCode(store: CustomerStore, code: string) {
   return Object.values(store.users).find((user) => cleanReferralCode(user.referralCode) === cleanCode) || null;
 }
 
+function syncReferralCompletions(store: CustomerStore) {
+  let changed = false;
+  const users = Object.values(store.users);
+
+  for (const user of users) {
+    if (user.referralCompletedAt) continue;
+    const invited = users
+      .filter((item) => item.referredByUserId === user.id)
+      .sort((a, b) => String(a.referredAt || a.createdAt).localeCompare(String(b.referredAt || b.createdAt)));
+    const orders = store.orders
+      .filter((order) => order.userId === user.id)
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    if (invited.length < 5 || !orders.length) continue;
+
+    const fifthInviteAt = new Date(invited[4].referredAt || invited[4].createdAt).getTime();
+    const firstOrderAt = new Date(orders[0].createdAt).getTime();
+    const completionAt = Math.max(
+      Number.isFinite(fifthInviteAt) ? fifthInviteAt : 0,
+      Number.isFinite(firstOrderAt) ? firstOrderAt : 0,
+    );
+    if (!completionAt) continue;
+    store.users[user.id] = { ...user, referralCompletedAt: new Date(completionAt).toISOString() };
+    changed = true;
+  }
+
+  return changed;
+}
+
 export async function getCustomerReferrerByCode(code: string) {
   const store = await readCustomerStore();
   const referrer = findUserByReferralCode(store, code);
@@ -232,6 +261,7 @@ export async function upsertCustomerUser(input: Omit<CustomerUser, "id" | "creat
   }
 
   store.users[id] = user;
+  syncReferralCompletions(store);
   await writeCustomerStore(store);
   return user;
 }
@@ -261,12 +291,14 @@ export async function addCustomerOrder(user: CustomerUser, input: Partial<Custom
 
   store.users[user.id] = user;
   store.orders = [...store.orders, order].slice(-5000);
+  syncReferralCompletions(store);
   await writeCustomerStore(store);
   return order;
 }
 
 export async function getCustomerReferralInfo(userIdValue: string, siteUrl = "https://ecliptic.website") {
   const store = await readCustomerStore();
+  if (syncReferralCompletions(store)) await writeCustomerStore(store);
   const user = store.users[userIdValue];
   if (!user) return null;
   const referrer = user.referredByUserId ? store.users[user.referredByUserId] : null;
@@ -426,6 +458,7 @@ export async function getPendingCustomerReferralClaims(limit = 20) {
 
 export async function getCustomerAdminReferralReport() {
   const store = await readCustomerStore();
+  if (syncReferralCompletions(store)) await writeCustomerStore(store);
   let changed = false;
   for (const user of Object.values(store.users)) {
     const referralCode = uniqueReferralCode(store, user.id, user.referralCode);
@@ -462,6 +495,7 @@ export async function getCustomerAdminReferralReport() {
         referralCode: user.referralCode || uniqueReferralCode(store, user.id, user.referralCode),
         referredByUserId: user.referredByUserId || "",
         referredAt: user.referredAt || "",
+        referralCompletedAt: user.referralCompletedAt || "",
         referrer: referrer ? {
           id: referrer.id,
           name: referrer.name || referrer.username || "Пользователь",

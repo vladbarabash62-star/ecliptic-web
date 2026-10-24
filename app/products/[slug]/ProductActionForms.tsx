@@ -143,21 +143,12 @@ function saveCustomerOrder(input: {
   message: string;
 }) {
   const payload = JSON.stringify(input);
-
-  try {
-    if (typeof navigator.sendBeacon === "function") {
-      const blob = new Blob([payload], { type: "application/json" });
-      if (navigator.sendBeacon("/api/orders", blob)) return;
-    }
-  } catch {
-    // If the user is not logged in or Beacon is blocked, the Telegram order still opens.
-  }
-
-  fetch("/api/orders", {
+  void fetch("/api/orders", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: payload,
     keepalive: true,
+    credentials: "include",
   }).catch(() => {
     // Order history is a convenience layer; it must not block buying.
   });
