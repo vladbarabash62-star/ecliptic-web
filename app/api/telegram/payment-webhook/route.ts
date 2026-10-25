@@ -70,7 +70,7 @@ async function forwardPayment(message: TelegramMessage) {
 
   const sender = [message.from?.first_name, message.from?.last_name].filter(Boolean).join(" ") || "не указано";
   const username = message.from?.username ? `@${message.from.username}` : "не указан";
-  const caption = message.caption?.trim() || "Без подписи";
+  const caption = message.caption?.trim() || message.text?.trim() || "Без подписи";
   const managerText = [
     "🧾 <b>Новая заявка на проверку оплаты</b>",
     "",
@@ -106,6 +106,16 @@ async function forwardPayment(message: TelegramMessage) {
       chat_id: managerChatId,
       document: message.document.file_id,
       caption: managerText,
+      parse_mode: "HTML",
+      reply_markup: replyMarkup,
+    });
+    return true;
+  }
+
+  if (message.text?.trim()) {
+    await telegram("sendMessage", {
+      chat_id: managerChatId,
+      text: managerText,
       parse_mode: "HTML",
       reply_markup: replyMarkup,
     });
