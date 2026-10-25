@@ -157,7 +157,8 @@ async function notifyManagerAboutPayment(message: TelegramMessage, pending: Pend
     `Клиент: <b>${escapeHtml(sender)}</b>`,
     `Telegram: <b>${escapeHtml(username)}</b>`,
     `Chat ID: <code>${customerChatId}</code>`,
-    `Код заказа: <code>${escapeHtml(pending.orderCode)}</code>`,
+    `Сервис: <b>${escapeHtml(extractOrderField(pending.orderMessage, "Сервис"))}</b>`,
+    `Товар: <b>${escapeHtml(extractOrderProduct(pending.orderMessage))}</b>`,
     `Сумма: <b>${escapeHtml(pending.amount)}</b>`,
   ].join("\n");
   const callbackBase = [String(customerChatId), pending.businessConnectionId || ""].filter(Boolean).join(":");
