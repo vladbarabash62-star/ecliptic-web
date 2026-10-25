@@ -5,15 +5,25 @@ import {
 } from "../../../../lib/customerAuth";
 import { rememberManagerChat } from "../../../../lib/telegramManagerStore";
 import { savePendingTelegramLogin } from "../../../../lib/telegramLoginStore";
-import { saveTelegramCustomEmojiIds } from "../../../../lib/telegramCustomEmojiStore";
+import {
+  beginTelegramAccountNoticeEdit,
+  saveTelegramAccountNoticeTemplate,
+  saveTelegramCustomEmojiIds,
+} from "../../../../lib/telegramCustomEmojiStore";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 type TelegramUpdate = {
+  callback_query?: {
+    id?: string;
+    data?: string;
+    from?: { id?: number; username?: string };
+    message?: { chat?: { id?: number } };
+  };
   message?: {
     text?: string;
-    entities?: Array<{ type?: string; custom_emoji_id?: string }>;
+    entities?: Array<{ type?: string; offset?: number; length?: number; custom_emoji_id?: string }>;
     chat?: {
       id?: number;
     };
@@ -105,6 +115,27 @@ async function sendPlainTelegramMessage(chatId: number, text: string, token: str
   return Boolean(response?.ok);
 }
 
+async function answerCallback(callbackId: string, token: string) {
+  await fetch(`https://api.telegram.org/bot${token}/answerCallbackQuery`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ callback_query_id: callbackId }),
+  }).catch(() => undefined);
+}
+
+async function sendManagerMenu(chatId: number, token: string) {
+  const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text: "Меню управления Ecliptic Store\\n\\nВыберите, что хотите изменить:",
+      reply_markup: { inline_keyboard: [[{ text: "Telegram аккаунт", callback_data: "edit_account_notice" }]] },
+    }),
+  }).catch(() => null);
+  return Boolean(response?.ok);
+}
+
 async function flushPendingReferralClaims(chatId: number, token: string) {
   const pending = await getPendingCustomerReferralClaims(30);
   if (!pending.length) return;
@@ -138,6 +169,18 @@ export async function POST(request: Request) {
   if (!token) return NextResponse.json({ ok: false }, { status: 500 });
 
   const update = await request.json().catch(() => ({})) as TelegramUpdate;
+  const callback = update.callback_query;
+  if (callback?.id) {
+    await answerCallback(callback.id, token);
+    if (callback.data === "edit_account_notice" && callback.message?.chat?.id) {
+      const manager = String(callback.from?.username || "").replace(/^@/, "").toLowerCase() === "ecliptic_store_pmr";
+      if (manager) {
+        await beginTelegramAccountNoticeEdit(callback.message.chat.id);
+        await sendPlainTelegramMessage(callback.message.chat.id, "Отправьте следующим сообщением текст автоответа для Telegram-аккаунта. Эмодзи и premium emoji сохранятся.", token);
+      }
+    }
+    return NextResponse.json({ ok: true, callback: true });
+  }
   const message = update.message;
   const text = message?.text || "";
 
@@ -148,6 +191,28 @@ export async function POST(request: Request) {
       .filter((entity) => entity.type === "custom_emoji" && entity.custom_emoji_id)
       .map((entity) => String(entity.custom_emoji_id));
     if (ids.length) await saveTelegramCustomEmojiIds(ids);
+  }
+  const managerChat = Number(message?.chat?.id);
+  const managerUsername = String(message?.from?.username || "").replace(/^@/, "").toLowerCase();
+  if (managerUsername === "ecliptic_store_pmr" && Number.isFinite(managerChat)) {
+    if (/^\/start(?:\s|$)/i.test(text)) {
+      await sendManagerMenu(managerChat, token);
+      return NextResponse.json({ ok: true, managerMenu: true });
+    }
+    const saved = await saveTelegramAccountNoticeTemplate(
+      managerChat,
+      text,
+      (message?.entities || []).filter((entity) => entity.type && Number.isFinite(entity.offset) && Number.isFinite(entity.length)).map((entity) => ({
+        type: entity.type as string,
+        offset: Number(entity.offset),
+        length: Number(entity.length),
+        ...(entity.custom_emoji_id ? { custom_emoji_id: entity.custom_emoji_id } : {}),
+      }))
+    );
+    if (saved) {
+      await sendPlainTelegramMessage(managerChat, "Текст для Telegram-аккаунта сохранён.", token);
+      return NextResponse.json({ ok: true, managerTemplate: true });
+    }
   }
   const loginToken = text.match(/^\/start\s+login_([a-f0-9-]{20,80})/i)?.[1];
 

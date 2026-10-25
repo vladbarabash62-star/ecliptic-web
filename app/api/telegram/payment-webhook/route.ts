@@ -9,7 +9,10 @@ import {
   savePendingTelegramOrder,
   type PendingTelegramOrder,
 } from "../../../../lib/telegramPendingOrderStore";
-import { getTelegramCustomEmojiIds } from "../../../../lib/telegramCustomEmojiStore";
+import {
+  getTelegramAccountNoticeTemplate,
+  getTelegramCustomEmojiIds,
+} from "../../../../lib/telegramCustomEmojiStore";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -169,14 +172,14 @@ async function sendOrderInstructions(chatId: number, orderMessage: string, busin
   const category = extractOrderCategory(orderMessage);
   const product = extractOrderProduct(orderMessage);
   const isTelegramAccount = category.value.trim().toLowerCase() === "telegram" && /аккаунт/i.test(product);
-  const accountSafetyNotice = isTelegramAccount
+  const fallbackAccountSafetyNotice = isTelegramAccount
     ? applyAccountNoticeEmojiIds([
         "",
-        "<b>❗ Важно! Ознакомьтесь перед использованием аккаунта</b>",
+        "❗ Важно! Ознакомьтесь перед использованием аккаунта",
         "",
         "После передачи аккаунта ответственность за его дальнейшее использование несёте только вы.",
         "",
-        "<b>Рекомендуем для безопасного использования:</b>",
+        "Рекомендуем для безопасного использования:",
         "• ⏳ Не пользоваться аккаунтом первые 48 часов.",
         "• 🚫 Не спамить и не флудить другим пользователям.",
         "• 📄 Соблюдать правила Telegram.",
@@ -201,10 +204,18 @@ async function sendOrderInstructions(chatId: number, orderMessage: string, busin
       `<b>Сумма к оплате: ${escapeHtml(extractOrderAmount(orderMessage))}</b>`,
       "",
       "<b>После оплаты отправьте сюда скриншот операции.</b>",
-      accountSafetyNotice,
     ].join("\n"),
   });
-  return Boolean(response);
+  if (!response || !isTelegramAccount) return Boolean(response);
+  const customTemplate = await getTelegramAccountNoticeTemplate();
+  const notice = customTemplate || { text: fallbackAccountSafetyNotice, entities: [] };
+  const noticeResponse = await telegram("sendMessage", {
+    chat_id: chatId,
+    ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
+    text: notice.text,
+    ...(notice.entities.length ? { entities: notice.entities } : {}),
+  });
+  return Boolean(noticeResponse);
 }
 
 type PaymentAttachment = { kind: "photo" | "document"; fileId: string };
