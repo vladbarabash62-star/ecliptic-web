@@ -28,17 +28,8 @@ function token() {
   return process.env.PAYMENT_BOT_TOKEN_V4 || process.env.PAYMENT_BOT_TOKEN_V3 || process.env.PAYMENT_BOT_TOKEN_V2 || process.env.PAYMENT_BOT_TOKEN || "";
 }
 
-function tokenSource() {
-  if (process.env.PAYMENT_BOT_TOKEN_V4) return "V4";
-  if (process.env.PAYMENT_BOT_TOKEN_V3) return "V3";
-  if (process.env.PAYMENT_BOT_TOKEN_V2) return "V2";
-  if (process.env.PAYMENT_BOT_TOKEN) return "legacy";
-  return "none";
-}
-
 async function telegram(method: string, body: Record<string, unknown>) {
   const botToken = token();
-  console.info("Payment bot token status", { configured: Boolean(botToken), length: botToken.length });
   if (!botToken) return null;
   const response = await fetch(`https://api.telegram.org/bot${botToken}/${method}`, {
     method: "POST",
@@ -168,7 +159,7 @@ export async function POST(request: Request) {
   await rememberManagerChat(message.from?.username, message.chat.id).catch(() => undefined);
   if (/^\/start(?:\s|$)/i.test(message.text || "")) {
     await sendWelcome(message.chat.id);
-    return NextResponse.json({ ok: true, welcome: true, botConfigured: Boolean(token()), tokenSource: tokenSource() });
+    return NextResponse.json({ ok: true, welcome: true });
   }
   const forwarded = await forwardPayment(message);
   if (!forwarded && (message.photo?.length || message.document?.file_id)) {
