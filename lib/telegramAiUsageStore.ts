@@ -7,6 +7,8 @@ const BLOB_KEY = "customers/telegram-ai-usage-v1.json";
 const DAILY_LIMIT = 30;
 type Usage = { date: string; count: number };
 
+let transientUsage: Usage | null = null;
+
 function todayKey() {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Chisinau", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 }
@@ -34,10 +36,21 @@ async function writeUsage(value: Usage) {
 
 export async function claimAiReplySlot() {
   const today = todayKey();
-  const current = await readUsage();
+  let current: Usage;
+  try {
+    current = await readUsage();
+  } catch {
+    // A temporary state/blob outage must not disable customer support replies.
+    current = transientUsage || { date: today, count: 0 };
+  }
   const next = current.date === today ? current : { date: today, count: 0 };
   if (next.count >= DAILY_LIMIT) return false;
   next.count += 1;
-  await writeUsage(next);
+  transientUsage = next;
+  try {
+    await writeUsage(next);
+  } catch {
+    // Keep the per-instance guard while the persistent store recovers.
+  }
   return true;
 }
