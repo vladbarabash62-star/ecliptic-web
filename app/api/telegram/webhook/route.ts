@@ -14,6 +14,23 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+function sleep(milliseconds: number) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+function typingDelay(text: string) {
+  return Math.min(5000, Math.max(1800, 1200 + text.length * 18));
+}
+
+async function showTyping(chatId: number, token: string, text: string) {
+  await fetch(`https://api.telegram.org/bot${token}/sendChatAction`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: chatId, action: "typing" }),
+  }).catch(() => undefined);
+  await sleep(typingDelay(text));
+}
+
 type TelegramUpdate = {
   callback_query?: {
     id?: string;
@@ -42,6 +59,7 @@ function botToken() {
 }
 
 async function sendTelegramMessage(chatId: number, text: string, token: string, loginToken: string) {
+  await showTyping(chatId, token, text);
   const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -65,17 +83,19 @@ async function sendTelegramMessage(chatId: number, text: string, token: string, 
 }
 
 async function sendWelcomeMessage(chatId: number, token: string) {
+  const text = [
+    "Здравствуйте! Добро пожаловать в Ecliptic Store.",
+    "",
+    "У нас можно посмотреть цифровые товары, игровые пополнения, подписки и Telegram Stars. Ассортимент и актуальные цены доступны на сайте:",
+    "https://ecliptic.website",
+  ].join("\n");
+  await showTyping(chatId, token, text);
   const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       chat_id: chatId,
-      text: [
-        "Здравствуйте! Добро пожаловать в Ecliptic Store.",
-        "",
-        "У нас можно посмотреть цифровые товары, игровые пополнения, подписки и Telegram Stars. Ассортимент и актуальные цены доступны на сайте:",
-        "https://ecliptic.website",
-      ].join("\n"),
+      text,
       reply_markup: {
         inline_keyboard: [
           [
@@ -101,6 +121,7 @@ function escapeHtml(value: string) {
 }
 
 async function sendPlainTelegramMessage(chatId: number, text: string, token: string) {
+  await showTyping(chatId, token, text);
   const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

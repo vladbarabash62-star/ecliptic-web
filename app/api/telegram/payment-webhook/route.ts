@@ -86,6 +86,23 @@ function escapeHtml(value: string) {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
+function sleep(milliseconds: number) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+function typingDelay(text: string) {
+  return Math.min(5000, Math.max(1800, 1200 + text.length * 18));
+}
+
+async function showTyping(chatId: number, text: string, businessConnectionId?: string) {
+  await telegram("sendChatAction", {
+    chat_id: chatId,
+    ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
+    action: "typing",
+  });
+  await sleep(typingDelay(text));
+}
+
 function applyAccountNoticeEmojiIds(text: string, ids: string[]) {
   const emojiPlaceholders = ["❗", "⌛️", "🚫", "📄", "💡"];
   let result = text;
@@ -178,24 +195,27 @@ async function sendOrderInstructions(chatId: number, orderMessage: string, busin
         "🤝 Следуя этим простым рекомендациям, вы снизите вероятность возникновения каких-либо ограничений.",
       ].join("\n"), (await getTelegramCustomEmojiIds())?.ids || [])
     : "";
+  const paymentText = [
+    "<b>Добро пожаловать в Ecliptic Store!</b>",
+    "",
+    `<b>${category.label}: ${escapeHtml(category.value)}</b>`,
+    `<b>Товар: ${escapeHtml(product)}</b>`,
+    "",
+    "<b>Реквизиты для оплаты переводилкой:</b>",
+    "",
+    "<b>Номер получателя: <code>77534682</code></b>",
+    "<b>Получатель: Владислав Б</b>",
+    `<b>Сумма к оплате: ${escapeHtml(extractOrderAmount(orderMessage))}</b>`,
+    "",
+    "<b>После оплаты отправьте сюда скриншот операции.</b>",
+  ].join("\n");
+  const noticeText = (await getTelegramAccountNoticeTemplate())?.text || fallbackAccountSafetyNotice;
+  await showTyping(chatId, paymentText + (isTelegramAccount ? noticeText : ""), businessConnectionId);
   const response = await telegram("sendMessage", {
     chat_id: chatId,
     ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
     parse_mode: "HTML",
-    text: [
-      "<b>Добро пожаловать в Ecliptic Store!</b>",
-      "",
-      `<b>${category.label}: ${escapeHtml(category.value)}</b>`,
-      `<b>Товар: ${escapeHtml(product)}</b>`,
-      "",
-      "<b>Реквизиты для оплаты переводилкой:</b>",
-      "",
-      "<b>Номер получателя: <code>77534682</code></b>",
-      "<b>Получатель: Владислав Б</b>",
-      `<b>Сумма к оплате: ${escapeHtml(extractOrderAmount(orderMessage))}</b>`,
-      "",
-      "<b>После оплаты отправьте сюда скриншот операции.</b>",
-    ].join("\n"),
+    text: paymentText,
   });
   if (!response || !isTelegramAccount) return Boolean(response);
   const customTemplate = await getTelegramAccountNoticeTemplate();
@@ -213,10 +233,6 @@ type PaymentAttachment = { kind: "photo" | "document"; fileId: string };
 
 const paymentBatches = new Map<string, PaymentAttachment[]>();
 const paymentBatchJobs = new Map<string, Promise<boolean>>();
-
-function sleep(milliseconds: number) {
-  return new Promise((resolve) => setTimeout(resolve, milliseconds));
-}
 
 async function notifyManagerAboutPayment(
   message: TelegramMessage,
