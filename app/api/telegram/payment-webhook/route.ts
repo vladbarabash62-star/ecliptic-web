@@ -19,8 +19,6 @@ import {
   claimDailyGreeting,
   noteTelegramChatActivity,
 } from "../../../../lib/telegramDailyGreetingStore";
-import { claimAiReplySlot } from "../../../../lib/telegramAiUsageStore";
-import { generateTelegramSupportReply } from "../../../../lib/telegramAiSupport";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -235,21 +233,6 @@ async function sendOrderInstructions(chatId: number, orderMessage: string, busin
   return Boolean(noticeResponse);
 }
 
-async function sendSupportFallback(chatId: number, businessConnectionId?: string) {
-  const key = String(chatId);
-  const lastReplyAt = fallbackReplyAt.get(key) || 0;
-  if (Date.now() - lastReplyAt < 10 * 60 * 1000) return false;
-  fallbackReplyAt.set(key, Date.now());
-  const text = "Менеджер уточнит информацию по вашему вопросу. Напишите точное название товара или услуги.";
-  await showTyping(chatId, text, businessConnectionId);
-  const response = await telegram("sendMessage", {
-    chat_id: chatId,
-    ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
-    text,
-  });
-  return Boolean(response);
-}
-
 async function sendDailyGreeting(chatId: number, businessConnectionId?: string) {
   const key = String(chatId);
   const lastGreetingAt = dailyGreetingSentAt.get(key) || 0;
@@ -269,7 +252,6 @@ type PaymentAttachment = { kind: "photo" | "document"; fileId: string };
 
 const paymentBatches = new Map<string, PaymentAttachment[]>();
 const paymentBatchJobs = new Map<string, Promise<boolean>>();
-const fallbackReplyAt = new Map<string, number>();
 const dailyGreetingSentAt = new Map<string, number>();
 
 async function notifyManagerAboutPayment(
@@ -441,22 +423,8 @@ export async function POST(request: Request) {
   if (message.text?.trim() && !message.photo?.length && !message.document?.file_id) {
     const orderCode = extractOrderCode(message.text);
     if (!orderCode) {
-      const aiSlot = await claimAiReplySlot().catch(() => false);
-      const aiReply = aiSlot ? await generateTelegramSupportReply(message.text).catch(() => null) : null;
-      if (aiReply) {
-        await showTyping(message.chat.id, aiReply, message.business_connection_id);
-        const response = await telegram("sendMessage", {
-          chat_id: message.chat.id,
-          ...(message.business_connection_id ? { business_connection_id: message.business_connection_id } : {}),
-          text: aiReply,
-        });
-        await noteTelegramChatActivity(message.chat.id).catch(() => undefined);
-        return NextResponse.json({ ok: true, aiReply: Boolean(response) });
-      }
       const shouldGreet = await claimDailyGreeting(message.chat.id).catch(() => false);
-      const replied = shouldGreet
-        ? await sendDailyGreeting(message.chat.id, message.business_connection_id)
-        : await sendSupportFallback(message.chat.id, message.business_connection_id);
+      const replied = shouldGreet ? await sendDailyGreeting(message.chat.id, message.business_connection_id) : false;
       await noteTelegramChatActivity(message.chat.id).catch(() => undefined);
       return NextResponse.json({ ok: true, replied, ignored: "not-an-order" });
     }
