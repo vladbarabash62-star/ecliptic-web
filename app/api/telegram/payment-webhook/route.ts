@@ -15,7 +15,10 @@ import {
   getTelegramAccountNoticeTemplate,
   getTelegramCustomEmojiIds,
 } from "../../../../lib/telegramCustomEmojiStore";
-import { claimDailyGreeting } from "../../../../lib/telegramDailyGreetingStore";
+import {
+  claimDailyGreeting,
+  noteTelegramChatActivity,
+} from "../../../../lib/telegramDailyGreetingStore";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -231,7 +234,7 @@ async function sendOrderInstructions(chatId: number, orderMessage: string, busin
 }
 
 async function sendDailyGreeting(chatId: number, businessConnectionId?: string) {
-  const text = "Здравствуйте! Добро пожаловать в Ecliptic Store. Напишите, какой товар или услугу вы хотите оформить, и я подскажу дальнейшие шаги.";
+  const text = "Здравствуйте, добро пожаловать в eClipтик Store. Напишите, какой товар или услугу вы хотите оформить.";
   await showTyping(chatId, text, businessConnectionId);
   const response = await telegram("sendMessage", {
     chat_id: chatId,
@@ -402,6 +405,7 @@ export async function POST(request: Request) {
   const message = update.business_message || update.message;
   if (!message?.chat?.id) return NextResponse.json({ ok: true, ignored: true });
   if (isOutgoingBusinessMessage(message)) {
+    await noteTelegramChatActivity(message.chat.id).catch(() => undefined);
     return NextResponse.json({ ok: true, ignored: "outgoing" });
   }
   if (message.business_connection_id) {
@@ -429,6 +433,7 @@ export async function POST(request: Request) {
         createdAt: new Date().toISOString(),
       });
     }
+    await noteTelegramChatActivity(message.chat.id).catch(() => undefined);
     return NextResponse.json({ ok: true, replied, awaitingPayment: replied });
   }
 
@@ -436,6 +441,7 @@ export async function POST(request: Request) {
     const pending = await getPendingTelegramOrder(message.chat.id);
     if (!pending) return NextResponse.json({ ok: true, ignored: "no-pending-order" });
     const notified = await queuePaymentScreenshot(message, pending);
+    await noteTelegramChatActivity(message.chat.id).catch(() => undefined);
     return NextResponse.json({ ok: true, paymentScreenshot: true, notified });
   }
 

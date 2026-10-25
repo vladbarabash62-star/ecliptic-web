@@ -4,13 +4,20 @@ import { hasCloudflareState, readCloudflareState, writeCloudflareState } from ".
 
 const STATE_KEY = "telegram-daily-greetings-v1";
 const BLOB_KEY = "customers/telegram-daily-greetings-v1.json";
-type GreetingStore = Record<string, string>;
+type GreetingRecord = { greetingDate?: string; lastActivityAt?: string };
+type GreetingStore = Record<string, GreetingRecord>;
 
 function normalize(value: unknown): GreetingStore {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {};
-  return Object.fromEntries(
-    Object.entries(value as Record<string, unknown>).filter(([, date]) => typeof date === "string") as Array<[string, string]>
-  );
+  return Object.fromEntries(Object.entries(value as Record<string, unknown>).map(([chatId, raw]) => {
+    if (typeof raw === "string") return [chatId, { greetingDate: raw } satisfies GreetingRecord];
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return [chatId, {} satisfies GreetingRecord];
+    const record = raw as Record<string, unknown>;
+    return [chatId, {
+      ...(typeof record.greetingDate === "string" ? { greetingDate: record.greetingDate } : {}),
+      ...(typeof record.lastActivityAt === "string" ? { lastActivityAt: record.lastActivityAt } : {}),
+    } satisfies GreetingRecord];
+  }));
 }
 
 async function readStore() {
@@ -41,8 +48,18 @@ export async function claimDailyGreeting(chatId: number) {
   const store = await readStore();
   const key = String(chatId);
   const today = todayKey();
-  if (store[key] === today) return false;
-  store[key] = today;
+  const current = store[key] || {};
+  const lastActivity = current.lastActivityAt ? Date.parse(current.lastActivityAt) : 0;
+  const recentConversation = lastActivity > 0 && Date.now() - lastActivity < 10 * 60 * 1000;
+  const shouldGreet = current.greetingDate !== today && !recentConversation;
+  store[key] = { ...current, lastActivityAt: new Date().toISOString(), ...(shouldGreet ? { greetingDate: today } : {}) };
   await writeStore(store);
-  return true;
+  return shouldGreet;
+}
+
+export async function noteTelegramChatActivity(chatId: number) {
+  const store = await readStore();
+  const key = String(chatId);
+  store[key] = { ...(store[key] || {}), lastActivityAt: new Date().toISOString() };
+  await writeStore(store);
 }
