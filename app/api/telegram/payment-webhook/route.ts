@@ -36,7 +36,16 @@ async function telegram(method: string, body: Record<string, unknown>) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   }).catch(() => null);
-  return response?.ok ? response.json().catch(() => null) : null;
+  if (!response) {
+    console.error("Telegram API request failed", method);
+    return null;
+  }
+  const payload = await response.json().catch(() => null);
+  if (!response.ok || payload?.ok === false) {
+    console.error("Telegram API rejected request", method, response.status, payload?.description || "unknown error");
+    return null;
+  }
+  return payload;
 }
 
 function escapeHtml(value: string) {
