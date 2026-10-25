@@ -4,7 +4,7 @@ import type { ProductOffer } from "./products";
 const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 
 function apiKey() {
-  return process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "";
+  return process.env.GEMINI_API_KEY || process.env.GEMINI_KEY || process.env.GOOGLE_API_KEY || "";
 }
 
 function catalogContext(products: Awaited<ReturnType<typeof getProducts>>) {
