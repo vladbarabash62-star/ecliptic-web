@@ -9,8 +9,10 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 type TelegramMessage = {
+  message_id?: number;
   chat?: { id?: number };
-  from?: { id?: number; username?: string; first_name?: string; last_name?: string };
+  from?: { id?: number; is_bot?: boolean; username?: string; first_name?: string; last_name?: string };
+  sender_business_bot?: { id?: number; username?: string; first_name?: string };
   business_connection_id?: string;
   text?: string;
   caption?: string;
@@ -70,6 +72,12 @@ async function refreshBusinessConnection(connectionId: string) {
 
 function escapeHtml(value: string) {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+function isOutgoingBusinessMessage(message: TelegramMessage) {
+  // Telegram echoes messages sent by a connected business bot as business_message
+  // updates. They must never be treated as a new customer order.
+  return Boolean(message.sender_business_bot || message.from?.is_bot);
 }
 
 async function sendWelcome(chatId: number, businessConnectionId?: string) {
@@ -219,6 +227,9 @@ export async function POST(request: Request) {
 
   const message = update.business_message || update.message;
   if (!message?.chat?.id) return NextResponse.json({ ok: true, ignored: true });
+  if (isOutgoingBusinessMessage(message)) {
+    return NextResponse.json({ ok: true, ignored: "outgoing" });
+  }
   if (message.business_connection_id) {
     const connection = await refreshBusinessConnection(message.business_connection_id).catch(() => undefined);
     if (connection?.user_chat_id) {
