@@ -107,23 +107,11 @@ function isOutgoingBusinessMessage(message: TelegramMessage) {
   return Boolean(message.sender_business_bot || message.from?.is_bot);
 }
 
-async function sendWelcome(chatId: number, businessConnectionId?: string) {
-  await telegram("sendMessage", {
-    chat_id: chatId,
-    ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
-    text: [
-      "Здравствуйте! Это бот проверки оплаты Ecliptic Store.",
-      "",
-      "После перевода отправьте сюда скриншот операции. Менеджер проверит его и сообщит результат.",
-    ].join("\n"),
-  });
-}
-
 function extractOrderAmount(message: string) {
   const payment = message.match(/К оплате\s*:\s*([^\n]+)/i);
   if (payment?.[1]) return payment[1].trim();
   const fallback = message.match(/(?:оплате|Сумма)\s*:\s*([^\n]+)/i);
-  return fallback?.[1]?.trim() || "сумму из заказа";
+  return fallback?.[1]?.trim() || "уточняется";
 }
 
 function extractOrderField(message: string, field: string) {
@@ -163,7 +151,8 @@ function extractOrderProduct(message: string) {
   if (balance && /steam/i.test(service)) return `Пополнение баланса ${balance}`;
   const amountLine = message.match(/(Количество золота|Количество монет|Сумма пополнения)\s*:\s*([^\n]+)/i);
   if (amountLine?.[2]) return `${amountLine[1]} ${amountLine[2].trim()}`;
-  return "не указан";
+  if (balance) return `Пополнение ${balance}`;
+  return service !== "не указан" ? service : "Заказ";
 }
 
 function extractOrderCode(message: string) {
