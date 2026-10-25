@@ -109,13 +109,35 @@ function extractOrderField(message: string, field: string) {
   return match?.[1]?.trim() || "не указан";
 }
 
+function extractOrderCategory(message: string) {
+  const service = extractOrderField(message, "Сервис");
+  if (service !== "не указан") return { label: "Сервис", value: service };
+
+  const platform = extractOrderField(message, "Платформа");
+  if (platform !== "не указан") return { label: "Сервис", value: platform };
+
+  const game = extractOrderField(message, "Игра");
+  if (game !== "не указан") return { label: "Игра", value: game };
+
+  return { label: "Сервис", value: "не указан" };
+}
+
 function extractOrderProduct(message: string) {
   const product = extractOrderField(message, "Товар");
-  if (product !== "не указан") return product;
-  const service = extractOrderField(message, "Сервис");
+  const category = extractOrderCategory(message);
+  const region = extractOrderField(message, "Регион");
+  if (product !== "не указан") {
+    if (category.value.toLowerCase() === "telegram" && region !== "не указан") {
+      return `Telegram ${product} ${region}`;
+    }
+    return product;
+  }
+  const service = category.value;
   const balance = message.match(/Сумма\s*:\s*([^\n]+)/i)?.[1]?.trim();
   if (balance && /steam/i.test(service)) return `Пополнение баланса ${balance}`;
-  return product;
+  const amountLine = message.match(/(Количество золота|Количество монет|Сумма пополнения)\s*:\s*([^\n]+)/i);
+  if (amountLine?.[2]) return `${amountLine[1]} ${amountLine[2].trim()}`;
+  return "не указан";
 }
 
 function extractOrderCode(message: string) {
@@ -123,6 +145,7 @@ function extractOrderCode(message: string) {
 }
 
 async function sendOrderInstructions(chatId: number, orderMessage: string, businessConnectionId?: string) {
+  const category = extractOrderCategory(orderMessage);
   const response = await telegram("sendMessage", {
     chat_id: chatId,
     ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
@@ -130,7 +153,7 @@ async function sendOrderInstructions(chatId: number, orderMessage: string, busin
     text: [
       "<b>Добро пожаловать в Ecliptic Store!</b>",
       "",
-      `<b>Сервис: ${escapeHtml(extractOrderField(orderMessage, "Сервис"))}</b>`,
+      `<b>${category.label}: ${escapeHtml(category.value)}</b>`,
       `<b>Товар: ${escapeHtml(extractOrderProduct(orderMessage))}</b>`,
       "",
       "<b>Реквизиты для оплаты переводилкой:</b>",
@@ -151,13 +174,14 @@ async function notifyManagerAboutPayment(message: TelegramMessage, pending: Pend
 
   const sender = [message.from?.first_name, message.from?.last_name].filter(Boolean).join(" ") || "не указано";
   const username = message.from?.username ? `@${message.from.username}` : "не указан";
+  const category = extractOrderCategory(pending.orderMessage);
   const managerText = [
     "💳 <b>Клиент отправил скриншот оплаты</b>",
     "",
     `Клиент: <b>${escapeHtml(sender)}</b>`,
     `Telegram: <b>${escapeHtml(username)}</b>`,
     `Chat ID: <code>${customerChatId}</code>`,
-    `Сервис: <b>${escapeHtml(extractOrderField(pending.orderMessage, "Сервис"))}</b>`,
+    `${category.label}: <b>${escapeHtml(category.value)}</b>`,
     `Товар: <b>${escapeHtml(extractOrderProduct(pending.orderMessage))}</b>`,
     `Сумма: <b>${escapeHtml(pending.amount)}</b>`,
   ].join("\n");

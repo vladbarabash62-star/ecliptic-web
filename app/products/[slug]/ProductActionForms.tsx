@@ -410,7 +410,7 @@ function formatKnownPurchaseMessage(productName: string, offerLabel: string, pri
 
   if (productName.toLowerCase().includes("telegram аккаунт")) {
     return normalizeOrderMessage(
-      `🛍 Новый заказ\n📱 Платформа: Telegram\n📦 Товар: аккаунт\n🌐 Регион: ${offer}\n💰 К оплате: ${priceRub}р`
+      `🛍 Новый заказ\n📦 Сервис: Telegram\n💎 Товар: аккаунт\n🌐 Регион: ${offer}\n💰 К оплате: ${priceRub}р`
     );
   }
 
