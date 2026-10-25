@@ -213,7 +213,7 @@ async function sendOrderInstructions(chatId: number, orderMessage: string, busin
     chat_id: chatId,
     ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
     text: notice.text,
-    ...(notice.entities.length ? { entities: notice.entities } : {}),
+    ...(notice.entities.length ? { entities: notice.entities } : { parse_mode: "HTML" }),
   });
   return Boolean(noticeResponse);
 }
