@@ -30,6 +30,12 @@ type TelegramUpdate = {
   };
 };
 
+type TelegramBusinessConnection = {
+  id?: string;
+  user_chat_id?: number;
+  can_reply?: boolean;
+};
+
 function token() {
   // Keep the dedicated payment bot isolated from the existing login bot.
   return process.env.PAYMENT_BOT_TOKEN_V4 || process.env.PAYMENT_BOT_TOKEN_V3 || process.env.PAYMENT_BOT_TOKEN_V2 || process.env.PAYMENT_BOT_TOKEN || "";
@@ -53,6 +59,13 @@ async function telegram(method: string, body: Record<string, unknown>) {
     return null;
   }
   return payload;
+}
+
+async function refreshBusinessConnection(connectionId: string) {
+  const payload = await telegram("getBusinessConnection", {
+    business_connection_id: connectionId,
+  });
+  return payload?.result as TelegramBusinessConnection | undefined;
 }
 
 function escapeHtml(value: string) {
@@ -206,6 +219,12 @@ export async function POST(request: Request) {
 
   const message = update.business_message || update.message;
   if (!message?.chat?.id) return NextResponse.json({ ok: true, ignored: true });
+  if (message.business_connection_id) {
+    const connection = await refreshBusinessConnection(message.business_connection_id).catch(() => undefined);
+    if (connection?.user_chat_id) {
+      await rememberBusinessManagerChat(connection.user_chat_id).catch(() => undefined);
+    }
+  }
   await rememberManagerChat(message.from?.username, message.chat.id).catch(() => undefined);
   if (/^\/start(?:\s|$)/i.test(message.text || "")) {
     await sendWelcome(message.chat.id, message.business_connection_id);
