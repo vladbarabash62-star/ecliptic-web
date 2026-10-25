@@ -420,8 +420,9 @@ export async function POST(request: Request) {
   if (message.text?.trim() && !message.photo?.length && !message.document?.file_id) {
     const orderCode = extractOrderCode(message.text);
     if (!orderCode) {
-      const aiReply = await generateTelegramSupportReply(message.text);
-      if (aiReply && await claimAiReplySlot()) {
+      const aiSlot = await claimAiReplySlot();
+      const aiReply = aiSlot ? await generateTelegramSupportReply(message.text) : null;
+      if (aiReply) {
         await showTyping(message.chat.id, aiReply, message.business_connection_id);
         const response = await telegram("sendMessage", {
           chat_id: message.chat.id,
