@@ -4,6 +4,11 @@ import {
   rememberBusinessManagerChat,
   rememberManagerChat,
 } from "../../../../lib/telegramManagerStore";
+import {
+  getPendingTelegramOrder,
+  savePendingTelegramOrder,
+  type PendingTelegramOrder,
+} from "../../../../lib/telegramPendingOrderStore";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -123,28 +128,52 @@ async function sendOrderInstructions(chatId: number, orderMessage: string, busin
   return Boolean(response);
 }
 
-async function notifyManagerAboutOrder(message: TelegramMessage, orderCode: string) {
+async function notifyManagerAboutPayment(message: TelegramMessage, pending: PendingTelegramOrder) {
   const managerChatId = await getManagerChatId();
   const customerChatId = Number(message.chat?.id);
   if (!managerChatId || !Number.isFinite(customerChatId)) return false;
 
   const sender = [message.from?.first_name, message.from?.last_name].filter(Boolean).join(" ") || "не указано";
   const username = message.from?.username ? `@${message.from.username}` : "не указан";
-  const orderText = message.text?.trim() || "Без текста заказа";
   const managerText = [
-    "🛍 <b>Новый заказ</b>",
+    "💳 <b>Клиент отправил скриншот оплаты</b>",
     "",
     `Клиент: <b>${escapeHtml(sender)}</b>`,
     `Telegram: <b>${escapeHtml(username)}</b>`,
     `Chat ID: <code>${customerChatId}</code>`,
-    `Код заказа: <code>${escapeHtml(orderCode)}</code>`,
-    `Сообщение: ${escapeHtml(orderText)}`,
+    `Код заказа: <code>${escapeHtml(pending.orderCode)}</code>`,
+    `Сумма: <b>${escapeHtml(pending.amount)}</b>`,
   ].join("\n");
-  return Boolean(await telegram("sendMessage", {
-    chat_id: managerChatId,
-    text: managerText,
-    parse_mode: "HTML",
-  }));
+  const callbackBase = [String(customerChatId), pending.businessConnectionId || ""].filter(Boolean).join(":");
+  const replyMarkup = {
+    inline_keyboard: [[
+      { text: "✅ Подтвердить оплату", callback_data: `pay:approve:${callbackBase}` },
+      { text: "❌ Отклонить", callback_data: `pay:reject:${callbackBase}` },
+    ]],
+  };
+
+  if (message.photo?.length) {
+    const largest = message.photo[message.photo.length - 1];
+    return Boolean(await telegram("sendPhoto", {
+      chat_id: managerChatId,
+      photo: largest.file_id,
+      caption: managerText,
+      parse_mode: "HTML",
+      reply_markup: replyMarkup,
+    }));
+  }
+
+  if (message.document?.file_id) {
+    return Boolean(await telegram("sendDocument", {
+      chat_id: managerChatId,
+      document: message.document.file_id,
+      caption: managerText,
+      parse_mode: "HTML",
+      reply_markup: replyMarkup,
+    }));
+  }
+
+  return false;
 }
 
 async function handleDecision(update: TelegramUpdate) {
@@ -206,8 +235,25 @@ export async function POST(request: Request) {
     const orderCode = extractOrderCode(message.text);
     if (!orderCode) return NextResponse.json({ ok: true, ignored: "not-an-order" });
     const replied = await sendOrderInstructions(message.chat.id, message.text, message.business_connection_id);
-    if (replied) await notifyManagerAboutOrder(message, orderCode);
-    return NextResponse.json({ ok: true, replied, notified: replied });
+    if (replied) {
+      await savePendingTelegramOrder({
+        chatId: message.chat.id,
+        businessConnectionId: message.business_connection_id,
+        orderCode,
+        amount: extractOrderAmount(message.text),
+        orderMessage: message.text,
+        createdAt: new Date().toISOString(),
+      });
+    }
+    return NextResponse.json({ ok: true, replied, awaitingPayment: replied });
   }
+
+  if (message.photo?.length || message.document?.file_id) {
+    const pending = await getPendingTelegramOrder(message.chat.id);
+    if (!pending) return NextResponse.json({ ok: true, ignored: "no-pending-order" });
+    const notified = await notifyManagerAboutPayment(message, pending);
+    return NextResponse.json({ ok: true, paymentScreenshot: true, notified });
+  }
+
   return NextResponse.json({ ok: true, ignored: "not-an-order" });
 }
