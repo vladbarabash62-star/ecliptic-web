@@ -1,7 +1,7 @@
 import { getProducts } from "./productStore";
 import type { ProductOffer } from "./products";
 
-const MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const MODEL = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
 
 function apiKey() {
   return process.env.GEMINI_API_KEY || process.env.GEMINI_KEY || process.env.GOOGLE_API_KEY || "";
@@ -35,7 +35,7 @@ export async function generateTelegramSupportReply(question: string) {
     question.trim().slice(0, 1000),
   ].join("\n\n");
 
-  const models = [...new Set([MODEL, "gemini-2.5-flash-lite", "gemini-2.0-flash"])]
+  const models = [...new Set([MODEL, "gemini-3.6-flash", "gemini-3.8-flash"])]
     .filter((model) => !model.includes("undefined"));
   for (const model of models) {
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(key)}`, {
