@@ -35,17 +35,27 @@ export async function generateTelegramSupportReply(question: string) {
     question.trim().slice(0, 1000),
   ].join("\n\n");
 
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(MODEL)}:generateContent?key=${encodeURIComponent(key)}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.2, maxOutputTokens: 220 },
-    }),
-  }).catch(() => null);
-  if (!response?.ok) return null;
-  const payload = await response.json().catch(() => null);
-  const text = payload?.candidates?.[0]?.content?.parts?.map((part: { text?: string }) => part.text || "").join("").trim();
-  if (!text || text.length > 1200) return null;
-  return text;
+  const models = [...new Set([MODEL, "gemini-2.5-flash-lite", "gemini-2.0-flash"])]
+    .filter((model) => !model.includes("undefined"));
+  for (const model of models) {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(key)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.2, maxOutputTokens: 220 },
+      }),
+    }).catch((error) => {
+      console.error("Gemini request failed", error instanceof Error ? error.message : "unknown error");
+      return null;
+    });
+    if (!response?.ok) {
+      console.error("Gemini model rejected request", model, response?.status || "no response");
+      continue;
+    }
+    const payload = await response.json().catch(() => null);
+    const text = payload?.candidates?.[0]?.content?.parts?.map((part: { text?: string }) => part.text || "").join("").trim();
+    if (text && text.length <= 1200) return text;
+  }
+  return null;
 }
