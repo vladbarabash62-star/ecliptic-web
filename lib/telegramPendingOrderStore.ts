@@ -12,6 +12,7 @@ export type PendingTelegramOrder = {
   amount: string;
   orderMessage: string;
   createdAt: string;
+  paymentNotificationClaimedAt?: string;
 };
 
 type PendingOrderStore = Record<string, PendingTelegramOrder>;
@@ -45,4 +46,21 @@ export async function savePendingTelegramOrder(order: PendingTelegramOrder) {
 export async function getPendingTelegramOrder(chatId: number) {
   const store = await readStore();
   return store[String(chatId)] || null;
+}
+
+export async function claimPaymentNotification(chatId: number) {
+  const store = await readStore();
+  const order = store[String(chatId)];
+  if (!order || order.paymentNotificationClaimedAt) return false;
+  order.paymentNotificationClaimedAt = new Date().toISOString();
+  await writeStore(store);
+  return true;
+}
+
+export async function releasePaymentNotificationClaim(chatId: number) {
+  const store = await readStore();
+  const order = store[String(chatId)];
+  if (!order) return;
+  delete order.paymentNotificationClaimedAt;
+  await writeStore(store);
 }

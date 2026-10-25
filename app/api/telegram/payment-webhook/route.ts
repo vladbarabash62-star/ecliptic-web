@@ -6,6 +6,8 @@ import {
 } from "../../../../lib/telegramManagerStore";
 import {
   getPendingTelegramOrder,
+  claimPaymentNotification,
+  releasePaymentNotificationClaim,
   savePendingTelegramOrder,
   type PendingTelegramOrder,
 } from "../../../../lib/telegramPendingOrderStore";
@@ -322,7 +324,11 @@ async function queuePaymentScreenshot(message: TelegramMessage, pending: Pending
     await sleep(1200);
     const batch = paymentBatches.get(key) || [];
     paymentBatches.delete(key);
-    return notifyManagerAboutPayment(message, pending, batch);
+    const claimed = await claimPaymentNotification(Number(customerChatId));
+    if (!claimed) return false;
+    const notified = await notifyManagerAboutPayment(message, pending, batch);
+    if (!notified) await releasePaymentNotificationClaim(Number(customerChatId));
+    return notified;
   })();
   paymentBatchJobs.set(key, job);
   try {
@@ -360,6 +366,7 @@ async function handleDecision(update: TelegramUpdate) {
       ? "✅ Оплата принята. Заказ передан в работу."
       : "❌ Не удалось подтвердить оплату. Проверьте сумму и отправьте актуальный скриншот операции.",
   });
+  if (!approved) await releasePaymentNotificationClaim(Number(customerChatId));
   return true;
 }
 
