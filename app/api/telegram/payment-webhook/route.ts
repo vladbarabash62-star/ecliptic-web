@@ -19,6 +19,8 @@ import {
   claimDailyGreeting,
   noteTelegramChatActivity,
 } from "../../../../lib/telegramDailyGreetingStore";
+import { claimAiReplySlot } from "../../../../lib/telegramAiUsageStore";
+import { generateTelegramSupportReply } from "../../../../lib/telegramAiSupport";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -418,6 +420,17 @@ export async function POST(request: Request) {
   if (message.text?.trim() && !message.photo?.length && !message.document?.file_id) {
     const orderCode = extractOrderCode(message.text);
     if (!orderCode) {
+      const aiReply = await generateTelegramSupportReply(message.text);
+      if (aiReply && await claimAiReplySlot()) {
+        await showTyping(message.chat.id, aiReply, message.business_connection_id);
+        const response = await telegram("sendMessage", {
+          chat_id: message.chat.id,
+          ...(message.business_connection_id ? { business_connection_id: message.business_connection_id } : {}),
+          text: aiReply,
+        });
+        await noteTelegramChatActivity(message.chat.id).catch(() => undefined);
+        return NextResponse.json({ ok: true, aiReply: Boolean(response) });
+      }
       const claimed = await claimDailyGreeting(message.chat.id);
       const greeted = claimed ? await sendDailyGreeting(message.chat.id, message.business_connection_id) : false;
       return NextResponse.json({ ok: true, greeted, ignored: "not-an-order" });
