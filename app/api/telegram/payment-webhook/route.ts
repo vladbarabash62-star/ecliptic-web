@@ -24,6 +24,7 @@ type TelegramUpdate = {
 };
 
 function token() {
+  // Keep the dedicated payment bot isolated from the existing login bot.
   return process.env.PAYMENT_BOT_TOKEN_V2 || process.env.PAYMENT_BOT_TOKEN || "";
 }
 
