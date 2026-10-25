@@ -151,6 +151,23 @@ function extractOrderCode(message: string) {
 
 async function sendOrderInstructions(chatId: number, orderMessage: string, businessConnectionId?: string) {
   const category = extractOrderCategory(orderMessage);
+  const product = extractOrderProduct(orderMessage);
+  const isTelegramAccount = category.value.trim().toLowerCase() === "telegram" && /аккаунт/i.test(product);
+  const accountSafetyNotice = isTelegramAccount
+    ? [
+        "",
+        "<b>❗ Важно! Ознакомьтесь перед использованием аккаунта</b>",
+        "",
+        "После передачи аккаунта ответственность за его дальнейшее использование несёте только вы.",
+        "",
+        "<b>Рекомендуем для безопасного использования:</b>",
+        "• ⏳ Не пользоваться аккаунтом первые 48 часов.",
+        "• 🚫 Не спамить и не флудить другим пользователям.",
+        "• 📄 Соблюдать правила Telegram.",
+        "",
+        "🤝 Следуя этим простым рекомендациям, вы снизите вероятность возникновения каких-либо ограничений.",
+      ].join("\n")
+    : "";
   const response = await telegram("sendMessage", {
     chat_id: chatId,
     ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
@@ -159,7 +176,7 @@ async function sendOrderInstructions(chatId: number, orderMessage: string, busin
       "<b>Добро пожаловать в Ecliptic Store!</b>",
       "",
       `<b>${category.label}: ${escapeHtml(category.value)}</b>`,
-      `<b>Товар: ${escapeHtml(extractOrderProduct(orderMessage))}</b>`,
+      `<b>Товар: ${escapeHtml(product)}</b>`,
       "",
       "<b>Реквизиты для оплаты переводилкой:</b>",
       "",
@@ -168,6 +185,7 @@ async function sendOrderInstructions(chatId: number, orderMessage: string, busin
       `<b>Сумма к оплате: ${escapeHtml(extractOrderAmount(orderMessage))}</b>`,
       "",
       "<b>После оплаты отправьте сюда скриншот операции.</b>",
+      accountSafetyNotice,
     ].join("\n"),
   });
   return Boolean(response);
