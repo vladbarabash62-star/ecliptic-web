@@ -8,7 +8,7 @@ import type { ProductItem } from "../../../lib/products";
 import { realOfferIcon } from "../../../lib/offerImages";
 import { playBuyHaptic } from "../../components/haptics";
 
-const TELEGRAM_USERNAME = "ecliptic_store_orders_bot";
+const TELEGRAM_USERNAME = "Ecliptic_Store_PMR";
 const REQUIRED_FIELDS_MESSAGE = "Заполните все поля.";
 const INPUT_LIMIT_HINT_CLASS = "mt-2 text-xs font-bold leading-relaxed text-amber-200/85";
 
