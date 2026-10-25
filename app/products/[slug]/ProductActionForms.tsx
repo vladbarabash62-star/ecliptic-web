@@ -877,7 +877,7 @@ export function RpTopupForm({
   const pmrPerUnit = isBlackRussia ? (isWeekend ? 0.15 : 0.3) : 1 / rublesPerPmr;
   const numericAmount = Number(amount);
   const validAmount = Number.isSafeInteger(numericAmount) && numericAmount >= minimumAmount;
-  const priceRub = validAmount ? Math.round(numericAmount * pmrPerUnit * 100) / 100 : 0;
+  const priceRub = validAmount ? roundUpToFive(numericAmount * pmrPerUnit) : 0;
   const identityLabel = usePlayerId ? "ID игрока" : "Никнейм";
   const message = normalizeOrderMessage(
     `Новый заказ\nИгра: ${productName}\n${identityLabel}: ${codeValue(identity)}${servers ? `\nСервер: ${codeValue(server)}` : ""}\nСумма пополнения: ${numericAmount} ${amountUnit}\nК оплате: ${priceRub} р ПМР`
@@ -946,7 +946,7 @@ export function SteamTopupForm({ productName, productSlug }: { productName: stri
   const hasInput = amount.trim().length > 0;
   const hasAmount = hasInput && numericAmount > 0;
   const isValidAmount = hasAmount && numericAmount >= 1;
-  const priceRub = isValidAmount ? Math.round(numericAmount * rate) : 0;
+  const priceRub = isValidAmount ? roundUpToFive(numericAmount * rate) : 0;
   const hasLogin = login.trim().length > 0;
   const limitMessage = rangeLimitMessage({
     hasAmount: hasInput,
@@ -1021,7 +1021,7 @@ export function EpicTopupForm({ productName, productSlug }: { productName: strin
   const hasInput = amount.trim().length > 0;
   const hasAmount = hasInput && numericAmount > 0;
   const isValidAmount = hasAmount && numericAmount >= 1;
-  const priceRub = isValidAmount ? Math.round(numericAmount * 21) : 0;
+  const priceRub = isValidAmount ? roundUpToFive(numericAmount * 21) : 0;
   const limitMessage = rangeLimitMessage({
     hasAmount: hasInput,
     amount: numericAmount,
@@ -1084,7 +1084,7 @@ export function SbpPaymentForm({ productName, productSlug }: { productName: stri
   const hasInput = amount.trim().length > 0;
   const hasAmount = hasInput && numericAmount > 0;
   const isValidAmount = hasAmount && numericAmount >= 100;
-  const pricePmr = isValidAmount ? Math.round(numericAmount * 0.3) : 0;
+  const pricePmr = isValidAmount ? roundUpToFive(numericAmount * 0.3) : 0;
   const limitMessage = rangeLimitMessage({
     hasAmount: hasInput,
     amount: numericAmount,

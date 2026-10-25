@@ -232,9 +232,12 @@ function normalizeOfferItem(item: Product["offers"][number]) {
 
   if (!("label" in item) || !item.label.trim()) return null;
 
+  const rawPrice = Math.max(0, Math.min(999999, Number(item.priceRub) || 0));
+  const priceRub = rawPrice > 0 ? Math.ceil(rawPrice / 5) * 5 : 0;
+
   return {
     label: trimLimit(item.label, "Вариант", 120),
-    priceRub: Math.max(0, Math.min(999999, Number(item.priceRub) || 0)),
+    priceRub,
     icon: safeOptionalIconUrl((item as ProductOffer).icon),
     iconScale: safeScale((item as ProductOffer).iconScale, 1, 0, 2),
     messageTemplate: trimMultilineLimit(item.messageTemplate, "", 1000),
