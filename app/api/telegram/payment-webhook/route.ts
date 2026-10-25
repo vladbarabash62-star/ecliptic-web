@@ -15,6 +15,7 @@ import {
   getTelegramAccountNoticeTemplate,
   getTelegramCustomEmojiIds,
 } from "../../../../lib/telegramCustomEmojiStore";
+import { claimDailyGreeting } from "../../../../lib/telegramDailyGreetingStore";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -229,6 +230,17 @@ async function sendOrderInstructions(chatId: number, orderMessage: string, busin
   return Boolean(noticeResponse);
 }
 
+async function sendDailyGreeting(chatId: number, businessConnectionId?: string) {
+  const text = "Здравствуйте! Добро пожаловать в Ecliptic Store. Напишите, какой товар или услугу вы хотите оформить, и я подскажу дальнейшие шаги.";
+  await showTyping(chatId, text, businessConnectionId);
+  const response = await telegram("sendMessage", {
+    chat_id: chatId,
+    ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
+    text,
+  });
+  return Boolean(response);
+}
+
 type PaymentAttachment = { kind: "photo" | "document"; fileId: string };
 
 const paymentBatches = new Map<string, PaymentAttachment[]>();
@@ -401,7 +413,11 @@ export async function POST(request: Request) {
   await rememberManagerChat(message.from?.username, message.chat.id).catch(() => undefined);
   if (message.text?.trim() && !message.photo?.length && !message.document?.file_id) {
     const orderCode = extractOrderCode(message.text);
-    if (!orderCode) return NextResponse.json({ ok: true, ignored: "not-an-order" });
+    if (!orderCode) {
+      const claimed = await claimDailyGreeting(message.chat.id);
+      const greeted = claimed ? await sendDailyGreeting(message.chat.id, message.business_connection_id) : false;
+      return NextResponse.json({ ok: true, greeted, ignored: "not-an-order" });
+    }
     const replied = await sendOrderInstructions(message.chat.id, message.text, message.business_connection_id);
     if (replied) {
       await savePendingTelegramOrder({
