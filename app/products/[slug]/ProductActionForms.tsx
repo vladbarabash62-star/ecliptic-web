@@ -131,6 +131,14 @@ function openTelegramOrderMessage(message: string) {
   openSellerChat(href, deepHref);
 }
 
+function addOrderCode(message: string, productSlug: string, priceRub?: number) {
+  const suffix = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID().slice(0, 8).toUpperCase()
+    : Date.now().toString(36).slice(-8).toUpperCase();
+  const price = Number.isFinite(priceRub) ? `${priceRub}R` : "NA";
+  return `${message}\n🆔 Код заказа: ECL-${productSlug.slice(0, 12).toUpperCase()}-${price}-${suffix}`;
+}
+
 function handleTelegramOrderClick(event: MouseEvent<HTMLAnchorElement>, message: string) {
   event.preventDefault();
   openTelegramOrderMessage(message);
@@ -214,8 +222,9 @@ function TelegramOrderLink({
   if (!visible) return null;
 
   function completeOrder() {
-    saveCustomerOrder({ productSlug, offer, priceRub, message });
-    openTelegramOrderMessage(message);
+    const orderMessage = addOrderCode(message, productSlug, priceRub);
+    saveCustomerOrder({ productSlug, offer, priceRub, message: orderMessage });
+    openTelegramOrderMessage(orderMessage);
   }
 
   return (
@@ -244,8 +253,9 @@ function TelegramOrderLink({
             return;
           }
 
-          saveCustomerOrder({ productSlug, offer, priceRub, message });
-          handleTelegramOrderClick(event, message);
+          const orderMessage = addOrderCode(message, productSlug, priceRub);
+          saveCustomerOrder({ productSlug, offer, priceRub, message: orderMessage });
+          handleTelegramOrderClick(event, orderMessage);
         }}
         className={className}
       >
