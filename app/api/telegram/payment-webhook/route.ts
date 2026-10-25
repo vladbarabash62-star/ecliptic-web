@@ -146,7 +146,7 @@ export async function POST(request: Request) {
 
   const message = update.message;
   if (!message?.chat?.id) return NextResponse.json({ ok: true, ignored: true });
-  await rememberManagerChat(message.from?.username, message.chat.id);
+  await rememberManagerChat(message.from?.username, message.chat.id).catch(() => undefined);
   if (/^\/start(?:\s|$)/i.test(message.text || "")) {
     await sendWelcome(message.chat.id);
     return NextResponse.json({ ok: true, welcome: true });
