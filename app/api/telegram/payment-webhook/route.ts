@@ -246,6 +246,17 @@ async function sendDailyGreeting(chatId: number, businessConnectionId?: string) 
   return Boolean(response);
 }
 
+async function sendSupportFallback(chatId: number, businessConnectionId?: string) {
+  const text = "Здравствуйте, добро пожаловать в Ecliptic Store. Напишите, какой товар или услугу вы хотите оформить.";
+  await showTyping(chatId, text, businessConnectionId);
+  const response = await telegram("sendMessage", {
+    chat_id: chatId,
+    ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
+    text,
+  });
+  return Boolean(response);
+}
+
 type PaymentAttachment = { kind: "photo" | "document"; fileId: string };
 
 const paymentBatches = new Map<string, PaymentAttachment[]>();
@@ -432,9 +443,14 @@ export async function POST(request: Request) {
         await noteTelegramChatActivity(message.chat.id).catch(() => undefined);
         return NextResponse.json({ ok: true, aiReply: Boolean(response) });
       }
+      // Never leave a customer without a response when AI or its quota is unavailable.
+      // The daily greeting remains deduplicated, but a failed AI attempt gets a response.
       const claimed = await claimDailyGreeting(message.chat.id);
-      const greeted = claimed ? await sendDailyGreeting(message.chat.id, message.business_connection_id) : false;
-      return NextResponse.json({ ok: true, greeted, ignored: "not-an-order" });
+      const replied = claimed
+        ? await sendDailyGreeting(message.chat.id, message.business_connection_id)
+        : await sendSupportFallback(message.chat.id, message.business_connection_id);
+      await noteTelegramChatActivity(message.chat.id).catch(() => undefined);
+      return NextResponse.json({ ok: true, replied, ignored: "not-an-order" });
     }
     const replied = await sendOrderInstructions(message.chat.id, message.text, message.business_connection_id);
     if (replied) {
