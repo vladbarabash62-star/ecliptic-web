@@ -542,7 +542,9 @@ function priceTagStyle(priceRub: number) {
 }
 
 function roundUpToFive(value: number) {
-  return Math.ceil(value / 5) * 5;
+  const normalized = Math.max(0, Number(value) || 0);
+  // Remove harmless floating-point noise before choosing the next 0/5 value.
+  return Math.ceil((normalized - 1e-9) / 5) * 5;
 }
 
 function worldOfTanksGoldPrice(goldAmount: number) {
