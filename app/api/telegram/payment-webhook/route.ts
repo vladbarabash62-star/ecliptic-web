@@ -98,13 +98,24 @@ async function sendWelcome(chatId: number, businessConnectionId?: string) {
 }
 
 function extractOrderAmount(message: string) {
-  const match = message.match(/(?:К оплате|оплате|Сумма)\s*:\s*([^\n]+)/i);
-  return match?.[1]?.trim() || "сумму из заказа";
+  const payment = message.match(/К оплате\s*:\s*([^\n]+)/i);
+  if (payment?.[1]) return payment[1].trim();
+  const fallback = message.match(/(?:оплате|Сумма)\s*:\s*([^\n]+)/i);
+  return fallback?.[1]?.trim() || "сумму из заказа";
 }
 
 function extractOrderField(message: string, field: string) {
   const match = message.match(new RegExp(`${field}\\s*:\\s*([^\\n]+)`, "i"));
   return match?.[1]?.trim() || "не указан";
+}
+
+function extractOrderProduct(message: string) {
+  const product = extractOrderField(message, "Товар");
+  if (product !== "не указан") return product;
+  const service = extractOrderField(message, "Сервис");
+  const balance = message.match(/Сумма\s*:\s*([^\n]+)/i)?.[1]?.trim();
+  if (balance && /steam/i.test(service)) return `Пополнение баланса ${balance}`;
+  return product;
 }
 
 function extractOrderCode(message: string) {
@@ -120,7 +131,7 @@ async function sendOrderInstructions(chatId: number, orderMessage: string, busin
       "<b>Добро пожаловать в Ecliptic Store!</b>",
       "",
       `<b>Сервис: ${escapeHtml(extractOrderField(orderMessage, "Сервис"))}</b>`,
-      `<b>Товар: ${escapeHtml(extractOrderField(orderMessage, "Товар"))}</b>`,
+      `<b>Товар: ${escapeHtml(extractOrderProduct(orderMessage))}</b>`,
       "",
       "<b>Реквизиты для оплаты:</b>",
       "<b>Номер получателя:</b>",
