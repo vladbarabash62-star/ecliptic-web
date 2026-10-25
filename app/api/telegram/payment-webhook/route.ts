@@ -30,6 +30,7 @@ function token() {
 
 async function telegram(method: string, body: Record<string, unknown>) {
   const botToken = token();
+  console.info("Payment bot token status", { configured: Boolean(botToken), length: botToken.length });
   if (!botToken) return null;
   const response = await fetch(`https://api.telegram.org/bot${botToken}/${method}`, {
     method: "POST",
