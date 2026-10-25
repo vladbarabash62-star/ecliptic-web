@@ -16,6 +16,7 @@ import {
   getTelegramCustomEmojiIds,
 } from "../../../../lib/telegramCustomEmojiStore";
 import {
+  claimDailyGreeting,
   noteTelegramChatActivity,
 } from "../../../../lib/telegramDailyGreetingStore";
 import { claimAiReplySlot } from "../../../../lib/telegramAiUsageStore";
@@ -249,11 +250,27 @@ async function sendSupportFallback(chatId: number, businessConnectionId?: string
   return Boolean(response);
 }
 
+async function sendDailyGreeting(chatId: number, businessConnectionId?: string) {
+  const key = String(chatId);
+  const lastGreetingAt = dailyGreetingSentAt.get(key) || 0;
+  if (Date.now() - lastGreetingAt < 24 * 60 * 60 * 1000) return false;
+  dailyGreetingSentAt.set(key, Date.now());
+  const text = "Здравствуйте, добро пожаловать в Ecliptic Store. Напишите, какой товар или услугу вы хотите оформить.";
+  await showTyping(chatId, text, businessConnectionId);
+  const response = await telegram("sendMessage", {
+    chat_id: chatId,
+    ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
+    text,
+  });
+  return Boolean(response);
+}
+
 type PaymentAttachment = { kind: "photo" | "document"; fileId: string };
 
 const paymentBatches = new Map<string, PaymentAttachment[]>();
 const paymentBatchJobs = new Map<string, Promise<boolean>>();
 const fallbackReplyAt = new Map<string, number>();
+const dailyGreetingSentAt = new Map<string, number>();
 
 async function notifyManagerAboutPayment(
   message: TelegramMessage,
@@ -436,8 +453,10 @@ export async function POST(request: Request) {
         await noteTelegramChatActivity(message.chat.id).catch(() => undefined);
         return NextResponse.json({ ok: true, aiReply: Boolean(response) });
       }
-      // Never substitute the daily greeting for a normal customer question.
-      const replied = await sendSupportFallback(message.chat.id, message.business_connection_id);
+      const shouldGreet = await claimDailyGreeting(message.chat.id).catch(() => false);
+      const replied = shouldGreet
+        ? await sendDailyGreeting(message.chat.id, message.business_connection_id)
+        : await sendSupportFallback(message.chat.id, message.business_connection_id);
       await noteTelegramChatActivity(message.chat.id).catch(() => undefined);
       return NextResponse.json({ ok: true, replied, ignored: "not-an-order" });
     }

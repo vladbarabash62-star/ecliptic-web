@@ -35,24 +35,13 @@ async function writeStore(store: GreetingStore) {
   await writeBlobJson(BLOB_KEY, store).catch(() => undefined);
 }
 
-function todayKey() {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Europe/Chisinau",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-}
-
 export async function claimDailyGreeting(chatId: number) {
   const store = await readStore();
   const key = String(chatId);
-  const today = todayKey();
   const current = store[key] || {};
   const lastActivity = current.lastActivityAt ? Date.parse(current.lastActivityAt) : 0;
-  const recentConversation = lastActivity > 0 && Date.now() - lastActivity < 10 * 60 * 1000;
-  const shouldGreet = current.greetingDate !== today && !recentConversation;
-  store[key] = { ...current, lastActivityAt: new Date().toISOString(), ...(shouldGreet ? { greetingDate: today } : {}) };
+  const shouldGreet = lastActivity <= 0 || Date.now() - lastActivity >= 24 * 60 * 60 * 1000;
+  store[key] = { ...current, lastActivityAt: new Date().toISOString() };
   await writeStore(store);
   return shouldGreet;
 }
