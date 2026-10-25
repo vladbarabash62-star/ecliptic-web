@@ -9,6 +9,7 @@ import {
   savePendingTelegramOrder,
   type PendingTelegramOrder,
 } from "../../../../lib/telegramPendingOrderStore";
+import { getTelegramCustomEmojiIds } from "../../../../lib/telegramCustomEmojiStore";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -78,6 +79,21 @@ async function refreshBusinessConnection(connectionId: string) {
 
 function escapeHtml(value: string) {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+function applyAccountNoticeEmojiIds(text: string, ids: string[]) {
+  const emojiPlaceholders = ["❗", "⌛️", "🚫", "📄", "💡"];
+  let result = text;
+  let offset = 0;
+  for (const [index, id] of ids.slice(0, emojiPlaceholders.length).entries()) {
+    const emoji = emojiPlaceholders[index];
+    const position = result.indexOf(emoji, offset);
+    if (position < 0) continue;
+    const tag = `<tg-emoji emoji-id="${escapeHtml(id)}">${emoji}</tg-emoji>`;
+    result = `${result.slice(0, position)}${tag}${result.slice(position + emoji.length)}`;
+    offset = position + tag.length;
+  }
+  return result;
 }
 
 function isOutgoingBusinessMessage(message: TelegramMessage) {
@@ -154,7 +170,7 @@ async function sendOrderInstructions(chatId: number, orderMessage: string, busin
   const product = extractOrderProduct(orderMessage);
   const isTelegramAccount = category.value.trim().toLowerCase() === "telegram" && /аккаунт/i.test(product);
   const accountSafetyNotice = isTelegramAccount
-    ? [
+    ? applyAccountNoticeEmojiIds([
         "",
         "<b>❗ Важно! Ознакомьтесь перед использованием аккаунта</b>",
         "",
@@ -166,7 +182,7 @@ async function sendOrderInstructions(chatId: number, orderMessage: string, busin
         "• 📄 Соблюдать правила Telegram.",
         "",
         "🤝 Следуя этим простым рекомендациям, вы снизите вероятность возникновения каких-либо ограничений.",
-      ].join("\n")
+      ].join("\n"), (await getTelegramCustomEmojiIds())?.ids || [])
     : "";
   const response = await telegram("sendMessage", {
     chat_id: chatId,

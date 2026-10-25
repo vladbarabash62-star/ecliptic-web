@@ -5,6 +5,7 @@ import {
 } from "../../../../lib/customerAuth";
 import { rememberManagerChat } from "../../../../lib/telegramManagerStore";
 import { savePendingTelegramLogin } from "../../../../lib/telegramLoginStore";
+import { saveTelegramCustomEmojiIds } from "../../../../lib/telegramCustomEmojiStore";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -12,6 +13,7 @@ export const dynamic = "force-dynamic";
 type TelegramUpdate = {
   message?: {
     text?: string;
+    entities?: Array<{ type?: string; custom_emoji_id?: string }>;
     chat?: {
       id?: number;
     };
@@ -138,6 +140,15 @@ export async function POST(request: Request) {
   const update = await request.json().catch(() => ({})) as TelegramUpdate;
   const message = update.message;
   const text = message?.text || "";
+
+  // Keep the exact premium emoji used in the account-safety notice. Only the
+  // known notice is accepted, so ordinary customer messages cannot overwrite it.
+  if (/Важно!\s*Ознакомьтесь перед использованием аккаунта/i.test(text)) {
+    const ids = (message?.entities || [])
+      .filter((entity) => entity.type === "custom_emoji" && entity.custom_emoji_id)
+      .map((entity) => String(entity.custom_emoji_id));
+    if (ids.length) await saveTelegramCustomEmojiIds(ids);
+  }
   const loginToken = text.match(/^\/start\s+login_([a-f0-9-]{20,80})/i)?.[1];
 
   const managerRemembered = await rememberManagerChat(message?.from?.username, message?.chat?.id);
