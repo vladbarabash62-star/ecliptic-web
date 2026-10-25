@@ -63,6 +63,29 @@ async function sendWelcome(chatId: number) {
   });
 }
 
+function extractOrderAmount(message: string) {
+  const match = message.match(/(?:К оплате|оплате|Сумма)\s*:\s*([^\n]+)/i);
+  return match?.[1]?.trim() || "сумму из заказа";
+}
+
+async function sendOrderInstructions(chatId: number, orderMessage: string) {
+  await telegram("sendMessage", {
+    chat_id: chatId,
+    text: "Добро пожаловать в Ecliptic Store! Сейчас с вами свяжется менеджер для оформления покупки.",
+  });
+  await telegram("sendMessage", {
+    chat_id: chatId,
+    text: [
+      "Реквизиты для оплаты:",
+      "77534682",
+      "Владислав B",
+      `Сумма: ${extractOrderAmount(orderMessage)}`,
+      "",
+      "После оплаты отправьте сюда скриншот операции. Менеджер проверит его и сообщит результат.",
+    ].join("\n"),
+  });
+}
+
 async function forwardPayment(message: TelegramMessage) {
   const managerChatId = await getManagerChatId();
   const customerChatId = Number(message.chat?.id);
@@ -170,6 +193,9 @@ export async function POST(request: Request) {
   if (/^\/start(?:\s|$)/i.test(message.text || "")) {
     await sendWelcome(message.chat.id);
     return NextResponse.json({ ok: true, welcome: true });
+  }
+  if (message.text?.trim() && !message.photo?.length && !message.document?.file_id) {
+    await sendOrderInstructions(message.chat.id, message.text);
   }
   const forwarded = await forwardPayment(message);
   if (!forwarded && (message.photo?.length || message.document?.file_id)) {
