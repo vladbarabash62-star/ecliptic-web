@@ -19,6 +19,7 @@ type TelegramMessage = {
   from?: { id?: number; is_bot?: boolean; username?: string; first_name?: string; last_name?: string };
   sender_business_bot?: { id?: number; username?: string; first_name?: string };
   business_connection_id?: string;
+  media_group_id?: string;
   text?: string;
   caption?: string;
   photo?: Array<{ file_id: string; width?: number; height?: number }>;
@@ -172,7 +173,20 @@ async function sendOrderInstructions(chatId: number, orderMessage: string, busin
   return Boolean(response);
 }
 
-async function notifyManagerAboutPayment(message: TelegramMessage, pending: PendingTelegramOrder) {
+type PaymentAttachment = { kind: "photo" | "document"; fileId: string };
+
+const paymentBatches = new Map<string, PaymentAttachment[]>();
+const paymentBatchJobs = new Map<string, Promise<boolean>>();
+
+function sleep(milliseconds: number) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+async function notifyManagerAboutPayment(
+  message: TelegramMessage,
+  pending: PendingTelegramOrder,
+  attachments: PaymentAttachment[] = []
+) {
   const managerChatId = await getManagerChatId();
   const customerChatId = Number(message.chat?.id);
   if (!managerChatId || !Number.isFinite(customerChatId)) return false;
@@ -198,6 +212,27 @@ async function notifyManagerAboutPayment(message: TelegramMessage, pending: Pend
     ]],
   };
 
+  const attachmentKind = attachments[0]?.kind;
+  if (attachments.length > 1 && attachmentKind && attachments.every((item) => item.kind === attachmentKind)) {
+    const media = attachments.slice(0, 10).map((item, index) => ({
+      type: attachmentKind,
+      media: item.fileId,
+      ...(index === 0 ? { caption: managerText, parse_mode: "HTML" } : {}),
+    }));
+    const album = await telegram("sendMediaGroup", {
+      chat_id: managerChatId,
+      media,
+    });
+    const firstMessageId = album?.result?.[0]?.message_id;
+    if (!firstMessageId) return false;
+    const edited = await telegram("editMessageReplyMarkup", {
+      chat_id: managerChatId,
+      message_id: firstMessageId,
+      reply_markup: replyMarkup,
+    });
+    return Boolean(edited);
+  }
+
   if (message.photo?.length) {
     const largest = message.photo[message.photo.length - 1];
     return Boolean(await telegram("sendPhoto", {
@@ -220,6 +255,36 @@ async function notifyManagerAboutPayment(message: TelegramMessage, pending: Pend
   }
 
   return false;
+}
+
+async function queuePaymentScreenshot(message: TelegramMessage, pending: PendingTelegramOrder) {
+  const customerChatId = String(message.chat?.id || "");
+  const key = `${customerChatId}:${pending.orderCode}`;
+  const attachments = paymentBatches.get(key) || [];
+  const nextAttachment = message.photo?.length
+    ? { kind: "photo" as const, fileId: message.photo[message.photo.length - 1].file_id }
+    : message.document?.file_id
+      ? { kind: "document" as const, fileId: message.document.file_id }
+      : null;
+  if (!nextAttachment) return false;
+  if (!attachments.some((item) => item.fileId === nextAttachment.fileId)) attachments.push(nextAttachment);
+  paymentBatches.set(key, attachments);
+
+  const existingJob = paymentBatchJobs.get(key);
+  if (existingJob) return existingJob;
+
+  const job = (async () => {
+    await sleep(1200);
+    const batch = paymentBatches.get(key) || [];
+    paymentBatches.delete(key);
+    return notifyManagerAboutPayment(message, pending, batch);
+  })();
+  paymentBatchJobs.set(key, job);
+  try {
+    return await job;
+  } finally {
+    paymentBatchJobs.delete(key);
+  }
 }
 
 async function handleDecision(update: TelegramUpdate) {
@@ -297,7 +362,7 @@ export async function POST(request: Request) {
   if (message.photo?.length || message.document?.file_id) {
     const pending = await getPendingTelegramOrder(message.chat.id);
     if (!pending) return NextResponse.json({ ok: true, ignored: "no-pending-order" });
-    const notified = await notifyManagerAboutPayment(message, pending);
+    const notified = await queuePaymentScreenshot(message, pending);
     return NextResponse.json({ ok: true, paymentScreenshot: true, notified });
   }
 
