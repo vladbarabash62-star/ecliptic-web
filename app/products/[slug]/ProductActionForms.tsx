@@ -942,11 +942,15 @@ export function SteamTopupForm({ productName, productSlug }: { productName: stri
   const [login, setLogin] = useState("");
   const { notice, isVisible, showNotice } = useOrderNotice();
   const numericAmount = Math.max(0, Number(amount) || 0);
-  const rate = numericAmount >= 100 ? 20 : 21;
+  const rate = numericAmount > 5 ? 20 : 21;
   const hasInput = amount.trim().length > 0;
   const hasAmount = hasInput && numericAmount > 0;
   const isValidAmount = hasAmount && numericAmount >= 1;
-  const priceRub = isValidAmount ? roundUpToFive(numericAmount * rate) : 0;
+  const priceRub = isValidAmount
+    ? numericAmount <= 5
+      ? numericAmount * rate
+      : roundUpToFive(numericAmount * rate)
+    : 0;
   const hasLogin = login.trim().length > 0;
   const limitMessage = rangeLimitMessage({
     hasAmount: hasInput,
