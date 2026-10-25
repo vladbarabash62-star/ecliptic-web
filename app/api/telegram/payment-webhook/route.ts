@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 type TelegramMessage = {
   chat?: { id?: number };
   from?: { id?: number; username?: string; first_name?: string; last_name?: string };
+  business_connection_id?: string;
   text?: string;
   caption?: string;
   photo?: Array<{ file_id: string; width?: number; height?: number }>;
@@ -15,6 +16,8 @@ type TelegramMessage = {
 
 type TelegramUpdate = {
   message?: TelegramMessage;
+  business_message?: TelegramMessage;
+  business_connection?: { id?: string; user_chat_id?: number; is_enabled?: boolean };
   callback_query?: {
     id?: string;
     data?: string;
@@ -52,9 +55,10 @@ function escapeHtml(value: string) {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-async function sendWelcome(chatId: number) {
+async function sendWelcome(chatId: number, businessConnectionId?: string) {
   await telegram("sendMessage", {
     chat_id: chatId,
+    ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
     text: [
       "Здравствуйте! Это бот проверки оплаты Ecliptic Store.",
       "",
@@ -68,13 +72,15 @@ function extractOrderAmount(message: string) {
   return match?.[1]?.trim() || "сумму из заказа";
 }
 
-async function sendOrderInstructions(chatId: number, orderMessage: string) {
+async function sendOrderInstructions(chatId: number, orderMessage: string, businessConnectionId?: string) {
   await telegram("sendMessage", {
     chat_id: chatId,
+    ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
     text: "Добро пожаловать в Ecliptic Store! Сейчас с вами свяжется менеджер для оформления покупки.",
   });
   await telegram("sendMessage", {
     chat_id: chatId,
+    ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
     text: [
       "Реквизиты для оплаты:",
       "77534682",
@@ -104,7 +110,7 @@ async function forwardPayment(message: TelegramMessage) {
     "",
     "Проверьте сумму, получателя, последние цифры карты и время операции.",
   ].join("\n");
-  const callbackBase = String(customerChatId);
+  const callbackBase = [String(customerChatId), message.business_connection_id || ""].filter(Boolean).join(":");
   const replyMarkup = {
     inline_keyboard: [[
       { text: "✅ Подтвердить оплату", callback_data: `pay:approve:${callbackBase}` },
@@ -155,9 +161,9 @@ async function handleDecision(update: TelegramUpdate) {
   const callbackChatId = String(callback?.message?.chat?.id || "");
   if (!callback || callbackChatId !== String(managerChatId)) return false;
 
-  const match = data.match(/^pay:(approve|reject):(-?\d+)$/);
+  const match = data.match(/^pay:(approve|reject):(-?\d+)(?::([A-Za-z0-9_-]+))?$/);
   if (!match) return false;
-  const [, decision, customerChatId] = match;
+  const [, decision, customerChatId, businessConnectionId] = match;
   const approved = decision === "approve";
   await telegram("answerCallbackQuery", {
     callback_query_id: callback.id,
@@ -171,6 +177,7 @@ async function handleDecision(update: TelegramUpdate) {
   });
   await telegram("sendMessage", {
     chat_id: customerChatId,
+    ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
     text: approved
       ? "✅ Оплата принята. Заказ передан в работу."
       : "❌ Не удалось подтвердить оплату. Проверьте сумму и отправьте актуальный скриншот операции.",
@@ -187,15 +194,15 @@ export async function POST(request: Request) {
   const update = await request.json().catch(() => ({})) as TelegramUpdate;
   if (await handleDecision(update)) return NextResponse.json({ ok: true, decision: true });
 
-  const message = update.message;
+  const message = update.business_message || update.message;
   if (!message?.chat?.id) return NextResponse.json({ ok: true, ignored: true });
   await rememberManagerChat(message.from?.username, message.chat.id).catch(() => undefined);
   if (/^\/start(?:\s|$)/i.test(message.text || "")) {
-    await sendWelcome(message.chat.id);
+    await sendWelcome(message.chat.id, message.business_connection_id);
     return NextResponse.json({ ok: true, welcome: true });
   }
   if (message.text?.trim() && !message.photo?.length && !message.document?.file_id) {
-    await sendOrderInstructions(message.chat.id, message.text);
+    await sendOrderInstructions(message.chat.id, message.text, message.business_connection_id);
   }
   const forwarded = await forwardPayment(message);
   if (!forwarded && (message.photo?.length || message.document?.file_id)) {
