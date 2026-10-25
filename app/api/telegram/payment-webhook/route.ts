@@ -102,6 +102,11 @@ function extractOrderAmount(message: string) {
   return match?.[1]?.trim() || "сумму из заказа";
 }
 
+function extractOrderField(message: string, field: string) {
+  const match = message.match(new RegExp(`${field}\\s*:\\s*([^\\n]+)`, "i"));
+  return match?.[1]?.trim() || "не указан";
+}
+
 function extractOrderCode(message: string) {
   return message.match(/\bECL-[A-Z0-9]+(?:-[A-Z0-9]+){2,}\b/i)?.[0] || "";
 }
@@ -114,15 +119,16 @@ async function sendOrderInstructions(chatId: number, orderMessage: string, busin
     text: [
       "<b>Добро пожаловать в Ecliptic Store!</b>",
       "",
-      "<b>Сейчас с вами свяжется менеджер для оформления покупки.</b>",
+      `<b>Сервис: ${escapeHtml(extractOrderField(orderMessage, "Сервис"))}</b>`,
+      `<b>Товар: ${escapeHtml(extractOrderField(orderMessage, "Товар"))}</b>`,
       "",
       "<b>Реквизиты для оплаты:</b>",
-      "<b>Номер:</b>",
+      "<b>Номер получателя:</b>",
       "<b><code>77534682</code></b>",
       "<b>Получатель: Владислав B</b>",
       `<b>Сумма к оплате: ${escapeHtml(extractOrderAmount(orderMessage))}</b>`,
       "",
-      "<b>После оплаты отправьте сюда скриншот операции. Менеджер проверит его и сообщит результат.</b>",
+      "<b>После оплаты отправьте сюда скриншот операции.</b>",
     ].join("\n"),
   });
   return Boolean(response);
