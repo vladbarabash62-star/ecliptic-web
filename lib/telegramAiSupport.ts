@@ -3,6 +3,7 @@ import type { ProductOffer } from "./products";
 
 const MODEL = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
 const REQUEST_TIMEOUT_MS = 4500;
+const MODEL_DISCOVERY_TIMEOUT_MS = 1800;
 
 function apiKey() {
   return process.env.GEMINI_API_KEY || process.env.GEMINI_KEY || process.env.GOOGLE_API_KEY || "";
@@ -17,6 +18,26 @@ function catalogContext(products: Awaited<ReturnType<typeof getProducts>>) {
       .join(", ");
     return `${product.name}: ${offers || "варианты уточняются"}`;
   }).join("\n").slice(0, 18000);
+}
+
+async function availableModels(key: string) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), MODEL_DISCOVERY_TIMEOUT_MS);
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(key)}`, {
+    signal: controller.signal,
+    cache: "no-store",
+  }).catch(() => null).finally(() => clearTimeout(timeout));
+  if (!response?.ok) return [];
+  const payload = await response.json().catch(() => null);
+  return Array.isArray(payload?.models)
+    ? payload.models
+        .filter((model: { name?: unknown; supportedGenerationMethods?: unknown }) =>
+          typeof model.name === "string" &&
+          Array.isArray(model.supportedGenerationMethods) &&
+          model.supportedGenerationMethods.includes("generateContent") &&
+          /flash/i.test(model.name))
+        .map((model: { name: string }) => model.name.replace(/^models\//, ""))
+    : [];
 }
 
 export async function generateTelegramSupportReply(question: string) {
@@ -36,7 +57,8 @@ export async function generateTelegramSupportReply(question: string) {
     question.trim().slice(0, 1000),
   ].join("\n\n");
 
-  const models = [...new Set([MODEL, "gemini-3.6-flash", "gemini-3.8-flash"])]
+  const discoveredModels = await availableModels(key);
+  const models = [...new Set([MODEL, ...discoveredModels, "gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-3.8-flash"])]
     .filter((model) => !model.includes("undefined"));
   const deadline = Date.now() + 5000;
   for (const model of models) {
