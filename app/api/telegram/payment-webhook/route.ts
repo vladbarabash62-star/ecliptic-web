@@ -135,7 +135,7 @@ async function sendOrderInstructions(chatId: number, orderMessage: string, busin
       "",
       "<b>Реквизиты для оплаты переводилкой:</b>",
       "<b>Номер получателя: <code>77534682</code></b>",
-      "<b>Получатель: Владислав B</b>",
+      "<b>Получатель: Владислав Б</b>",
       `<b>Сумма к оплате: ${escapeHtml(extractOrderAmount(orderMessage))}</b>`,
       "",
       "<b>После оплаты отправьте сюда скриншот операции.</b>",
