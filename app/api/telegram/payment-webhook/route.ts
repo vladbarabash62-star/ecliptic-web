@@ -133,6 +133,10 @@ function extractOrderProduct(message: string) {
     return product;
   }
   const service = category.value;
+  const tariff = extractOrderField(message, "Тариф");
+  const period = extractOrderField(message, "Период");
+  if (tariff !== "не указан" && period !== "не указан") return `${tariff}, ${period}`;
+  if (tariff !== "не указан") return tariff;
   const balance = message.match(/Сумма\s*:\s*([^\n]+)/i)?.[1]?.trim();
   if (balance && /steam/i.test(service)) return `Пополнение баланса ${balance}`;
   const amountLine = message.match(/(Количество золота|Количество монет|Сумма пополнения)\s*:\s*([^\n]+)/i);
