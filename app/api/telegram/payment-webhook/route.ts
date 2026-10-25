@@ -24,7 +24,7 @@ type TelegramUpdate = {
 };
 
 function token() {
-  return process.env.PAYMENT_BOT_TOKEN || "";
+  return process.env.PAYMENT_BOT_TOKEN_V2 || process.env.PAYMENT_BOT_TOKEN || "";
 }
 
 async function telegram(method: string, body: Record<string, unknown>) {
