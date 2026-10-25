@@ -44,6 +44,25 @@ export async function rememberManagerChat(username: string | undefined, chatId: 
   return true;
 }
 
+export async function rememberBusinessManagerChat(chatId: number | undefined) {
+  if (!Number.isFinite(Number(chatId))) return false;
+
+  const nextStore = {
+    chatId: Number(chatId),
+    username: MANAGER_USERNAME,
+    updatedAt: new Date().toISOString(),
+    version: 1,
+  } satisfies ManagerChatStore;
+
+  if (hasCloudflareState()) {
+    await writeCloudflareState(MANAGER_CHAT_FALLBACK, nextStore);
+    return true;
+  }
+  await writeAdminFallback(MANAGER_CHAT_FALLBACK, nextStore);
+  await writeBlobJson(MANAGER_CHAT_BLOB, nextStore).catch(() => undefined);
+  return true;
+}
+
 export async function getManagerChatId() {
   const fromEnv = process.env.REFERRAL_MANAGER_CHAT_ID || process.env.TELEGRAM_MANAGER_CHAT_ID || "";
   if (fromEnv.trim()) return fromEnv.trim();

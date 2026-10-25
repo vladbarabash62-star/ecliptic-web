@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { getManagerChatId, rememberManagerChat } from "../../../../lib/telegramManagerStore";
+import {
+  getManagerChatId,
+  rememberBusinessManagerChat,
+  rememberManagerChat,
+} from "../../../../lib/telegramManagerStore";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -81,11 +85,14 @@ async function sendOrderInstructions(chatId: number, orderMessage: string, busin
   await telegram("sendMessage", {
     chat_id: chatId,
     ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
+    parse_mode: "HTML",
     text: [
       "Реквизиты для оплаты:",
-      "77534682",
-      "Владислав B",
-      `Сумма: ${extractOrderAmount(orderMessage)}`,
+      "Номер:",
+      "<code>77534682</code>",
+      "Получатель:",
+      "<code>Владислав B</code>",
+      `Сумма к оплате: <code>${escapeHtml(extractOrderAmount(orderMessage))}</code>`,
       "",
       "После оплаты отправьте сюда скриншот операции. Менеджер проверит его и сообщит результат.",
     ].join("\n"),
@@ -192,6 +199,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
   const update = await request.json().catch(() => ({})) as TelegramUpdate;
+  if (update.business_connection?.is_enabled && update.business_connection.user_chat_id) {
+    await rememberBusinessManagerChat(update.business_connection.user_chat_id).catch(() => undefined);
+  }
   if (await handleDecision(update)) return NextResponse.json({ ok: true, decision: true });
 
   const message = update.business_message || update.message;
