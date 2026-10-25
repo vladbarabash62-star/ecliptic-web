@@ -101,13 +101,12 @@ async function sendOrderInstructions(chatId: number, orderMessage: string, busin
   await telegram("sendMessage", {
     chat_id: chatId,
     ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
-    text: "Добро пожаловать в Ecliptic Store! Сейчас с вами свяжется менеджер для оформления покупки.",
-  });
-  await telegram("sendMessage", {
-    chat_id: chatId,
-    ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
     parse_mode: "HTML",
     text: [
+      "Добро пожаловать в Ecliptic Store!",
+      "",
+      "Сейчас с вами свяжется менеджер для оформления покупки.",
+      "",
       "Реквизиты для оплаты:",
       "Номер:",
       "<code>77534682</code>",
@@ -244,9 +243,5 @@ export async function POST(request: Request) {
   if (message.text?.trim() && !message.photo?.length && !message.document?.file_id) {
     await sendOrderInstructions(message.chat.id, message.text, message.business_connection_id);
   }
-  const forwarded = await forwardPayment(message);
-  if (!forwarded && (message.photo?.length || message.document?.file_id)) {
-    await telegram("sendMessage", { chat_id: message.chat.id, text: "Не удалось передать чек менеджеру. Попробуйте ещё раз позже." });
-  }
-  return NextResponse.json({ ok: true, forwarded });
+  return NextResponse.json({ ok: true, replied: Boolean(message.text?.trim()) });
 }
