@@ -247,6 +247,10 @@ async function sendDailyGreeting(chatId: number, businessConnectionId?: string) 
 }
 
 async function sendSupportFallback(chatId: number, businessConnectionId?: string) {
+  const key = String(chatId);
+  const lastReplyAt = fallbackReplyAt.get(key) || 0;
+  if (Date.now() - lastReplyAt < 10 * 60 * 1000) return false;
+  fallbackReplyAt.set(key, Date.now());
   const text = "Здравствуйте, добро пожаловать в Ecliptic Store. Напишите, какой товар или услугу вы хотите оформить.";
   await showTyping(chatId, text, businessConnectionId);
   const response = await telegram("sendMessage", {
@@ -261,6 +265,7 @@ type PaymentAttachment = { kind: "photo" | "document"; fileId: string };
 
 const paymentBatches = new Map<string, PaymentAttachment[]>();
 const paymentBatchJobs = new Map<string, Promise<boolean>>();
+const fallbackReplyAt = new Map<string, number>();
 
 async function notifyManagerAboutPayment(
   message: TelegramMessage,
