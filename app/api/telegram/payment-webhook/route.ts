@@ -97,88 +97,54 @@ function extractOrderAmount(message: string) {
   return match?.[1]?.trim() || "сумму из заказа";
 }
 
+function extractOrderCode(message: string) {
+  return message.match(/\bECL-[A-Z0-9]+(?:-[A-Z0-9]+){2,}\b/i)?.[0] || "";
+}
+
 async function sendOrderInstructions(chatId: number, orderMessage: string, businessConnectionId?: string) {
-  await telegram("sendMessage", {
+  const response = await telegram("sendMessage", {
     chat_id: chatId,
     ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
     parse_mode: "HTML",
     text: [
-      "Добро пожаловать в Ecliptic Store!",
+      "<b>Добро пожаловать в Ecliptic Store!</b>",
       "",
-      "Сейчас с вами свяжется менеджер для оформления покупки.",
+      "<b>Сейчас с вами свяжется менеджер для оформления покупки.</b>",
       "",
-      "Реквизиты для оплаты:",
-      "Номер:",
-      "<code>77534682</code>",
-      "Получатель:",
-      "<code>Владислав B</code>",
-      `Сумма к оплате: <code>${escapeHtml(extractOrderAmount(orderMessage))}</code>`,
+      "<b>Реквизиты для оплаты:</b>",
+      "<b>Номер:</b>",
+      "<b><code>77534682</code></b>",
+      "<b>Получатель: Владислав B</b>",
+      `<b>Сумма к оплате: ${escapeHtml(extractOrderAmount(orderMessage))}</b>`,
       "",
-      "После оплаты отправьте сюда скриншот операции. Менеджер проверит его и сообщит результат.",
+      "<b>После оплаты отправьте сюда скриншот операции. Менеджер проверит его и сообщит результат.</b>",
     ].join("\n"),
   });
+  return Boolean(response);
 }
 
-async function forwardPayment(message: TelegramMessage) {
+async function notifyManagerAboutOrder(message: TelegramMessage, orderCode: string) {
   const managerChatId = await getManagerChatId();
   const customerChatId = Number(message.chat?.id);
   if (!managerChatId || !Number.isFinite(customerChatId)) return false;
 
   const sender = [message.from?.first_name, message.from?.last_name].filter(Boolean).join(" ") || "не указано";
   const username = message.from?.username ? `@${message.from.username}` : "не указан";
-  const caption = message.caption?.trim() || message.text?.trim() || "Без подписи";
+  const orderText = message.text?.trim() || "Без текста заказа";
   const managerText = [
-    "🧾 <b>Новая заявка на проверку оплаты</b>",
+    "🛍 <b>Новый заказ</b>",
     "",
     `Клиент: <b>${escapeHtml(sender)}</b>`,
     `Telegram: <b>${escapeHtml(username)}</b>`,
     `Chat ID: <code>${customerChatId}</code>`,
-    `Комментарий: ${escapeHtml(caption)}`,
-    "",
-    "Проверьте сумму, получателя, последние цифры карты и время операции.",
+    `Код заказа: <code>${escapeHtml(orderCode)}</code>`,
+    `Сообщение: ${escapeHtml(orderText)}`,
   ].join("\n");
-  const callbackBase = [String(customerChatId), message.business_connection_id || ""].filter(Boolean).join(":");
-  const replyMarkup = {
-    inline_keyboard: [[
-      { text: "✅ Подтвердить оплату", callback_data: `pay:approve:${callbackBase}` },
-      { text: "❌ Отклонить", callback_data: `pay:reject:${callbackBase}` },
-    ]],
-  };
-
-  if (message.photo?.length) {
-    const largest = message.photo[message.photo.length - 1];
-    await telegram("sendPhoto", {
-      chat_id: managerChatId,
-      photo: largest.file_id,
-      caption: managerText,
-      parse_mode: "HTML",
-      reply_markup: replyMarkup,
-    });
-    return true;
-  }
-
-  if (message.document?.file_id) {
-    await telegram("sendDocument", {
-      chat_id: managerChatId,
-      document: message.document.file_id,
-      caption: managerText,
-      parse_mode: "HTML",
-      reply_markup: replyMarkup,
-    });
-    return true;
-  }
-
-  if (message.text?.trim()) {
-    await telegram("sendMessage", {
-      chat_id: managerChatId,
-      text: managerText,
-      parse_mode: "HTML",
-      reply_markup: replyMarkup,
-    });
-    return true;
-  }
-
-  return false;
+  return Boolean(await telegram("sendMessage", {
+    chat_id: managerChatId,
+    text: managerText,
+    parse_mode: "HTML",
+  }));
 }
 
 async function handleDecision(update: TelegramUpdate) {
@@ -236,12 +202,12 @@ export async function POST(request: Request) {
     }
   }
   await rememberManagerChat(message.from?.username, message.chat.id).catch(() => undefined);
-  if (/^\/start(?:\s|$)/i.test(message.text || "")) {
-    await sendWelcome(message.chat.id, message.business_connection_id);
-    return NextResponse.json({ ok: true, welcome: true });
-  }
   if (message.text?.trim() && !message.photo?.length && !message.document?.file_id) {
-    await sendOrderInstructions(message.chat.id, message.text, message.business_connection_id);
+    const orderCode = extractOrderCode(message.text);
+    if (!orderCode) return NextResponse.json({ ok: true, ignored: "not-an-order" });
+    const replied = await sendOrderInstructions(message.chat.id, message.text, message.business_connection_id);
+    if (replied) await notifyManagerAboutOrder(message, orderCode);
+    return NextResponse.json({ ok: true, replied, notified: replied });
   }
-  return NextResponse.json({ ok: true, replied: Boolean(message.text?.trim()) });
+  return NextResponse.json({ ok: true, ignored: "not-an-order" });
 }
