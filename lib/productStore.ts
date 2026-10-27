@@ -241,6 +241,23 @@ function normalizeOfferItem(item: Product["offers"][number]) {
   };
 }
 
+function migrateRobloxOfferLabels(slug: string, offers: Product["offers"]) {
+  if (slug !== "roblox") return offers;
+
+  const labels: Record<string, string> = {
+    "400 Robux": "500 Robux",
+    "800 Robux": "1000 Robux",
+    "1200 Robux": "1500 Robux",
+    "1700 Robux": "2000 Robux",
+    "3150 Robux": "3625 Robux",
+  };
+
+  return offers.map((offer) => {
+    if (offer.type === "divider") return offer;
+    return { ...offer, label: labels[offer.label.trim()] || offer.label };
+  });
+}
+
 type ProductReadOptions = {
   cached?: boolean;
 };
@@ -326,7 +343,7 @@ export async function getProducts(options: ProductReadOptions = {}) {
         ...baseProduct,
         ...override,
         baseSlug: baseProduct.slug,
-        offers,
+        offers: migrateRobloxOfferLabels(baseProduct.slug, offers),
         slug: baseProduct.slug,
       };
     });
@@ -350,7 +367,7 @@ export async function getProducts(options: ProductReadOptions = {}) {
           ...baseProduct,
           ...override,
           baseSlug: baseProduct.slug,
-          offers,
+          offers: migrateRobloxOfferLabels(baseProduct.slug, offers),
           slug,
         };
       }

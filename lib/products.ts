@@ -440,23 +440,23 @@ export const products: Product[] = [
         "priceRub": 80
       },
       {
-        "label": "400 Robux",
+        "label": "500 Robux",
         "priceRub": 125
       },
       {
-        "label": "800 Robux",
+        "label": "1000 Robux",
         "priceRub": 210
       },
       {
-        "label": "1200 Robux",
+        "label": "1500 Robux",
         "priceRub": 295
       },
       {
-        "label": "1700 Robux",
+        "label": "2000 Robux",
         "priceRub": 410
       },
       {
-        "label": "4500 Robux",
+        "label": "3625 Robux",
         "priceRub": 1055
       },
       {
