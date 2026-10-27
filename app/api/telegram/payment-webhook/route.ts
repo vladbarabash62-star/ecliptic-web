@@ -19,6 +19,10 @@ import {
   claimDailyGreeting,
   noteTelegramChatActivity,
 } from "../../../../lib/telegramDailyGreetingStore";
+import {
+  createPendingTelegramLogin,
+  savePendingTelegramLogin,
+} from "../../../../lib/telegramLoginStore";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -248,6 +252,31 @@ async function sendDailyGreeting(chatId: number, businessConnectionId?: string) 
   return Boolean(response);
 }
 
+async function sendLoginPrompt(message: TelegramMessage) {
+  if (!message.chat?.id || !message.from?.id) return false;
+  const loginToken = await createPendingTelegramLogin();
+  const saved = await savePendingTelegramLogin(loginToken, {
+    id: message.from.id,
+    username: message.from.username,
+    first_name: message.from.first_name,
+    last_name: message.from.last_name,
+  });
+  if (!saved) return false;
+
+  const response = await telegram("sendMessage", {
+    chat_id: message.chat.id,
+    ...(message.business_connection_id ? { business_connection_id: message.business_connection_id } : {}),
+    text: "Готово. Нажмите кнопку ниже, чтобы войти в личный кабинет Ecliptic Store.",
+    reply_markup: {
+      inline_keyboard: [[{
+        text: "Войти в Ecliptic Store",
+        url: `https://ecliptic.website/api/auth/telegram/complete?token=${encodeURIComponent(loginToken)}`,
+      }]],
+    },
+  });
+  return Boolean(response);
+}
+
 type PaymentAttachment = { kind: "photo" | "document"; fileId: string };
 
 const paymentBatches = new Map<string, PaymentAttachment[]>();
@@ -421,6 +450,11 @@ export async function POST(request: Request) {
   }
   await rememberManagerChat(message.from?.username, message.chat.id).catch(() => undefined);
   if (message.text?.trim() && !message.photo?.length && !message.document?.file_id) {
+    if (/^\/start(?:\s|$)/i.test(message.text)) {
+      const replied = await sendLoginPrompt(message);
+      await noteTelegramChatActivity(message.chat.id).catch(() => undefined);
+      return NextResponse.json({ ok: true, replied, loginPrompt: replied });
+    }
     const orderCode = extractOrderCode(message.text);
     if (!orderCode) {
       const shouldGreet = await claimDailyGreeting(message.chat.id).catch(() => false);

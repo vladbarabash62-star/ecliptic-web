@@ -5,6 +5,7 @@ import {
 } from "../../../../lib/customerAuth";
 import { rememberManagerChat } from "../../../../lib/telegramManagerStore";
 import { savePendingTelegramLogin } from "../../../../lib/telegramLoginStore";
+import { createPendingTelegramLogin } from "../../../../lib/telegramLoginStore";
 import {
   beginTelegramAccountNoticeEdit,
   saveTelegramAccountNoticeTemplate,
@@ -243,6 +244,19 @@ export async function POST(request: Request) {
   }
 
   if (!loginToken && /^\/start(?:\s|$)/i.test(text) && message?.chat?.id) {
+    if (message.from?.id) {
+      const freshLoginToken = await createPendingTelegramLogin();
+      const saved = await savePendingTelegramLogin(freshLoginToken, message.from);
+      if (saved) {
+        await sendTelegramMessage(
+          message.chat.id,
+          "Готово. Нажмите кнопку ниже, чтобы войти в личный кабинет Ecliptic Store.",
+          token,
+          freshLoginToken
+        );
+        return NextResponse.json({ ok: true, loginPrompt: true });
+      }
+    }
     await sendWelcomeMessage(message.chat.id, token);
     return NextResponse.json({ ok: true, welcome: true });
   }
