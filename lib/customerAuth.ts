@@ -25,6 +25,7 @@ export type CustomerUser = {
 
 export type CustomerOrder = {
   id: string;
+  clientOrderId?: string;
   userId: string;
   createdAt: string;
   productSlug: string;
@@ -279,8 +280,14 @@ export async function addCustomerOrder(user: CustomerUser, input: Partial<Custom
   if (!productSlug) return null;
 
   const store = await readCustomerStore();
+  const clientOrderId = cleanText(input.clientOrderId, "", 80);
+  if (clientOrderId) {
+    const existing = store.orders.find((order) => order.userId === user.id && order.clientOrderId === clientOrderId);
+    if (existing) return existing;
+  }
   const order: CustomerOrder = {
     id: randomUUID(),
+    clientOrderId: clientOrderId || undefined,
     userId: user.id,
     createdAt: new Date().toISOString(),
     productSlug,
@@ -289,7 +296,9 @@ export async function addCustomerOrder(user: CustomerUser, input: Partial<Custom
     message: cleanText(input.message, "", 900),
   };
 
-  store.users[user.id] = user;
+  // Keep the canonical user record. The session cookie can be older than the
+  // referral record and must not overwrite a newly attached referrer.
+  if (!store.users[user.id]) store.users[user.id] = user;
   store.orders = [...store.orders, order].slice(-5000);
   syncReferralCompletions(store);
   await writeCustomerStore(store);

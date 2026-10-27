@@ -150,7 +150,21 @@ function saveCustomerOrder(input: {
   priceRub?: number;
   message: string;
 }) {
-  const payload = JSON.stringify(input);
+  const payload = JSON.stringify({
+    ...input,
+    clientOrderId: typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+  });
+
+  // sendBeacon is designed for writes that must survive navigation. The
+  // order link opens Telegram immediately, so a normal background fetch can
+  // be cancelled by the browser before the referral counter is updated.
+  const sent = typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function"
+    ? navigator.sendBeacon("/api/orders", new Blob([payload], { type: "application/json" }))
+    : false;
+  if (sent) return;
+
   void fetch("/api/orders", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
