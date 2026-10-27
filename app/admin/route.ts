@@ -101,7 +101,15 @@ const STYLE = `
   .dot { width:12px; height:12px; border-radius:50%; background:var(--dot,#38bdf8); }
   .chart-empty { display:grid; min-height:210px; place-items:center; color:var(--muted); text-align:center; }
   .wide-chart { padding:16px; margin-bottom:14px; }
-  .week-bars { display:flex; gap:12px; align-items:end; min-height:230px; margin-top:18px; padding:12px 2px 4px; border-top:1px solid rgba(255,255,255,.08); overflow-x:auto; }
+  .week-chart-shell { display:flex; align-items:center; gap:8px; margin-top:18px; }
+  .week-bars { flex:1 1 auto; display:flex; gap:12px; align-items:end; min-height:230px; margin:0; padding:12px 2px 4px; border-top:1px solid rgba(255,255,255,.08); overflow-x:auto; overscroll-behavior-x:contain; scrollbar-width:thin; scrollbar-color:rgba(56,189,248,.72) rgba(255,255,255,.08); scroll-behavior:smooth; }
+  .week-bars::-webkit-scrollbar { height:8px; }
+  .week-bars::-webkit-scrollbar-track { background:rgba(255,255,255,.08); border-radius:999px; }
+  .week-bars::-webkit-scrollbar-thumb { background:rgba(56,189,248,.72); border-radius:999px; }
+  .week-scroll-btn { display:none; flex:0 0 34px; width:34px; height:34px; border:1px solid rgba(56,189,248,.4); border-radius:10px; background:#0b1628; color:#e2e8f0; font-size:22px; line-height:1; cursor:pointer; }
+  .week-scroll-btn:hover { background:#10243a; border-color:#38bdf8; }
+  .week-scroll-hint { display:none; margin-top:6px; color:var(--muted); font-size:12px; text-align:center; }
+  .week-chart-shell.is-scrollable .week-scroll-btn, .week-chart-shell.is-scrollable + .week-scroll-hint { display:block; }
   .week-bar { position:relative; flex:0 0 118px; display:grid; gap:8px; align-content:end; min-height:205px; cursor:default; }
   .week-fill { min-height:8px; border-radius:12px 12px 6px 6px; background:linear-gradient(180deg,#38bdf8,#22c55e); box-shadow:0 12px 28px rgba(34,197,94,.2); }
   .week-label { color:var(--muted); font-size:11px; line-height:1.25; text-align:center; }
@@ -954,15 +962,46 @@ const ADMIN_HTML = `<!doctype html>
         return '<div class="week-bar" data-week-tip="' + esc(tip) + '"><div class="week-value">' + row.visitors.size + '<small>пользователей</small></div><div class="week-fill" style="height:' + height + 'px"></div><div class="week-label">' + esc(row.label) + '</div></div>';
       }).join('') + '</div>';
     }
+    function enhanceWeekScroller(id) {
+      var host = $(id);
+      var bars = host && host.querySelector('.week-bars');
+      if (!bars) return;
+      var shell = document.createElement('div');
+      shell.className = 'week-chart-shell';
+      bars.parentNode.insertBefore(shell, bars);
+      shell.appendChild(bars);
+      var left = document.createElement('button');
+      left.type = 'button';
+      left.className = 'week-scroll-btn';
+      left.setAttribute('aria-label', 'Показать предыдущие недели');
+      left.textContent = '‹';
+      var right = document.createElement('button');
+      right.type = 'button';
+      right.className = 'week-scroll-btn';
+      right.setAttribute('aria-label', 'Показать следующие недели');
+      right.textContent = '›';
+      shell.insertBefore(left, bars);
+      shell.appendChild(right);
+      var hint = document.createElement('div');
+      hint.className = 'week-scroll-hint';
+      hint.textContent = 'Прокрутите влево или вправо, чтобы посмотреть другие недели';
+      shell.parentNode.appendChild(hint);
+      var step = 3 * 118;
+      left.addEventListener('click', function() { bars.scrollBy({ left: -step, behavior: 'smooth' }); });
+      right.addEventListener('click', function() { bars.scrollBy({ left: step, behavior: 'smooth' }); });
+      bars.addEventListener('wheel', function(event) {
+        if (Math.abs(event.deltaY) <= Math.abs(event.deltaX) || bars.scrollWidth <= bars.clientWidth) return;
+        event.preventDefault();
+        bars.scrollLeft += event.deltaY;
+      }, { passive: false });
+      if (bars.scrollWidth > bars.clientWidth + 2) shell.classList.add('is-scrollable');
+    }
     function renderRegistrationWeekBars(id, users) {
       var registrationEvents = (users || []).filter(function(user) { return user && user.createdAt; }).map(function(user) {
         return { time: user.createdAt };
       });
-      var ranges = weekRanges(registrationEvents);
-      if (!ranges.length) {
-        $(id).innerHTML = '<div class="chart-empty">Пока нет зарегистрированных пользователей.</div>';
-        return;
-      }
+      var currentWeekEvent = { time: new Date().toISOString() };
+      var ranges = weekRanges(registrationEvents.concat(currentWeekEvent));
       var rows = ranges.map(function(range) {
         var days = [];
         for (var index = 0; index < 7; index += 1) {
@@ -990,6 +1029,7 @@ const ADMIN_HTML = `<!doctype html>
         var tip = '<strong>' + esc(row.label) + '</strong>' + dayRows + '<div class="week-tip-total">Новых пользователей: ' + row.value + '</div>';
         return '<div class="week-bar" data-week-tip="' + esc(tip) + '"><div class="week-value">' + row.value + '<small>регистраций</small></div><div class="week-fill" style="height:' + height + 'px"></div><div class="week-label">' + esc(row.label) + '</div></div>';
       }).join('') + '</div>';
+      enhanceWeekScroller(id);
     }
     function renderReferralCompletionWeekBars(id, users) {
       var completionEvents = (users || []).filter(function(user) { return user && user.referralCompletedAt; }).map(function(user) {
