@@ -23,6 +23,9 @@ import {
   createPendingTelegramLogin,
   savePendingTelegramLogin,
 } from "../../../../lib/telegramLoginStore";
+import { compactProductCode } from "../../../../lib/orderCode";
+import { getProducts } from "../../../../lib/productStore";
+import type { Product } from "../../../../lib/products";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -181,10 +184,59 @@ function extractOrderProduct(message: string) {
 }
 
 function extractOrderCode(message: string) {
-  return message.match(/\bECL-[A-Z0-9]+(?:-[A-Z0-9]+){2,}\b/i)?.[0] || "";
+  return message.match(/\b(?:E-[A-Z0-9]{5}-(?:\d+|NA)-[A-Z0-9]{4}|ECL-[A-Z0-9]+(?:-[A-Z0-9]+){2,})\b/i)?.[0] || "";
 }
 
-async function sendOrderInstructions(chatId: number, orderMessage: string, businessConnectionId?: string) {
+function parseOrderCode(orderCode: string) {
+  const compact = orderCode.match(/^E-([A-Z0-9]{5})-(\d+|NA)-([A-Z0-9]{4})$/i);
+  if (compact) {
+    return {
+      alias: compact[1].toUpperCase(),
+      priceRub: compact[2].toUpperCase() === "NA" ? undefined : Number(compact[2]),
+    };
+  }
+
+  const legacy = orderCode.match(/^ECL-([A-Z0-9]+)-(?:(\d+)R|NA)-[A-Z0-9]+$/i);
+  return legacy
+    ? { legacyPrefix: legacy[1].toLowerCase(), priceRub: legacy[2] ? Number(legacy[2]) : undefined }
+    : null;
+}
+
+type ResolvedOrderPayment = {
+  amount: string;
+  product?: Product;
+  sitePrice?: number;
+};
+
+async function resolveOrderPayment(orderMessage: string, orderCode: string): Promise<ResolvedOrderPayment> {
+  const parsed = parseOrderCode(orderCode);
+  if (!parsed) return { amount: extractOrderAmount(orderMessage) };
+
+  const products = await getProducts({ cached: false }).catch(() => []);
+  const product = products.find((candidate) => {
+    if (parsed.alias) return compactProductCode(candidate.slug) === parsed.alias;
+    return candidate.slug.toLowerCase().replace(/[^a-z0-9]/g, "").startsWith(parsed.legacyPrefix || "");
+  });
+  if (!product) return { amount: extractOrderAmount(orderMessage) };
+
+  const offers = product.offers.filter((offer): offer is Extract<Product["offers"][number], { priceRub: number }> =>
+    offer.type !== "divider" && typeof offer.priceRub === "number"
+  );
+  const offer = offers.find((candidate) => orderMessage.toLowerCase().includes(candidate.label.toLowerCase()))
+    || offers.find((candidate) => candidate.priceRub === parsed.priceRub)
+    || (offers.length === 1 ? offers[0] : undefined);
+  if (offer) return { amount: `${offer.priceRub}р`, product, sitePrice: offer.priceRub };
+
+  // Keep the old behavior when a product exists but its offer cannot be resolved.
+  return { amount: parsed.priceRub ? `${parsed.priceRub}р` : extractOrderAmount(orderMessage), product };
+}
+
+async function sendOrderInstructions(
+  chatId: number,
+  orderMessage: string,
+  businessConnectionId?: string,
+  paymentAmount?: string
+) {
   const category = extractOrderCategory(orderMessage);
   const product = extractOrderProduct(orderMessage);
   const isTelegramAccount = category.value.trim().toLowerCase() === "telegram" && /аккаунт/i.test(product);
@@ -213,7 +265,7 @@ async function sendOrderInstructions(chatId: number, orderMessage: string, busin
     "",
     "<b>Номер получателя: <code>77534682</code></b>",
     "<b>Получатель: Владислав Б</b>",
-    `<b>Сумма к оплате: ${escapeHtml(extractOrderAmount(orderMessage))}</b>`,
+    `<b>Сумма к оплате: ${escapeHtml(paymentAmount || extractOrderAmount(orderMessage))}</b>`,
     "",
     "<b>После оплаты отправьте сюда скриншот операции.</b>",
   ].join("\n");
@@ -462,13 +514,19 @@ export async function POST(request: Request) {
       await noteTelegramChatActivity(message.chat.id).catch(() => undefined);
       return NextResponse.json({ ok: true, replied, ignored: "not-an-order" });
     }
-    const replied = await sendOrderInstructions(message.chat.id, message.text, message.business_connection_id);
+    const resolvedPayment = await resolveOrderPayment(message.text, orderCode);
+    const replied = await sendOrderInstructions(
+      message.chat.id,
+      message.text,
+      message.business_connection_id,
+      resolvedPayment.amount
+    );
     if (replied) {
       await savePendingTelegramOrder({
         chatId: message.chat.id,
         businessConnectionId: message.business_connection_id,
         orderCode,
-        amount: extractOrderAmount(message.text),
+        amount: resolvedPayment.amount,
         orderMessage: message.text,
         createdAt: new Date().toISOString(),
       });

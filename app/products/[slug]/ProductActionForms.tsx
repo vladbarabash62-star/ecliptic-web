@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import type { ProductItem } from "../../../lib/products";
 import { realOfferIcon } from "../../../lib/offerImages";
+import { createOrderCode } from "../../../lib/orderCode";
 import { playBuyHaptic } from "../../components/haptics";
 
 const TELEGRAM_USERNAME = "Ecliptic_Store_PMR";
@@ -132,11 +133,7 @@ function openTelegramOrderMessage(message: string) {
 }
 
 function addOrderCode(message: string, productSlug: string, priceRub?: number) {
-  const suffix = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-    ? crypto.randomUUID().slice(0, 8).toUpperCase()
-    : Date.now().toString(36).slice(-8).toUpperCase();
-  const price = Number.isFinite(priceRub) ? `${priceRub}R` : "NA";
-  return `${message}\n🆔 Код заказа: ECL-${productSlug.slice(0, 12).toUpperCase()}-${price}-${suffix}`;
+  return `${message}\n🆔 Код заказа: ${createOrderCode(productSlug, priceRub)}`;
 }
 
 function handleTelegramOrderClick(event: MouseEvent<HTMLAnchorElement>, message: string) {
