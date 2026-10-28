@@ -6,11 +6,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 function getTelegramBotUsername() {
-  const username =
-    process.env.NEXT_PUBLIC_TELEGRAM_LOGIN_BOT_USERNAME ||
-    process.env.NEXT_PUBLIC_TELEGRAM_WEBAPP_BOT_USERNAME ||
-    process.env.TELEGRAM_WEBAPP_BOT_USERNAME ||
-    "Ecliptic_Store_BOT";
+  // Authentication always belongs to the login bot. Do not let an old
+  // payment-bot environment variable redirect users into the Orders bot.
+  const username = "Ecliptic_Store_BOT";
 
   return username.replace(/^@/, "").trim();
 }

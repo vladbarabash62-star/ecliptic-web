@@ -5,10 +5,7 @@ function isMobileUserAgent(userAgent: string) {
 }
 
 function getTelegramBotUsername() {
-  const username =
-    process.env.TELEGRAM_WEBAPP_BOT_USERNAME ||
-    process.env.NEXT_PUBLIC_TELEGRAM_WEBAPP_BOT_USERNAME ||
-    "Ecliptic_Store_BOT";
+  const username = "Ecliptic_Store_BOT";
 
   const normalized = username.replace(/^@/, "").trim();
   return /^[a-zA-Z0-9_]{5,32}$/.test(normalized) ? normalized : "";
