@@ -120,7 +120,7 @@ function openSellerChat(href: string, deepHref: string) {
     return;
   }
 
-  window.open(href, "_blank", "noopener,noreferrer");
+  window.location.assign(href);
 }
 
 function openTelegramOrderMessage(message: string) {

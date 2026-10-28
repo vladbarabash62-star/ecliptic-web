@@ -81,7 +81,7 @@ function openSellerChat(href: string, deepHref: string) {
     return;
   }
 
-  window.open(href, "_blank", "noopener,noreferrer");
+  window.location.assign(href);
 }
 
 function handleContactClick(event: MouseEvent<HTMLAnchorElement>) {
@@ -100,8 +100,7 @@ export default function ContactButton() {
   return (
     <a
       href={href}
-      target="_blank"
-      rel="noopener noreferrer"
+      target="_self"
       data-analytics="telegram_contact"
       data-haptic-direct="true"
       onClick={handleContactClick}
