@@ -94,17 +94,13 @@ function sleep(milliseconds: number) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
-function typingDelay(text: string) {
-  return Math.min(5000, Math.max(1800, 1200 + text.length * 18));
-}
-
-async function showTyping(chatId: number, text: string, businessConnectionId?: string) {
+async function showTyping(chatId: number, businessConnectionId?: string) {
   await telegram("sendChatAction", {
     chat_id: chatId,
     ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
     action: "typing",
   });
-  await sleep(typingDelay(text));
+  await sleep(1000);
 }
 
 function applyAccountNoticeEmojiIds(text: string, ids: string[]) {
@@ -263,6 +259,7 @@ async function sendOrderInstructions(
     "<b>После оплаты отправьте сюда скриншот операции.</b>",
   ].join("\n");
   const noticeText = (await getTelegramAccountNoticeTemplate())?.text || fallbackAccountSafetyNotice;
+  await showTyping(chatId, businessConnectionId);
   const response = await telegram("sendMessage", {
     chat_id: chatId,
     ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
