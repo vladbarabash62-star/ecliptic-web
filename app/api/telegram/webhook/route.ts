@@ -56,7 +56,7 @@ type TelegramUpdate = {
 };
 
 function botToken() {
-  return process.env.TELEGRAM_BOT_TOKEN || process.env.TELEGRAM_WEBAPP_BOT_TOKEN || "";
+  return process.env.TELEGRAM_LOGIN_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN || process.env.TELEGRAM_WEBAPP_BOT_TOKEN || "";
 }
 
 async function sendTelegramMessage(chatId: number, text: string, token: string, loginToken: string) {

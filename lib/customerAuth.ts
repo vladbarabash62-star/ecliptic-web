@@ -561,7 +561,7 @@ export async function verifyGoogleCredential(credential: string) {
 }
 
 export function verifyTelegramInitData(initData: string) {
-  const botToken = process.env.TELEGRAM_BOT_TOKEN || process.env.TELEGRAM_WEBAPP_BOT_TOKEN || "";
+  const botToken = process.env.TELEGRAM_LOGIN_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN || process.env.TELEGRAM_WEBAPP_BOT_TOKEN || "";
   if (!botToken) return null;
 
   const params = new URLSearchParams(initData);
@@ -596,7 +596,7 @@ export function verifyTelegramLoginData(params: URLSearchParams) {
   const authDate = Number(params.get("auth_date") || 0);
   if (!id || !authDate || Date.now() / 1000 - authDate > 60 * 60 * 24) return null;
 
-  const botToken = process.env.TELEGRAM_BOT_TOKEN || process.env.TELEGRAM_WEBAPP_BOT_TOKEN || "";
+  const botToken = process.env.TELEGRAM_LOGIN_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN || process.env.TELEGRAM_WEBAPP_BOT_TOKEN || "";
   if (!botToken && shouldUseSecureCookie()) return null;
   if (!botToken) return { id: Number(id), username, first_name: firstName, last_name: lastName, photo_url: photoUrl };
 
