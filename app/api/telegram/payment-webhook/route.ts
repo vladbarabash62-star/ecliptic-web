@@ -263,7 +263,6 @@ async function sendOrderInstructions(
     "<b>После оплаты отправьте сюда скриншот операции.</b>",
   ].join("\n");
   const noticeText = (await getTelegramAccountNoticeTemplate())?.text || fallbackAccountSafetyNotice;
-  await showTyping(chatId, paymentText + (isTelegramAccount ? noticeText : ""), businessConnectionId);
   const response = await telegram("sendMessage", {
     chat_id: chatId,
     ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),

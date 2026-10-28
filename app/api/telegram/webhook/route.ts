@@ -60,7 +60,6 @@ function botToken() {
 }
 
 async function sendTelegramMessage(chatId: number, text: string, token: string, loginToken: string) {
-  await showTyping(chatId, token, text);
   const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
