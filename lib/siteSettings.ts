@@ -1,5 +1,4 @@
 import { redisPipeline } from "./security";
-import { unstable_cache } from "next/cache";
 import { defaultSiteSettings, normalizeSiteSettings, type SiteSettings } from "./siteSettingsDefaults";
 import { readAdminFallback, writeAdminFallback } from "./adminFallbackStore";
 import { readBlobJson, writeBlobJson } from "./blobJsonStore";
@@ -39,10 +38,6 @@ async function readSiteSettings() {
     return fallback ? normalizeSiteSettings(fallback) : defaultSiteSettings;
   }
 }
-
-const readCachedSiteSettings = unstable_cache(readSiteSettings, ["ecliptic-site-settings-v2"], {
-  tags: [SITE_SETTINGS_CACHE_TAG], revalidate: 600,
-});
 
 export function getSiteSettings() {
   // Settings are small and must reflect an admin save immediately.

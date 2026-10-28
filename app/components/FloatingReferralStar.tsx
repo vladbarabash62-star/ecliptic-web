@@ -267,7 +267,7 @@ export default function FloatingReferralStar() {
   const isVisible = useMemo(() => {
     if (!isLocationReady) return false;
     return shouldShowOnCurrentPage(pathname || "/");
-  }, [isLocationReady, pathname, locationSearch]);
+  }, [isLocationReady, pathname]);
 
   async function refreshUser() {
     const response = await fetch("/api/auth/me", { cache: "no-store" }).catch(() => null);
