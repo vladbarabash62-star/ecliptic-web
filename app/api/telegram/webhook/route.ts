@@ -201,6 +201,35 @@ export async function POST(request: Request) {
       const manager = String(callback.from?.username || "").replace(/^@/, "").toLowerCase() === "ecliptic_store_pmr";
       if (manager) {
         const userId = callback.data.slice("referral_reward:".length);
+        await sendPlainTelegramMessage(
+          callback.message.chat.id,
+          "Вы уверены, что хотите подтвердить выдачу подарка на 50 Telegram Stars?",
+          token,
+          {
+            inline_keyboard: [[
+              { text: "Да, подтвердить", callback_data: `referral_confirm:${userId}` },
+              { text: "Отмена", callback_data: `referral_cancel:${userId}` },
+            ]],
+          },
+        );
+        if (callback.message.message_id) {
+          await fetch(`https://api.telegram.org/bot${token}/editMessageReplyMarkup`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              chat_id: callback.message.chat.id,
+              message_id: callback.message.message_id,
+              reply_markup: { inline_keyboard: [] },
+            }),
+          }).catch(() => undefined);
+        }
+      }
+      return NextResponse.json({ ok: true, referralReward: manager, confirmationRequested: manager });
+    }
+    if (callback.data?.startsWith("referral_confirm:") && callback.message?.chat?.id) {
+      const manager = String(callback.from?.username || "").replace(/^@/, "").toLowerCase() === "ecliptic_store_pmr";
+      if (manager) {
+        const userId = callback.data.slice("referral_confirm:".length);
         await markCustomerReferralRewarded(userId);
         if (callback.message.message_id) {
           await fetch(`https://api.telegram.org/bot${token}/editMessageReplyMarkup`, {
@@ -213,9 +242,27 @@ export async function POST(request: Request) {
             }),
           }).catch(() => undefined);
         }
-        await sendPlainTelegramMessage(callback.message.chat.id, "✅ Подарок отмечен выданным. Статус на сайте обновлён.", token);
+        await sendPlainTelegramMessage(callback.message.chat.id, "✅ Подарок подтверждён и отмечен выданным. Статус на сайте обновлён. Отправьте 50 Stars получателю вручную через Telegram.", token);
       }
-      return NextResponse.json({ ok: true, referralReward: manager });
+      return NextResponse.json({ ok: true, referralConfirmation: manager });
+    }
+    if (callback.data?.startsWith("referral_cancel:") && callback.message?.chat?.id) {
+      const manager = String(callback.from?.username || "").replace(/^@/, "").toLowerCase() === "ecliptic_store_pmr";
+      if (manager) {
+        if (callback.message.message_id) {
+          await fetch(`https://api.telegram.org/bot${token}/editMessageReplyMarkup`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              chat_id: callback.message.chat.id,
+              message_id: callback.message.message_id,
+              reply_markup: { inline_keyboard: [] },
+            }),
+          }).catch(() => undefined);
+        }
+        await sendPlainTelegramMessage(callback.message.chat.id, "Отмена. Статус подарка не изменён.", token);
+      }
+      return NextResponse.json({ ok: true, referralCancellation: manager });
     }
     if (callback.data === "edit_account_notice" && callback.message?.chat?.id) {
       const manager = String(callback.from?.username || "").replace(/^@/, "").toLowerCase() === "ecliptic_store_pmr";
