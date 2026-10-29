@@ -64,9 +64,6 @@ export async function rememberBusinessManagerChat(chatId: number | undefined) {
 }
 
 export async function getManagerChatId() {
-  const fromEnv = process.env.REFERRAL_MANAGER_CHAT_ID || process.env.TELEGRAM_MANAGER_CHAT_ID || "";
-  if (fromEnv.trim()) return fromEnv.trim();
-
   if (hasCloudflareState()) {
     const stateStore = normalize(await readCloudflareState<ManagerChatStore>(MANAGER_CHAT_FALLBACK));
     if (stateStore.chatId) return String(stateStore.chatId);
@@ -80,6 +77,9 @@ export async function getManagerChatId() {
     await writeBlobJson(MANAGER_CHAT_BLOB, fallbackStore).catch(() => undefined);
     return String(fallbackStore.chatId);
   }
+
+  const fromEnv = process.env.REFERRAL_MANAGER_CHAT_ID || process.env.TELEGRAM_MANAGER_CHAT_ID || "";
+  if (fromEnv.trim()) return fromEnv.trim();
 
   return "";
 }
