@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   getPendingCustomerReferralClaims,
+  markCustomerReferralRewarded,
   markCustomerReferralClaimSent,
 } from "../../../../lib/customerAuth";
 import { rememberManagerChat } from "../../../../lib/telegramManagerStore";
@@ -37,7 +38,7 @@ type TelegramUpdate = {
     id?: string;
     data?: string;
     from?: { id?: number; username?: string };
-    message?: { chat?: { id?: number } };
+    message?: { chat?: { id?: number }; message_id?: number };
   };
   message?: {
     text?: string;
@@ -120,7 +121,7 @@ function escapeHtml(value: string) {
     .replace(/"/g, "&quot;");
 }
 
-async function sendPlainTelegramMessage(chatId: number, text: string, token: string) {
+async function sendPlainTelegramMessage(chatId: number, text: string, token: string, replyMarkup?: Record<string, unknown>) {
   await showTyping(chatId, token, text);
   const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: "POST",
@@ -130,6 +131,7 @@ async function sendPlainTelegramMessage(chatId: number, text: string, token: str
       text,
       parse_mode: "HTML",
       disable_web_page_preview: true,
+      ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
     }),
   }).catch(() => null);
 
@@ -175,7 +177,9 @@ async function flushPendingReferralClaims(chatId: number, token: string) {
       `ID сайта: <code>${escapeHtml(item.user?.id || item.claim.userId)}</code>`,
     ].join("\n");
 
-    const sent = await sendPlainTelegramMessage(chatId, text, token);
+    const sent = await sendPlainTelegramMessage(chatId, text, token, {
+      inline_keyboard: [[{ text: "Подарок выдан", callback_data: `referral_reward:${item.claim.userId}` }]],
+    });
     if (sent) await markCustomerReferralClaimSent(item.claim.id);
   }
 }
@@ -193,6 +197,26 @@ export async function POST(request: Request) {
   const callback = update.callback_query;
   if (callback?.id) {
     await answerCallback(callback.id, token);
+    if (callback.data?.startsWith("referral_reward:") && callback.message?.chat?.id) {
+      const manager = String(callback.from?.username || "").replace(/^@/, "").toLowerCase() === "ecliptic_store_pmr";
+      if (manager) {
+        const userId = callback.data.slice("referral_reward:".length);
+        await markCustomerReferralRewarded(userId);
+        if (callback.message.message_id) {
+          await fetch(`https://api.telegram.org/bot${token}/editMessageReplyMarkup`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              chat_id: callback.message.chat.id,
+              message_id: callback.message.message_id,
+              reply_markup: { inline_keyboard: [] },
+            }),
+          }).catch(() => undefined);
+        }
+        await sendPlainTelegramMessage(callback.message.chat.id, "✅ Подарок отмечен выданным. Статус на сайте обновлён.", token);
+      }
+      return NextResponse.json({ ok: true, referralReward: manager });
+    }
     if (callback.data === "edit_account_notice" && callback.message?.chat?.id) {
       const manager = String(callback.from?.username || "").replace(/^@/, "").toLowerCase() === "ecliptic_store_pmr";
       if (manager) {

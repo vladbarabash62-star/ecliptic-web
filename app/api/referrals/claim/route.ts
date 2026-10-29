@@ -14,7 +14,7 @@ function botToken() {
   return process.env.TELEGRAM_LOGIN_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN || process.env.TELEGRAM_WEBAPP_BOT_TOKEN || "";
 }
 
-async function sendManagerNotification(text: string) {
+async function sendManagerNotification(text: string, claimUserId: string) {
   const token = botToken();
   if (!token) return false;
   const chatId = await getManagerChatId();
@@ -28,6 +28,9 @@ async function sendManagerNotification(text: string) {
       text,
       parse_mode: "HTML",
       disable_web_page_preview: true,
+      reply_markup: {
+        inline_keyboard: [[{ text: "Подарок выдан", callback_data: `referral_reward:${claimUserId}` }]],
+      },
     }),
   }).catch(() => null);
 
@@ -103,7 +106,8 @@ export async function POST() {
       `Приглашено участников: <b>${result.invitedCount}</b>`,
       `Заявка: <code>${escapeHtml(claim.id)}</code>`,
       `ID сайта: <code>${escapeHtml(user.id)}</code>`,
-    ].join("\n")
+    ].join("\n"),
+    claim.userId,
   );
 
   const finalClaim = managerSent ? await markCustomerReferralClaimSent(claim.id) : claim;
