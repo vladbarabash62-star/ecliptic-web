@@ -215,8 +215,10 @@ export async function POST(request: Request) {
   }
   const managerChat = Number(message?.chat?.id);
   const managerUsername = String(message?.from?.username || "").replace(/^@/, "").toLowerCase();
+  const managerRemembered = await rememberManagerChat(message?.from?.username, message?.chat?.id);
   if (managerUsername === "ecliptic_store_pmr" && Number.isFinite(managerChat)) {
     if (/^\/start(?:\s|$)/i.test(text)) {
+      await flushPendingReferralClaims(managerChat, token);
       await sendManagerMenu(managerChat, token);
       return NextResponse.json({ ok: true, managerMenu: true });
     }
@@ -237,7 +239,6 @@ export async function POST(request: Request) {
   }
   const loginToken = text.match(/^\/start\s+login_([a-f0-9-]{20,80})/i)?.[1];
 
-  const managerRemembered = await rememberManagerChat(message?.from?.username, message?.chat?.id);
   if (managerRemembered && message?.chat?.id) {
     await flushPendingReferralClaims(message.chat.id, token);
   }
