@@ -15,7 +15,7 @@ import {
   getTelegramAccountNoticeTemplate,
   getTelegramCustomEmojiIds,
 } from "../../../../lib/telegramCustomEmojiStore";
-import { noteTelegramChatActivity } from "../../../../lib/telegramDailyGreetingStore";
+import { claimDailyGreeting, noteTelegramChatActivity } from "../../../../lib/telegramDailyGreetingStore";
 import { compactProductCode } from "../../../../lib/orderCode";
 import { getProducts } from "../../../../lib/productStore";
 import type { Product } from "../../../../lib/products";
@@ -32,6 +32,7 @@ type TelegramMessage = {
   media_group_id?: string;
   text?: string;
   caption?: string;
+  sticker?: { file_id: string; is_animated?: boolean; is_video?: boolean };
   photo?: Array<{ file_id: string; width?: number; height?: number }>;
   document?: { file_id: string; mime_type?: string; file_name?: string };
 };
@@ -284,6 +285,17 @@ async function sendOrderInstructions(
   return Boolean(noticeResponse);
 }
 
+async function sendDailyGreeting(chatId: number, businessConnectionId?: string) {
+  const text = "Здравствуйте, добро пожаловать в Ecliptic Store. Напишите, какой товар или услугу вы хотите оформить.";
+  await showTyping(chatId, businessConnectionId);
+  const response = await telegram("sendMessage", {
+    chat_id: chatId,
+    ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
+    text,
+  });
+  return Boolean(response);
+}
+
 type PaymentAttachment = { kind: "photo" | "document"; fileId: string };
 
 const paymentBatches = new Map<string, PaymentAttachment[]>();
@@ -456,8 +468,12 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate) {
   if (message.text?.trim() && !message.photo?.length && !message.document?.file_id) {
     const orderCode = extractOrderCode(message.text);
     if (!orderCode) {
+      const shouldGreet = await claimDailyGreeting(message.chat.id).catch(() => false);
+      const replied = shouldGreet
+        ? await sendDailyGreeting(message.chat.id, message.business_connection_id)
+        : false;
       await noteTelegramChatActivity(message.chat.id).catch(() => undefined);
-      return NextResponse.json({ ok: true, replied: false, ignored: "not-an-order" });
+      return NextResponse.json({ ok: true, replied, ignored: "not-an-order" });
     }
     const resolvedPayment = await resolveOrderPayment(message.text, orderCode);
     const replied = await sendOrderInstructions(
@@ -486,6 +502,15 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate) {
     const notified = await queuePaymentScreenshot(message, pending);
     await noteTelegramChatActivity(message.chat.id).catch(() => undefined);
     return NextResponse.json({ ok: true, paymentScreenshot: true, notified });
+  }
+
+  if (message.sticker) {
+    const shouldGreet = await claimDailyGreeting(message.chat.id).catch(() => false);
+    const replied = shouldGreet
+      ? await sendDailyGreeting(message.chat.id, message.business_connection_id)
+      : false;
+    await noteTelegramChatActivity(message.chat.id).catch(() => undefined);
+    return NextResponse.json({ ok: true, replied, ignored: "sticker" });
   }
 
   return NextResponse.json({ ok: true, ignored: "not-an-order" });
