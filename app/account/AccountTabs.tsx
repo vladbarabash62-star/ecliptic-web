@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 type AccountOrder = {
   id: string;
@@ -336,7 +337,7 @@ export default function AccountTabs({ orders, referral: initialReferral }: { ord
         </section>
       )}
 
-      {isLogoutOpen ? (
+      {isLogoutOpen && typeof document !== "undefined" ? createPortal(
         <div className="fixed inset-0 z-[70] grid place-items-center bg-black/70 p-4 backdrop-blur-sm" role="presentation">
           <div
             role="dialog"
@@ -365,7 +366,8 @@ export default function AccountTabs({ orders, referral: initialReferral }: { ord
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       ) : null}
     </>
   );
