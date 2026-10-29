@@ -205,9 +205,10 @@ export default function AccountTabs({ orders, referral: initialReferral }: { ord
           onClick={() => setIsLogoutOpen(true)}
           aria-label="Выйти из аккаунта"
           title="Выйти из аккаунта"
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/[0.055] text-xl font-black text-white/82 transition hover:border-red-300/40 hover:bg-red-500/14 hover:text-red-100 active:scale-95"
+          className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.055] px-3 text-sm font-black text-white/82 transition hover:border-red-300/40 hover:bg-red-500/14 hover:text-red-100 active:scale-95"
         >
-          <span aria-hidden="true">↪</span>
+          <span aria-hidden="true" className="text-lg leading-none">↪</span>
+          <span>Выйти из аккаунта</span>
         </button>
       </div>
 
