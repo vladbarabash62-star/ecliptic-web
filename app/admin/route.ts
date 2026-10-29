@@ -1248,7 +1248,7 @@ const ADMIN_HTML = `<!doctype html>
       var latestClaim = user.lastClaim || null;
       var rewardClaim = user.rewardClaim || (latestClaim && latestClaim.status === 'rewarded' ? latestClaim : null);
       var canMarkRewarded = (user.invited || []).length >= 5 && (user.orders || []).length > 0 && !rewardClaim;
-      var canCancelClaim = Boolean(latestClaim && latestClaim.status !== 'rewarded' && latestClaim.status !== 'canceled');
+      var canCancelClaim = Boolean(latestClaim && latestClaim.status !== 'canceled');
       $('referralDetails').className = '';
       $('referralDetails').innerHTML =
         '<div class="toolbar" style="justify-content:space-between;align-items:flex-start">' +

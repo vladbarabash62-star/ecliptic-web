@@ -328,6 +328,9 @@ export async function getCustomerReferralInfo(userIdValue: string, siteUrl = "ht
       joinedAt: item.referredAt || item.createdAt,
     }));
   const orderCount = store.orders.filter((order) => order.userId === user.id).length;
+  const lastClaim = store.referralClaims
+    .filter((claim) => claim.userId === user.id)
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0] || null;
 
   return {
     code: referralCode,
@@ -341,12 +344,8 @@ export async function getCustomerReferralInfo(userIdValue: string, siteUrl = "ht
       name: referrer.name || referrer.username || "Пользователь",
       username: referrer.username || "",
     } : null,
-    lastClaim: store.referralClaims
-      .filter((claim) => claim.userId === user.id)
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0] || null,
-    rewardClaim: store.referralClaims
-      .filter((claim) => claim.userId === user.id && claim.status === "rewarded")
-      .sort((a, b) => String(b.rewardedAt || b.createdAt).localeCompare(String(a.rewardedAt || a.createdAt)))[0] || null,
+    lastClaim,
+    rewardClaim: lastClaim?.status === "rewarded" ? lastClaim : null,
   };
 }
 
@@ -453,7 +452,7 @@ export async function cancelCustomerReferralClaim(userIdValue: string) {
     .filter((item) => item.claim.userId === userIdValue)
     .sort((a, b) => b.claim.createdAt.localeCompare(a.claim.createdAt));
   const latest = userClaims[0];
-  if (!latest || latest.claim.status === "rewarded" || latest.claim.status === "canceled") return latest?.claim || null;
+  if (!latest || latest.claim.status === "canceled") return latest?.claim || null;
 
   store.referralClaims[latest.index] = { ...latest.claim, status: "canceled" };
   await writeCustomerStore(store);
@@ -508,6 +507,10 @@ export async function getCustomerAdminReferralReport() {
   return users
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .map((user) => {
+      const userClaims = store.referralClaims
+        .filter((claim) => claim.userId === user.id)
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+      const lastClaim = userClaims[0] || null;
       const referrer = user.referredByUserId ? store.users[user.referredByUserId] : null;
       return {
         id: user.id,
@@ -534,12 +537,8 @@ export async function getCustomerAdminReferralReport() {
           username: item.username || "",
           joinedAt: item.referredAt || item.createdAt,
         })),
-        lastClaim: store.referralClaims
-          .filter((claim) => claim.userId === user.id)
-          .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0] || null,
-        rewardClaim: store.referralClaims
-          .filter((claim) => claim.userId === user.id && claim.status === "rewarded")
-          .sort((a, b) => String(b.rewardedAt || b.createdAt).localeCompare(String(a.rewardedAt || a.createdAt)))[0] || null,
+        lastClaim,
+        rewardClaim: lastClaim?.status === "rewarded" ? lastClaim : null,
       };
     });
 }
