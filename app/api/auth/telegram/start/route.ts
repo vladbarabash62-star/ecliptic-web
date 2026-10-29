@@ -19,7 +19,7 @@ async function ensureLoginWebhook(request: Request) {
   const webhookUrl = new URL("/api/telegram/webhook", request.url).toString();
   const body: Record<string, unknown> = {
     url: webhookUrl,
-    allowed_updates: ["message", "callback_query"],
+    allowed_updates: ["message", "business_message", "business_connection", "callback_query"],
   };
   const secret = process.env.TELEGRAM_WEBHOOK_SECRET || "";
   if (secret) body.secret_token = secret;

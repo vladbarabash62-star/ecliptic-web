@@ -12,6 +12,7 @@ import {
   saveTelegramAccountNoticeTemplate,
   saveTelegramCustomEmojiIds,
 } from "../../../../lib/telegramCustomEmojiStore";
+import { processTelegramPaymentUpdate } from "../payment-webhook/route";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -53,6 +54,22 @@ type TelegramUpdate = {
       last_name?: string;
       photo_url?: string;
     };
+  };
+  business_connection?: {
+    id?: string;
+    user_chat_id?: number;
+    is_enabled?: boolean;
+  };
+  business_message?: {
+    chat?: { id?: number };
+    from?: { id?: number; is_bot?: boolean; username?: string; first_name?: string; last_name?: string };
+    sender_business_bot?: { id?: number; username?: string };
+    business_connection_id?: string;
+    media_group_id?: string;
+    text?: string;
+    caption?: string;
+    photo?: Array<{ file_id: string; width?: number; height?: number }>;
+    document?: { file_id: string; mime_type?: string; file_name?: string };
   };
 };
 
@@ -194,6 +211,9 @@ export async function POST(request: Request) {
   if (!token) return NextResponse.json({ ok: false }, { status: 500 });
 
   const update = await request.json().catch(() => ({})) as TelegramUpdate;
+  if (update.business_connection || update.business_message || update.callback_query?.data?.startsWith("pay:")) {
+    return processTelegramPaymentUpdate(update as never);
+  }
   const callback = update.callback_query;
   if (callback?.id) {
     await answerCallback(callback.id, token);

@@ -55,8 +55,15 @@ type TelegramBusinessConnection = {
 };
 
 function token() {
-  // Keep the dedicated payment bot isolated from the existing login bot.
-  return process.env.PAYMENT_BOT_TOKEN_V4 || process.env.PAYMENT_BOT_TOKEN_V3 || process.env.PAYMENT_BOT_TOKEN_V2 || process.env.PAYMENT_BOT_TOKEN || "";
+  // Orders now use the same primary bot as login and referral flows.
+  return process.env.TELEGRAM_LOGIN_BOT_TOKEN
+    || process.env.TELEGRAM_BOT_TOKEN
+    || process.env.TELEGRAM_WEBAPP_BOT_TOKEN
+    || process.env.PAYMENT_BOT_TOKEN_V4
+    || process.env.PAYMENT_BOT_TOKEN_V3
+    || process.env.PAYMENT_BOT_TOKEN_V2
+    || process.env.PAYMENT_BOT_TOKEN
+    || "";
 }
 
 async function telegram(method: string, body: Record<string, unknown>) {
@@ -423,13 +430,8 @@ async function handleDecision(update: TelegramUpdate) {
   return true;
 }
 
-export async function POST(request: Request) {
+export async function processTelegramPaymentUpdate(update: TelegramUpdate) {
   if (!token()) return NextResponse.json({ ok: false, error: "PAYMENT_BOT_TOKEN is not configured" }, { status: 500 });
-  const expectedSecret = process.env.PAYMENT_TELEGRAM_WEBHOOK_SECRET || "";
-  if (expectedSecret && request.headers.get("x-telegram-bot-api-secret-token") !== expectedSecret) {
-    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
-  }
-  const update = await request.json().catch(() => ({})) as TelegramUpdate;
   if (update.business_connection?.is_enabled && update.business_connection.user_chat_id) {
     await rememberBusinessManagerChat(update.business_connection.user_chat_id).catch(() => undefined);
   }
@@ -487,4 +489,13 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({ ok: true, ignored: "not-an-order" });
+}
+
+export async function POST(request: Request) {
+  const expectedSecret = process.env.PAYMENT_TELEGRAM_WEBHOOK_SECRET || process.env.TELEGRAM_WEBHOOK_SECRET || "";
+  if (expectedSecret && request.headers.get("x-telegram-bot-api-secret-token") !== expectedSecret) {
+    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+  }
+  const update = await request.json().catch(() => ({})) as TelegramUpdate;
+  return processTelegramPaymentUpdate(update);
 }
