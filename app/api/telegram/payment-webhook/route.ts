@@ -266,13 +266,12 @@ async function sendOrderInstructions(
     "<b>После оплаты отправьте сюда скриншот операции.</b>",
   ].join("\n");
   await showTyping(chatId, businessConnectionId);
-  const welcomeResponse = await telegram("sendMessage", {
+  await telegram("sendMessage", {
     chat_id: chatId,
     ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
     parse_mode: "HTML",
     text: welcomeText,
   });
-  if (!welcomeResponse) return false;
 
   // The payment details follow immediately after the short greeting delay.
   const response = await telegram("sendMessage", {
