@@ -393,7 +393,9 @@ async function queuePaymentScreenshot(message: TelegramMessage, pending: Pending
   if (existingJob) return existingJob;
 
   const job = (async () => {
-    await sleep(1200);
+    // Telegram sends album items almost together. Keep only a short window for
+    // collecting them while letting a normal single screenshot notify the manager immediately.
+    await sleep(message.media_group_id ? 350 : 0);
     const batch = paymentBatches.get(key) || [];
     paymentBatches.delete(key);
     const claimed = await claimPaymentNotification(Number(customerChatId));
