@@ -46,16 +46,13 @@ export default async function AccountPage() {
         </div>
 
         <div className="rounded-3xl border border-white/10 bg-[#090f1b]/88 p-5 shadow-[0_24px_90px_rgba(0,0,0,0.34)] backdrop-blur-md sm:p-8">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h1 className="mt-2 text-4xl font-black sm:text-5xl">Ecliptic Store</h1>
-            </div>
-          </div>
-
           {!user ? (
-            <AccountLoginPrompt />
+            <>
+              <h1 className="mt-2 text-4xl font-black sm:text-5xl">Ecliptic Store</h1>
+              <AccountLoginPrompt />
+            </>
           ) : (
-            <AccountTabs orders={accountOrders} referral={referral} accountName={user.name || user.username || user.email || "Аккаунт"} />
+            <AccountTabs orders={accountOrders} referral={referral} />
           )}
         </div>
       </section>

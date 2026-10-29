@@ -107,7 +107,7 @@ export default function UserAuthButton({ initialUser = null }: UserAuthButtonPro
           authUserName: user.name,
           authUsername: user.username,
         });
-        window.location.href = "/account";
+        window.location.href = "/account#referral";
         return;
       }
       trackAuthEvent("auth_modal_open", { referralCode });
@@ -195,7 +195,7 @@ export default function UserAuthButton({ initialUser = null }: UserAuthButtonPro
           />
         ) : user ? (
           <Link
-            href="/account"
+            href="/account#referral"
             className="flex min-h-11 items-center gap-2 rounded-full border border-sky-300/24 bg-[#07111f]/92 px-3 py-2 text-sm font-black text-white shadow-[0_18px_44px_rgba(14,165,233,0.16)] backdrop-blur-md transition hover:-translate-y-0.5 hover:border-sky-300/42 hover:bg-[#0a1728] active:scale-95"
           >
             <span className="grid h-7 w-7 place-items-center overflow-hidden rounded-full bg-sky-400 shadow-[0_0_0_1px_rgba(255,255,255,0.18)]">

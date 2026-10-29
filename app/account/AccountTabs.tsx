@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import AccountLogoutButton from "./AccountLogoutButton";
 
 type AccountOrder = {
   id: string;
@@ -68,20 +67,22 @@ function formatClaimWait(ms: number) {
   return `${minutes} мин. ${seconds} сек.`;
 }
 
-type AccountTab = "profile" | "orders" | "referral";
+type AccountTab = "orders" | "referral";
 
 function tabFromHash(value: string): AccountTab {
   if (value === "#referral" || value === "referral") return "referral";
   if (value === "#orders" || value === "orders") return "orders";
-  return "profile";
+  return "referral";
 }
 
-export default function AccountTabs({ orders, referral: initialReferral, accountName }: { orders: AccountOrder[]; referral: ReferralInfo | null; accountName: string }) {
-  const [tab, setTab] = useState<AccountTab>("profile");
+export default function AccountTabs({ orders, referral: initialReferral }: { orders: AccountOrder[]; referral: ReferralInfo | null }) {
+  const [tab, setTab] = useState<AccountTab>("referral");
   const [referral, setReferral] = useState<ReferralInfo | null>(initialReferral);
   const [copyText, setCopyText] = useState("Скопировать");
   const [claimText, setClaimText] = useState("");
   const [isClaiming, setIsClaiming] = useState(false);
+  const [isLogoutOpen, setIsLogoutOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [lastClaimAt, setLastClaimAt] = useState(referral?.lastClaim?.status === "canceled" ? "" : referral?.lastClaim?.createdAt || "");
   const [now, setNow] = useState(() => Date.now());
   const invitedCount = referral?.invitedCount || 0;
@@ -128,10 +129,17 @@ export default function AccountTabs({ orders, referral: initialReferral, account
 
   function selectTab(nextTab: AccountTab) {
     setTab(nextTab);
-    const nextHash = nextTab === "profile" ? "#profile" : nextTab === "referral" ? "#referral" : "#orders";
+    const nextHash = nextTab === "referral" ? "#referral" : "#orders";
     if (window.location.hash !== nextHash) {
       window.history.replaceState(null, "", nextHash);
     }
+  }
+
+  async function confirmLogout() {
+    setIsLoggingOut(true);
+    await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
+    window.dispatchEvent(new Event("ecliptic-auth-changed"));
+    window.location.href = "/";
   }
 
   async function copyReferralLink() {
@@ -172,12 +180,12 @@ export default function AccountTabs({ orders, referral: initialReferral, account
       <div className="mt-6 flex flex-wrap gap-2 rounded-2xl border border-white/10 bg-white/[0.035] p-1.5">
         <button
           type="button"
-          onClick={() => selectTab("profile")}
+          onClick={() => selectTab("referral")}
           className={`rounded-xl px-4 py-2 text-sm font-black transition ${
-            tab === "profile" ? "bg-white text-black" : "text-white/62 hover:bg-white/[0.08] hover:text-white"
+            tab === "referral" ? "bg-white text-black" : "text-white/62 hover:bg-white/[0.08] hover:text-white"
           }`}
         >
-          Личный кабинет
+          Реферальная программа
         </button>
         <button
           type="button"
@@ -188,28 +196,22 @@ export default function AccountTabs({ orders, referral: initialReferral, account
         >
           Мои заказы
         </button>
+      </div>
+
+      <div className="mt-7 flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-black text-white sm:text-3xl">Ecliptic Store</h1>
         <button
           type="button"
-          onClick={() => selectTab("referral")}
-          className={`rounded-xl px-4 py-2 text-sm font-black transition ${
-            tab === "referral" ? "bg-white text-black" : "text-white/62 hover:bg-white/[0.08] hover:text-white"
-          }`}
+          onClick={() => setIsLogoutOpen(true)}
+          aria-label="Выйти из аккаунта"
+          title="Выйти из аккаунта"
+          className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/[0.055] text-xl font-black text-white/82 transition hover:border-red-300/40 hover:bg-red-500/14 hover:text-red-100 active:scale-95"
         >
-          Реферальная программа
+          <span aria-hidden="true">↪</span>
         </button>
       </div>
 
-      {tab === "profile" ? (
-        <section className="mt-7 rounded-3xl border border-white/10 bg-white/[0.035] p-5">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <h2 className="text-xl font-black text-white">Личный кабинет</h2>
-            <div className="rounded-2xl border border-white/10 bg-white/[0.055] px-4 py-3 text-sm font-black text-white/76">
-              {accountName}
-            </div>
-          </div>
-          <AccountLogoutButton />
-        </section>
-      ) : tab === "orders" ? (
+      {tab === "orders" ? (
         orders.length ? (
           <section className="mt-7 grid gap-3">
             <h2 className="text-xl font-black text-white">Мои заказы</h2>
@@ -332,6 +334,38 @@ export default function AccountTabs({ orders, referral: initialReferral, account
           ) : null}
         </section>
       )}
+
+      {isLogoutOpen ? (
+        <div className="fixed inset-0 z-[70] grid place-items-center bg-black/70 p-4 backdrop-blur-sm" role="presentation">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="logout-title"
+            className="w-full max-w-sm rounded-3xl border border-white/12 bg-[#0b111d] p-5 shadow-[0_24px_80px_rgba(0,0,0,0.5)]"
+          >
+            <h2 id="logout-title" className="text-xl font-black text-white">Выйти из аккаунта?</h2>
+            <p className="mt-2 text-sm font-semibold leading-relaxed text-white/60">Вы уверены, что хотите завершить сеанс?</p>
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setIsLogoutOpen(false)}
+                disabled={isLoggingOut}
+                className="rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm font-black text-white transition hover:bg-white/[0.1] disabled:opacity-60"
+              >
+                Отмена
+              </button>
+              <button
+                type="button"
+                onClick={confirmLogout}
+                disabled={isLoggingOut}
+                className="rounded-2xl border border-red-300/25 bg-red-500/14 px-4 py-3 text-sm font-black text-red-100 transition hover:bg-red-500/22 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isLoggingOut ? "Выходим..." : "Выйти"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </>
   );
 }
