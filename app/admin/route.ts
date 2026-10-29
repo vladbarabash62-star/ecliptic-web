@@ -1189,7 +1189,8 @@ const ADMIN_HTML = `<!doctype html>
     function referralUserTierClass(user) {
       var ordersCount = (user.orders || []).length;
       var invitedCount = (user.invited || []).length;
-      if (invitedCount >= 5 && (user.orders || []).length > 0) return 'ref-good';
+      var rewardClaim = user.rewardClaim || (user.lastClaim && user.lastClaim.status === 'rewarded' ? user.lastClaim : null);
+      if (rewardClaim || (invitedCount >= 5 && ordersCount > 0)) return 'ref-good';
       if (ordersCount > 50) return 'ref-vip';
       if (ordersCount > 10) return 'ref-hot';
       return '';
@@ -1197,9 +1198,11 @@ const ADMIN_HTML = `<!doctype html>
     function referralFilterMatches(user, filter) {
       var ordersCount = (user.orders || []).length;
       var invitedCount = (user.invited || []).length;
-      if (filter === 'completed') return invitedCount >= 5 && ordersCount > 0;
-      if (filter === 'one') return invitedCount >= 5 && ordersCount === 0;
-      if (filter === 'two') return invitedCount === 4;
+      var rewardClaim = user.rewardClaim || (user.lastClaim && user.lastClaim.status === 'rewarded' ? user.lastClaim : null);
+      var rewarded = Boolean(rewardClaim);
+      if (filter === 'completed') return rewarded || (invitedCount >= 5 && ordersCount > 0);
+      if (filter === 'one') return !rewarded && invitedCount >= 5 && ordersCount === 0;
+      if (filter === 'two') return !rewarded && invitedCount === 4;
       return true;
     }
     function visibleReferralUsers() {
