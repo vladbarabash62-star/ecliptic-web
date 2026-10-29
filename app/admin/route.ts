@@ -132,6 +132,9 @@ const STYLE = `
   .reviews-row span { display:block; margin-bottom:3px; color:rgba(255,255,255,.48); font-weight:800; }
   .referral-grid { display:grid; grid-template-columns:minmax(280px,390px) minmax(0,1fr); gap:14px; }
   .referral-users { display:grid; gap:8px; max-height:640px; overflow:auto; padding-right:4px; }
+  .referral-filters { display:flex; flex-wrap:wrap; gap:6px; margin:12px 0; }
+  .referral-filter { border:1px solid rgba(255,255,255,.12); border-radius:10px; padding:7px 10px; background:rgba(255,255,255,.04); color:var(--muted); font:inherit; font-size:12px; font-weight:800; cursor:pointer; }
+  .referral-filter:hover,.referral-filter.active { border-color:rgba(56,189,248,.55); background:rgba(14,165,233,.15); color:#fff; }
   .referral-user { width:100%; display:block; padding:12px; border:1px solid rgba(255,255,255,.1); border-radius:14px; background:rgba(255,255,255,.04); color:#fff; text-align:left; }
   .referral-user:hover,.referral-user.active { border-color:rgba(56,189,248,.5); background:rgba(14,165,233,.13); }
   .referral-user.ref-good { border-color:rgba(163,230,53,.42); background:rgba(132,204,22,.18); }
@@ -373,6 +376,12 @@ const ADMIN_HTML = `<!doctype html>
       <div class="referral-grid">
         <aside class="card panel">
           <h2>Пользователи</h2>
+          <div class="referral-filters" role="tablist" aria-label="Фильтр пользователей">
+            <button class="referral-filter active" type="button" data-referral-filter="all">Все</button>
+            <button class="referral-filter" type="button" data-referral-filter="completed">Выполнившие</button>
+            <button class="referral-filter" type="button" data-referral-filter="one">1</button>
+            <button class="referral-filter" type="button" data-referral-filter="two">2</button>
+          </div>
           <div id="referralUsers" class="referral-users"></div>
         </aside>
         <section class="card panel">
@@ -395,6 +404,7 @@ const ADMIN_HTML = `<!doctype html>
     var analyticsPagination = { offset: 0, limit: 5000, loaded: 0, totalStored: 0, hasMore: false, nextOffset: 0 };
     var hotVisitorOpenCounts = {};
     var referralUsers = [];
+    var referralFilter = 'all';
     var selectedReferralUserId = '';
     var selectedSlug = '';
     var uploadTarget = null;
@@ -1183,15 +1193,38 @@ const ADMIN_HTML = `<!doctype html>
       if (ordersCount > 10) return 'ref-hot';
       return '';
     }
+    function referralFilterMatches(user, filter) {
+      var ordersCount = (user.orders || []).length;
+      var invitedCount = (user.invited || []).length;
+      if (filter === 'completed') return invitedCount >= 5 && ordersCount > 0;
+      if (filter === 'one') return invitedCount >= 5 && ordersCount === 0;
+      if (filter === 'two') return invitedCount === 4;
+      return true;
+    }
+    function visibleReferralUsers() {
+      return referralUsers.filter(function(user) { return referralFilterMatches(user, referralFilter); });
+    }
+    function updateReferralFilterButtons() {
+      document.querySelectorAll('[data-referral-filter]').forEach(function(button) {
+        var active = button.dataset.referralFilter === referralFilter;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-selected', active ? 'true' : 'false');
+      });
+    }
     function renderReferrals() {
-      $('referralUsers').innerHTML = referralUsers.map(function(user) {
+      var users = visibleReferralUsers();
+      if (!users.some(function(user) { return user.id === selectedReferralUserId; })) {
+        selectedReferralUserId = users[0] ? users[0].id : '';
+      }
+      updateReferralFilterButtons();
+      $('referralUsers').innerHTML = users.map(function(user) {
         return '<button class="referral-user ' + esc(referralUserTierClass(user)) + ' ' + (user.id === selectedReferralUserId ? 'active' : '') + '" type="button" data-referral-user="' + esc(user.id) + '">' +
           '<strong>' + esc(referralUserName(user)) + '</strong>' +
           '<div class="row-meta">' + esc([user.username, user.provider, formatAdminDate(user.createdAt)].filter(Boolean).join(' · ')) + '</div>' +
           '<div class="row-meta">Код: ' + esc(user.referralCode || '-') + ' · друзья: ' + ((user.invited || []).length) + ' · заказы: ' + ((user.orders || []).length) + '</div>' +
           (user.referrer ? '<div class="row-meta">Пригласил: ' + esc(referralPersonLabel(user.referrer)) + '</div>' : '') +
         '</button>';
-      }).join('') || '<p class="muted">Пока нет зарегистрированных пользователей.</p>';
+      }).join('') || '<p class="muted">В этой группе пока нет пользователей.</p>';
       renderReferralDetails();
     }
     function renderReferralDetails() {
@@ -1894,6 +1927,12 @@ const ADMIN_HTML = `<!doctype html>
     $('loadMoreEventsBtn').addEventListener('click', function() { loadAnalytics(analyticsPagination.nextOffset || analyticsEvents.length); });
     $('reloadChartsBtn').addEventListener('click', loadFullAnalyticsForCharts);
     $('reloadReferralsBtn').addEventListener('click', loadReferrals);
+    document.querySelectorAll('[data-referral-filter]').forEach(function(button) {
+      button.addEventListener('click', function() {
+        referralFilter = button.dataset.referralFilter || 'all';
+        renderReferrals();
+      });
+    });
     $('referralUsers').addEventListener('click', function(event) {
       var button = event.target.closest('[data-referral-user]');
       if (!button) return;
