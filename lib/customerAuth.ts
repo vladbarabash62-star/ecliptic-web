@@ -39,7 +39,7 @@ export type CustomerReferralClaim = {
   userId: string;
   createdAt: string;
   invitedCount: number;
-  status: "sent" | "pending_manager" | "rewarded";
+  status: "sent" | "pending_manager" | "rewarded" | "canceled";
   rewardedAt?: string;
 };
 
@@ -369,7 +369,7 @@ export async function createCustomerReferralClaim(userIdValue: string, status: C
   }
 
   const recentClaim = store.referralClaims
-    .filter((claim) => claim.userId === user.id)
+    .filter((claim) => claim.userId === user.id && claim.status !== "canceled")
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
   if (recentClaim) {
     const retryAfterMs = REFERRAL_CLAIM_COOLDOWN_MS - (Date.now() - new Date(recentClaim.createdAt).getTime());
@@ -444,6 +444,20 @@ export async function markCustomerReferralRewarded(userIdValue: string) {
   store.referralClaims = [...store.referralClaims, claim].slice(-1000);
   await writeCustomerStore(store);
   return claim;
+}
+
+export async function cancelCustomerReferralClaim(userIdValue: string) {
+  const store = await readCustomerStore();
+  const userClaims = store.referralClaims
+    .map((claim, index) => ({ claim, index }))
+    .filter((item) => item.claim.userId === userIdValue)
+    .sort((a, b) => b.claim.createdAt.localeCompare(a.claim.createdAt));
+  const latest = userClaims[0];
+  if (!latest || latest.claim.status === "rewarded" || latest.claim.status === "canceled") return latest?.claim || null;
+
+  store.referralClaims[latest.index] = { ...latest.claim, status: "canceled" };
+  await writeCustomerStore(store);
+  return store.referralClaims[latest.index];
 }
 
 export async function getPendingCustomerReferralClaims(limit = 20) {

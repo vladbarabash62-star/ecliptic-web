@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getCustomerAdminReferralReport, markCustomerReferralRewarded } from "../../../../lib/customerAuth";
+import { cancelCustomerReferralClaim, getCustomerAdminReferralReport, markCustomerReferralRewarded } from "../../../../lib/customerAuth";
 import { validateAdminRequest } from "../../../../lib/security";
 
 export const runtime = "nodejs";
@@ -14,6 +14,10 @@ export async function POST(request: Request) {
     if (body.action === "mark_rewarded") {
       if (!body.userId) return NextResponse.json({ ok: false, error: "Пользователь не выбран." }, { status: 400 });
       await markCustomerReferralRewarded(body.userId);
+    }
+    if (body.action === "cancel_claim") {
+      if (!body.userId) return NextResponse.json({ ok: false, error: "Пользователь не выбран." }, { status: 400 });
+      await cancelCustomerReferralClaim(body.userId);
     }
 
     const users = await getCustomerAdminReferralReport();

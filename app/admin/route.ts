@@ -1182,6 +1182,7 @@ const ADMIN_HTML = `<!doctype html>
     function referralClaimLabel(claim) {
       if (!claim) return 'Заявок пока нет';
       if (claim.status === 'rewarded') return 'Подарок выдан' + (claim.rewardedAt ? ' · ' + formatAdminDate(claim.rewardedAt) : '');
+      if (claim.status === 'canceled') return 'Получение подарка отменено' + (claim.createdAt ? ' · ' + formatAdminDate(claim.createdAt) : '');
       if (claim.status === 'pending_manager') return 'Ожидает сообщения менеджеру · ' + formatAdminDate(claim.createdAt);
       return 'Заявка отправлена · ' + formatAdminDate(claim.createdAt);
     }
@@ -1247,6 +1248,7 @@ const ADMIN_HTML = `<!doctype html>
       var latestClaim = user.lastClaim || null;
       var rewardClaim = user.rewardClaim || (latestClaim && latestClaim.status === 'rewarded' ? latestClaim : null);
       var canMarkRewarded = (user.invited || []).length >= 5 && (user.orders || []).length > 0 && !rewardClaim;
+      var canCancelClaim = Boolean(latestClaim && latestClaim.status !== 'rewarded' && latestClaim.status !== 'canceled');
       $('referralDetails').className = '';
       $('referralDetails').innerHTML =
         '<div class="toolbar" style="justify-content:space-between;align-items:flex-start">' +
@@ -1262,7 +1264,9 @@ const ADMIN_HTML = `<!doctype html>
           '<div class="referral-metric"><span>Приглашённые</span><strong>' + ((user.invited || []).length) + '</strong></div>' +
         '</div>' +
         '<div class="referral-metric" style="margin-top:10px"><span>Кто пригласил этого пользователя</span><strong>' + esc(referrer) + '</strong></div>' +
-        '<div class="referral-metric" style="margin-top:10px"><span>Статус подарка</span><strong>' + esc(referralClaimLabel(rewardClaim || latestClaim)) + '</strong></div>' +
+        '<div class="referral-metric" style="margin-top:10px"><div class="toolbar" style="justify-content:space-between;align-items:center"><div><span>Статус подарка</span><strong>' + esc(referralClaimLabel(rewardClaim || latestClaim)) + '</strong></div>' +
+          (canCancelClaim ? '<button class="btn secondary" type="button" data-referral-action="cancel-claim" data-user-id="' + esc(user.id) + '">Отменить получение подарка</button>' : '') +
+        '</div></div>' +
         '<div class="referral-columns">' +
           '<div><h3>Заказы пользователя</h3><div class="list">' + orders + '</div></div>' +
           '<div><h3>Приглашённые друзья</h3><div class="list">' + invited + '</div></div>' +
@@ -1781,6 +1785,23 @@ const ADMIN_HTML = `<!doctype html>
         if (button) button.disabled = false;
       }
     }
+    async function cancelReferralClaim(userId, button) {
+      if (!userId) return;
+      if (!confirm('Отменить заявку на получение подарка? Пользователь сможет подать её заново.')) return;
+      if (button) button.disabled = true;
+      showNotice('Отменяю заявку...', false);
+      try {
+        var data = await postJson('/api/admin/referrals', { action: 'cancel_claim', userId: userId }, 12000);
+        referralUsers = data.users || referralUsers;
+        renderReferrals();
+        $('referralsUpdatedAt').textContent = 'Обновлено: ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' · заявка отменена';
+        showNotice('Заявка на подарок отменена.', false);
+        hideNoticeSoon();
+      } catch (error) {
+        showNotice(error.message || 'Не удалось отменить заявку.', true);
+        if (button) button.disabled = false;
+      }
+    }
     async function loadFullAnalyticsForCharts() {
       $('reloadChartsBtn').disabled = true;
       $('loadMoreEventsBtn').disabled = true;
@@ -1940,9 +1961,13 @@ const ADMIN_HTML = `<!doctype html>
       renderReferrals();
     });
     $('referralDetails').addEventListener('click', function(event) {
-      var button = event.target.closest('[data-referral-action="mark-rewarded"]');
+      var button = event.target.closest('[data-referral-action]');
       if (!button) return;
-      markReferralRewarded(button.dataset.userId || '', button);
+      if (button.dataset.referralAction === 'mark-rewarded') {
+        markReferralRewarded(button.dataset.userId || '', button);
+      } else if (button.dataset.referralAction === 'cancel-claim') {
+        cancelReferralClaim(button.dataset.userId || '', button);
+      }
     });
     document.addEventListener('mouseover', function(event) {
       var bar = event.target.closest && event.target.closest('.week-bar[data-week-tip]');

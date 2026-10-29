@@ -33,13 +33,13 @@ type ReferralInfo = {
   lastClaim?: {
     id: string;
     createdAt: string;
-    status: "sent" | "pending_manager" | "rewarded";
+    status: "sent" | "pending_manager" | "rewarded" | "canceled";
     rewardedAt?: string;
   } | null;
   rewardClaim?: {
     id: string;
     createdAt: string;
-    status: "sent" | "pending_manager" | "rewarded";
+    status: "sent" | "pending_manager" | "rewarded" | "canceled";
     rewardedAt?: string;
   } | null;
 };
@@ -82,7 +82,7 @@ export default function AccountTabs({ orders, referral: initialReferral, account
   const [copyText, setCopyText] = useState("Скопировать");
   const [claimText, setClaimText] = useState("");
   const [isClaiming, setIsClaiming] = useState(false);
-  const [lastClaimAt, setLastClaimAt] = useState(referral?.lastClaim?.createdAt || "");
+  const [lastClaimAt, setLastClaimAt] = useState(referral?.lastClaim?.status === "canceled" ? "" : referral?.lastClaim?.createdAt || "");
   const [now, setNow] = useState(() => Date.now());
   const invitedCount = referral?.invitedCount || 0;
   const orderCount = referral?.orderCount || 0;
@@ -109,7 +109,7 @@ export default function AccountTabs({ orders, referral: initialReferral, account
       const data = await response.json().catch(() => ({}));
       if (active && data?.referral) {
         setReferral(data.referral);
-        setLastClaimAt(data.referral.lastClaim?.createdAt || "");
+        setLastClaimAt(data.referral.lastClaim?.status === "canceled" ? "" : data.referral.lastClaim?.createdAt || "");
       }
     };
     void refreshReferral();
@@ -154,7 +154,7 @@ export default function AccountTabs({ orders, referral: initialReferral, account
         const refreshedData = await refreshed.json().catch(() => ({}));
         if (refreshedData?.referral) {
           setReferral(refreshedData.referral);
-          setLastClaimAt(refreshedData.referral.lastClaim?.createdAt || data.claim?.createdAt || "");
+          setLastClaimAt(refreshedData.referral.lastClaim?.status === "canceled" ? "" : refreshedData.referral.lastClaim?.createdAt || data.claim?.createdAt || "");
         }
       }
       setNow(Date.now());
