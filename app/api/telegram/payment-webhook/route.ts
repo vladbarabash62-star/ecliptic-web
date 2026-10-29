@@ -467,10 +467,16 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate) {
     await noteTelegramChatActivity(message.chat.id).catch(() => undefined);
     return NextResponse.json({ ok: true, ignored: "outgoing" });
   }
-  if (message.business_connection_id) {
-    const connection = await refreshBusinessConnection(message.business_connection_id).catch(() => undefined);
-    if (connection?.user_chat_id) {
-      await rememberBusinessManagerChat(connection.user_chat_id).catch(() => undefined);
+  const businessConnection = message.business_connection_id
+    ? await refreshBusinessConnection(message.business_connection_id).catch(() => undefined)
+    : undefined;
+  if (businessConnection?.user_chat_id) {
+    await rememberBusinessManagerChat(businessConnection.user_chat_id).catch(() => undefined);
+    // A manual message from the connected business account is not a customer
+    // message and must never trigger an automatic reply.
+    if (message.from?.id === businessConnection.user_chat_id) {
+      await noteTelegramChatActivity(message.chat.id).catch(() => undefined);
+      return NextResponse.json({ ok: true, ignored: "manager-message" });
     }
   }
   await rememberManagerChat(message.from?.username, message.chat.id).catch(() => undefined);
