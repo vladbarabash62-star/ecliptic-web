@@ -252,9 +252,8 @@ async function sendOrderInstructions(
         "🤝 Следуя этим простым рекомендациям, вы снизите вероятность возникновения каких-либо ограничений.",
       ].join("\n"), (await getTelegramCustomEmojiIds())?.ids || [])
     : "";
+  const welcomeText = "<b>Здравствуйте,</b>\n\n<b>Добро пожаловать в Ecliptic Store!</b>";
   const paymentText = [
-    "<b>Добро пожаловать в Ecliptic Store!</b>",
-    "",
     `<b>${category.label}: ${escapeHtml(category.value)}</b>`,
     `<b>Товар: ${escapeHtml(product)}</b>`,
     "",
@@ -267,6 +266,15 @@ async function sendOrderInstructions(
     "<b>После оплаты отправьте сюда скриншот операции.</b>",
   ].join("\n");
   await showTyping(chatId, businessConnectionId);
+  const welcomeResponse = await telegram("sendMessage", {
+    chat_id: chatId,
+    ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
+    parse_mode: "HTML",
+    text: welcomeText,
+  });
+  if (!welcomeResponse) return false;
+
+  // The payment details follow immediately after the short greeting delay.
   const response = await telegram("sendMessage", {
     chat_id: chatId,
     ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
