@@ -139,6 +139,11 @@ export default function AccountTabs({ orders, referral: initialReferral }: { ord
   async function confirmLogout() {
     setIsLoggingOut(true);
     await fetch("/api/auth/logout", { method: "POST" }).catch(() => null);
+    try {
+      localStorage.removeItem("ecliptic_authenticated_user_v1");
+    } catch {
+      // Optional analytics identity.
+    }
     window.dispatchEvent(new Event("ecliptic-auth-changed"));
     window.location.href = "/";
   }

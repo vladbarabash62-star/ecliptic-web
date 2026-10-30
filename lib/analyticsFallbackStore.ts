@@ -24,6 +24,9 @@ export type AnalyticsEvent = {
   region?: string;
   city?: string;
   userAgent?: string;
+  authProvider?: string;
+  authUserName?: string;
+  authUsername?: string;
 };
 
 const MAX_FALLBACK_EVENTS = 5000;

@@ -13,6 +13,17 @@ type CustomerUser = {
   avatar?: string;
 };
 
+const AUTH_USER_KEY = "ecliptic_authenticated_user_v1";
+
+function persistAuthUser(user: CustomerUser | null) {
+  try {
+    if (user) localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+    else localStorage.removeItem(AUTH_USER_KEY);
+  } catch {
+    // Analytics identity is optional and must never block auth.
+  }
+}
+
 type AuthTelegramWebApp = {
   initData?: string;
   initDataUnsafe?: {
@@ -67,11 +78,14 @@ export default function UserAuthButton({ initialUser = null }: UserAuthButtonPro
       const response = await fetch("/api/auth/me", { cache: "no-store" }).catch(() => null);
       if (!response?.ok) {
         setUser(null);
+        persistAuthUser(null);
         return;
       }
 
       const data = await response.json().catch(() => ({}));
-      setUser(data.user || null);
+      const nextUser = data.user || null;
+      setUser(nextUser);
+      persistAuthUser(nextUser);
     } finally {
       setIsAuthReady(true);
     }
@@ -164,6 +178,7 @@ export default function UserAuthButton({ initialUser = null }: UserAuthButtonPro
       if (!response.ok) throw new Error(data.error || "Telegram вход не прошёл.");
 
       setUser(data.user);
+      persistAuthUser(data.user);
       trackAuthEvent("auth_telegram_success", {
         referralCode,
         authProvider: "telegram",

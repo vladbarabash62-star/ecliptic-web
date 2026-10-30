@@ -203,36 +203,40 @@ type ResolvedOrderPayment = {
   amount: string;
   product?: Product;
   sitePrice?: number;
+  hasPayment: boolean;
 };
 
 async function resolveOrderPayment(orderMessage: string, orderCode: string): Promise<ResolvedOrderPayment> {
   const parsed = parseOrderCode(orderCode);
-  if (!parsed) return { amount: extractOrderAmount(orderMessage) };
+  if (!parsed) return { amount: "", hasPayment: false };
 
   const products = await getProducts({ cached: false }).catch(() => []);
   const product = products.find((candidate) => {
     if (parsed.alias) return compactProductCode(candidate.slug) === parsed.alias;
     return candidate.slug.toLowerCase().replace(/[^a-z0-9]/g, "").startsWith(parsed.legacyPrefix || "");
   });
-  if (!product) return { amount: extractOrderAmount(orderMessage) };
+  if (!product) {
+    const amount = parsed.priceRub && parsed.priceRub > 0 ? `${parsed.priceRub}р` : "";
+    return { amount, hasPayment: Boolean(amount) };
+  }
 
   const offers = product.offers.filter((offer): offer is Extract<Product["offers"][number], { priceRub: number }> =>
-    offer.type !== "divider" && typeof offer.priceRub === "number"
+    offer.type !== "divider" && typeof offer.priceRub === "number" && offer.priceRub > 0
   );
   const offer = offers.find((candidate) => orderMessage.toLowerCase().includes(candidate.label.toLowerCase()))
     || offers.find((candidate) => candidate.priceRub === parsed.priceRub)
     || (offers.length === 1 ? offers[0] : undefined);
-  if (offer) return { amount: `${offer.priceRub}р`, product, sitePrice: offer.priceRub };
+  if (offer) return { amount: `${offer.priceRub}р`, product, sitePrice: offer.priceRub, hasPayment: true };
 
-  // Keep the old behavior when a product exists but its offer cannot be resolved.
-  return { amount: parsed.priceRub ? `${parsed.priceRub}р` : extractOrderAmount(orderMessage), product };
+  return { amount: "", product, hasPayment: false };
 }
 
 async function sendOrderInstructions(
   chatId: number,
   orderMessage: string,
   businessConnectionId?: string,
-  paymentAmount?: string
+  paymentAmount?: string,
+  hasPayment = false
 ) {
   const category = extractOrderCategory(orderMessage);
   const product = extractOrderProduct(orderMessage);
@@ -253,6 +257,15 @@ async function sendOrderInstructions(
       ].join("\n"), (await getTelegramCustomEmojiIds())?.ids || [])
     : "";
   const welcomeText = "<b>Здравствуйте,</b>\n\n<b>Добро пожаловать в Ecliptic Store!</b>";
+  if (!hasPayment) {
+    const response = await telegram("sendMessage", {
+      chat_id: chatId,
+      ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
+      parse_mode: "HTML",
+      text: `${welcomeText}\n\n<b>В ближайшее время с вами свяжется менеджер.</b>`,
+    });
+    return Boolean(response);
+  }
   const paymentText = [
     `<b>${category.label}: ${escapeHtml(category.value)}</b>`,
     `<b>Товар: ${escapeHtml(product)}</b>`,
@@ -495,9 +508,10 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate) {
       message.chat.id,
       message.text,
       message.business_connection_id,
-      resolvedPayment.amount
+      resolvedPayment.amount,
+      resolvedPayment.hasPayment
     );
-    if (replied) {
+    if (replied && resolvedPayment.hasPayment) {
       await savePendingTelegramOrder({
         chatId: message.chat.id,
         businessConnectionId: message.business_connection_id,

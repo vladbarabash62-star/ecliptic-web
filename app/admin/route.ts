@@ -87,6 +87,8 @@ const STYLE = `
   .visitor-main { font-weight:850; color:#e0f2fe; }
   .visitor-main.hot { display:inline-flex; align-items:center; border:1px solid rgba(248,113,113,.7); border-radius:10px; background:rgba(239,68,68,.2); box-shadow:0 0 0 1px rgba(239,68,68,.12),0 12px 28px rgba(239,68,68,.12); padding:5px 8px; color:#fee2e2; }
   .visitor-meta { margin-top:4px; color:rgba(255,255,255,.56); font-size:12px; line-height:1.35; overflow-wrap:anywhere; }
+  .copy-username { margin:0; padding:0; border:0; background:transparent; color:#7dd3fc; font:inherit; font-weight:800; cursor:pointer; }
+  .copy-username:hover { color:#e0f2fe; text-decoration:underline; }
   .load-more-wrap { display:flex; justify-content:center; margin-top:14px; }
   .chart-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:14px; margin-bottom:14px; }
   .chart-grid.two { grid-template-columns:repeat(2,minmax(0,1fr)); }
@@ -266,7 +268,7 @@ const ADMIN_HTML = `<!doctype html>
         <div class="card stat"><p class="muted">Всего событий</p><div id="statTotal" class="value">0</div></div>
         <div class="card stat"><p class="muted">Открытия товаров</p><div id="statViews" class="value">0</div></div>
         <div class="card stat"><p class="muted">Клики купить</p><div id="statBuys" class="value">0</div></div>
-        <div class="card stat"><p class="muted">Telegram</p><div id="statTelegram" class="value">0</div></div>
+        <div class="card stat"><p class="muted" title="Все события, связанные с Telegram: вход, поддержка, канал и отзывы">События Telegram</p><div id="statTelegram" class="value">0</div></div>
       </div>
       <div class="card panel" style="margin-top:14px">
         <h2>Последние события</h2>
@@ -576,14 +578,26 @@ const ADMIN_HTML = `<!doctype html>
         return 'https://ecliptic.website/';
       }
     }
+    function compactEventUrl(value) {
+      var raw = String(value || '');
+      try {
+        var parsed = new URL(raw, 'https://ecliptic.website');
+        if (parsed.hostname === 'ecliptic.website') return parsed.pathname + (parsed.hash || '');
+        var compact = parsed.hostname + parsed.pathname;
+        return compact.length > 72 ? compact.slice(0, 69) + '...' : compact;
+      } catch (error) {
+        return raw.length > 72 ? raw.slice(0, 69) + '...' : raw;
+      }
+    }
     function eventPageHtml(event) {
       var url = eventPageUrl(event);
       var label = pageLabel(event.path || url.replace(/^https?:\\/\\/[^/]+/i, '') || '/');
-      return '<a href="' + esc(url) + '" target="_blank" rel="noreferrer">' + esc(label) + '</a><div class="row-meta">' + esc(url) + '</div>';
+      return '<a href="' + esc(url) + '" target="_blank" rel="noreferrer">' + esc(label) + '</a><div class="row-meta">' + esc(compactEventUrl(url)) + '</div>';
     }
     function actionLabel(type) {
       var labels = {
         page_view: 'Просмотр страницы',
+        site_visit: 'Визит на сайт',
         product_open: 'Открытие товара',
         buy_click: 'Нажали «Купить»',
         account_open: 'Открытие личного кабинета',
@@ -636,15 +650,21 @@ const ADMIN_HTML = `<!doctype html>
       } else {
         meta.push('IP: не сохранён для этого события');
       }
-      if (event.authUserName || event.authUsername) {
-        meta.push('Telegram: ' + [event.authUserName, event.authUsername].filter(Boolean).map(cleanText).join(' '));
-      }
+      var authLabel = [event.authUserName, event.authUsername].filter(Boolean).map(cleanText).join(' ');
       if (event.referralCode) meta.push('реф.код: ' + event.referralCode);
       if (event.city || event.region || event.country) meta.push([event.city, event.region, event.country].filter(Boolean).map(cleanText).join(', '));
       meta.push(deviceLabel(event.userAgent));
       if (event.screen) meta.push(event.screen);
       if (hotCount > 10) meta.unshift('открытий товаров за 24ч: ' + hotCount);
-      return '<div class="visitor-cell"><div class="' + mainClass + '">' + esc(main) + '</div><div class="visitor-meta">' + esc(meta.join(' · ')) + '</div></div>';
+      var metaHtml = esc(meta.join(' · '));
+      if (authLabel) {
+        var copyValue = cleanText(event.authUsername || '');
+        var authHtml = copyValue
+          ? '<button type="button" class="copy-username" data-copy-text="' + esc(copyValue) + '" title="Скопировать Telegram username">Telegram: ' + esc(authLabel) + '</button>'
+          : 'Telegram: ' + esc(authLabel);
+        metaHtml += (metaHtml ? '<br>' : '') + authHtml;
+      }
+      return '<div class="visitor-cell"><div class="' + mainClass + '">' + esc(main) + '</div><div class="visitor-meta">' + metaHtml + '</div></div>';
     }
     function countBy(items, getter) {
       return items.reduce(function(acc, item) {
@@ -1984,6 +2004,17 @@ const ADMIN_HTML = `<!doctype html>
       var bar = event.target.closest && event.target.closest('.week-bar[data-week-tip]');
       if (!bar || (event.relatedTarget && bar.contains(event.relatedTarget))) return;
       hideFloatingWeekTip();
+    });
+    document.addEventListener('click', function(event) {
+      var button = event.target.closest && event.target.closest('[data-copy-text]');
+      if (!button) return;
+      var value = button.dataset.copyText || '';
+      if (!value) return;
+      navigator.clipboard.writeText(value).then(function() {
+        var original = button.textContent;
+        button.textContent = 'Скопировано';
+        window.setTimeout(function() { button.textContent = original; }, 900);
+      }).catch(function() {});
     });
     $('resetAnalyticsBtn').addEventListener('click', resetAnalytics);
     $('logoutBtn').addEventListener('click', logout);

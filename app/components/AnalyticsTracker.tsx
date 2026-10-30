@@ -29,6 +29,7 @@ const STORAGE_KEY = "ecliptic_analytics_events_v2";
 const VISITOR_KEY = "ecliptic_visitor_id";
 const SESSION_KEY = "ecliptic_session_id";
 const SITE_VISIT_KEY = "ecliptic_site_visit_recorded_v1";
+const AUTH_USER_KEY = "ecliptic_authenticated_user_v1";
 const RECOVERY_KEY = "ecliptic_recovered_runtime_error";
 
 declare global {
@@ -127,6 +128,14 @@ function getOrCreateId(key: string) {
 
 function enrichEvent(event: Omit<AnalyticsEvent, "visitorId" | "sessionId">) {
   let timezone: string | undefined;
+  let storedAuth: { name?: string; username?: string; provider?: string } = {};
+
+  try {
+    const parsed = JSON.parse(localStorage.getItem(AUTH_USER_KEY) || "null");
+    if (parsed && typeof parsed === "object") storedAuth = parsed;
+  } catch {
+    storedAuth = {};
+  }
 
   try {
     timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -136,6 +145,9 @@ function enrichEvent(event: Omit<AnalyticsEvent, "visitorId" | "sessionId">) {
 
   return {
     ...event,
+    authProvider: event.authProvider || storedAuth.provider,
+    authUserName: event.authUserName || storedAuth.name,
+    authUsername: event.authUsername || storedAuth.username,
     url: event.url || window.location.href,
     title: event.title || document.title || undefined,
     visitorId: getOrCreateId(VISITOR_KEY),
