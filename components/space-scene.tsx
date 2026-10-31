@@ -19,16 +19,21 @@ const halloweenImages = [
   "/halloween/candy-purple.png",
 ];
 
+const flyerRandom = (index: number, salt: number) => {
+  const value = Math.sin((index + 1) * 12.9898 + salt * 78.233) * 43758.5453;
+  return value - Math.floor(value);
+};
+
 const halloweenFlyers = Array.from({ length: 20 }, (_, index) => ({
   src: halloweenImages[index % halloweenImages.length],
-  x: (index * 137 + 31) % 86,
-  y: (index * 83 + 13) % 82,
-  speedX: 0.09 + (index % 5) * 0.018,
-  speedY: 0.068 + (index % 4) * 0.014,
-  directionX: index % 2 === 0 ? 1 : -1,
-  directionY: index % 3 === 0 ? -1 : 1,
-  rotation: (index * 19) % 360,
-  rotationSpeed: index % 2 === 0 ? 0.05 : -0.04,
+  x: flyerRandom(index, 1) * 82,
+  y: flyerRandom(index, 2) * 78,
+  speedX: 0.075 + flyerRandom(index, 3) * 0.105,
+  speedY: 0.055 + flyerRandom(index, 4) * 0.09,
+  directionX: flyerRandom(index, 5) > 0.5 ? 1 : -1,
+  directionY: flyerRandom(index, 6) > 0.5 ? 1 : -1,
+  rotation: flyerRandom(index, 7) * 360,
+  rotationSpeed: (flyerRandom(index, 8) - 0.5) * 0.16,
 }));
 
 const HALLOWEEN_END = new Date(2026, 10, 3, 0, 0, 0, 0).getTime();
