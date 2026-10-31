@@ -28,12 +28,12 @@ const halloweenFlyers = Array.from({ length: 20 }, (_, index) => ({
   src: halloweenImages[index % halloweenImages.length],
   x: flyerRandom(index, 1) * 82,
   y: flyerRandom(index, 2) * 78,
-  speedX: 0.075 + flyerRandom(index, 3) * 0.105,
-  speedY: 0.055 + flyerRandom(index, 4) * 0.09,
+  speedX: 0.0375 + flyerRandom(index, 3) * 0.0525,
+  speedY: 0.0275 + flyerRandom(index, 4) * 0.045,
   directionX: flyerRandom(index, 5) > 0.5 ? 1 : -1,
   directionY: flyerRandom(index, 6) > 0.5 ? 1 : -1,
   rotation: flyerRandom(index, 7) * 360,
-  rotationSpeed: (flyerRandom(index, 8) - 0.5) * 0.16,
+  rotationSpeed: (flyerRandom(index, 8) - 0.5) * 0.08,
 }));
 
 const HALLOWEEN_END = new Date(2026, 10, 3, 0, 0, 0, 0).getTime();
