@@ -29,7 +29,10 @@ export type AnalyticsEvent = {
   authUsername?: string;
 };
 
-const MAX_FALLBACK_EVENTS = 5000;
+// Keep a generous emergency-store ceiling without the old 5,000-event cutoff.
+// The normal production path is Redis/Cloudflare; this only protects a broken
+// deployment from exhausting its Blob or temporary filesystem storage.
+const MAX_FALLBACK_EVENTS = 100_000;
 const FALLBACK_DIR = join(tmpdir(), "ecliptic-store");
 const FALLBACK_FILE = join(FALLBACK_DIR, "analytics-events-v2.json");
 const ANALYTICS_BLOB = "admin/analytics-events-v2.json";

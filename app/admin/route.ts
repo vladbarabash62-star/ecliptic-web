@@ -725,7 +725,7 @@ const ADMIN_HTML = `<!doctype html>
       };
     }
     function mergeSummary(serverSummary, events) {
-      return summarizeEvents(events);
+      return serverSummary && Number(serverSummary.total) >= 0 ? serverSummary : summarizeEvents(events);
     }
     function topEntries(data, limit) {
       return Object.entries(data).sort(function(a,b) { return b[1] - a[1]; }).slice(0, limit || 8);

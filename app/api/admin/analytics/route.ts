@@ -75,7 +75,7 @@ export async function POST(request: Request) {
       result = null;
     } else {
     result = await redisPipeline([
-      ["LRANGE", ANALYTICS_KEY, "0", String(MAX_EVENTS_LIMIT - 1)],
+      ["LRANGE", ANALYTICS_KEY, "0", "-1"],
       ["LLEN", ANALYTICS_KEY],
       ["HGETALL", ANALYTICS_TOTALS_KEY],
       ["HGETALL", ANALYTICS_ACTIONS_KEY],
@@ -120,6 +120,17 @@ export async function POST(request: Request) {
         .filter((event) => event && event.type !== "page_view" && !isExcludedAnalyticsVisitor(event.visitorId))
     : [];
 
+  const redisTotals = result?.[2]?.result;
+  const summary = redisTotals && typeof redisTotals === "object"
+    ? {
+        ...summarizeAnalyticsEvents(events),
+        total: Number(redisTotals.total || 0) || events.length,
+        views: Number(redisTotals.views || 0) || summarizeAnalyticsEvents(events).views,
+        buys: Number(redisTotals.buys || 0) || summarizeAnalyticsEvents(events).buys,
+        telegram: Number(redisTotals.telegram || 0) || summarizeAnalyticsEvents(events).telegram,
+      }
+    : summarizeAnalyticsEvents(events);
+
   return NextResponse.json({
     ok: true,
     configured: Boolean(getRedisConfig()),
@@ -132,6 +143,6 @@ export async function POST(request: Request) {
       hasMore: offset + limit < events.length,
       nextOffset: offset + events.slice(offset, offset + limit).length,
     },
-    summary: summarizeAnalyticsEvents(events),
+    summary,
   });
 }

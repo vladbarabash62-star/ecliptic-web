@@ -56,14 +56,11 @@ type TelegramBusinessConnection = {
 };
 
 function token() {
-  // Orders now use the same primary bot as login and referral flows.
+  // All Telegram flows intentionally use one primary bot. Legacy payment-bot
+  // tokens are excluded so an old webhook cannot silently create a second bot.
   return process.env.TELEGRAM_LOGIN_BOT_TOKEN
     || process.env.TELEGRAM_BOT_TOKEN
     || process.env.TELEGRAM_WEBAPP_BOT_TOKEN
-    || process.env.PAYMENT_BOT_TOKEN_V4
-    || process.env.PAYMENT_BOT_TOKEN_V3
-    || process.env.PAYMENT_BOT_TOKEN_V2
-    || process.env.PAYMENT_BOT_TOKEN
     || "";
 }
 
