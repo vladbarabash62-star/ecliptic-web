@@ -13,6 +13,7 @@ import {
   saveTelegramCustomEmojiIds,
 } from "../../../../lib/telegramCustomEmojiStore";
 import { processTelegramPaymentUpdate } from "../payment-webhook/route";
+import { ensurePrimaryTelegramWebhook } from "../../../../lib/telegramWebhook";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -209,10 +210,11 @@ export async function POST(request: Request) {
 
   const token = botToken();
   if (!token) return NextResponse.json({ ok: false }, { status: 500 });
+  await ensurePrimaryTelegramWebhook(request, token);
 
   const update = await request.json().catch(() => ({})) as TelegramUpdate;
   if (update.business_connection || update.business_message || update.callback_query?.data?.startsWith("pay:")) {
-    return processTelegramPaymentUpdate(update as never);
+    return processTelegramPaymentUpdate(update as never, request);
   }
   const callback = update.callback_query;
   if (callback?.id) {

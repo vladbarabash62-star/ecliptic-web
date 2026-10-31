@@ -4,6 +4,7 @@ import {
   rememberBusinessManagerChat,
   rememberManagerChat,
 } from "../../../../lib/telegramManagerStore";
+import { ensurePrimaryTelegramWebhook } from "../../../../lib/telegramWebhook";
 import {
   getPendingTelegramOrder,
   claimPaymentNotification,
@@ -461,8 +462,10 @@ async function handleDecision(update: TelegramUpdate) {
   return true;
 }
 
-export async function processTelegramPaymentUpdate(update: TelegramUpdate) {
-  if (!token()) return NextResponse.json({ ok: false, error: "PAYMENT_BOT_TOKEN is not configured" }, { status: 500 });
+export async function processTelegramPaymentUpdate(update: TelegramUpdate, request?: Request) {
+  const botToken = token();
+  if (!botToken) return NextResponse.json({ ok: false, error: "TELEGRAM_BOT_TOKEN is not configured" }, { status: 500 });
+  if (request) await ensurePrimaryTelegramWebhook(request, botToken);
   if (update.business_connection?.is_enabled && update.business_connection.user_chat_id) {
     await rememberBusinessManagerChat(update.business_connection.user_chat_id).catch(() => undefined);
   }
@@ -548,5 +551,5 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
   const update = await request.json().catch(() => ({})) as TelegramUpdate;
-  return processTelegramPaymentUpdate(update);
+  return processTelegramPaymentUpdate(update, request);
 }
