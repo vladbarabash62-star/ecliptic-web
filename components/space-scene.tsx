@@ -70,9 +70,11 @@ export default function SpaceScene() {
       lastTime = time;
       const width = window.innerWidth;
       const height = window.innerHeight;
-      const size = Math.min(86, Math.max(56, Math.round(Math.min(width, height) * 0.105)));
+      const baseSize = Math.min(86, Math.max(56, Math.round(Math.min(width, height) * 0.105)));
 
       positions.forEach((position, index) => {
+        const isGhost = position.src.includes("ghost");
+        const size = isGhost ? baseSize * 2 : baseSize;
         const maxX = Math.max(0, width - size);
         const maxY = Math.max(0, height - size);
         position.x += position.speedX * position.directionX * elapsed;
@@ -133,8 +135,8 @@ export default function SpaceScene() {
               draggable={false}
               className="absolute left-0 top-0 z-0 object-contain opacity-90 drop-shadow-[0_4px_8px_rgba(255,126,0,0.28)]"
               style={{
-                width: "68px",
-                height: "68px",
+                width: flyer.src.includes("ghost") ? "136px" : "68px",
+                height: flyer.src.includes("ghost") ? "136px" : "68px",
                 transform: `translate3d(${flyer.x}vw, ${flyer.y}vh, 0) rotate(${flyer.rotation}deg)`,
               }}
             />
