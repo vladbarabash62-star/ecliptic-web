@@ -23,8 +23,8 @@ const halloweenFlyers = Array.from({ length: 20 }, (_, index) => ({
   src: halloweenImages[index % halloweenImages.length],
   x: (index * 137 + 31) % 86,
   y: (index * 83 + 13) % 82,
-  speedX: 0.16 + (index % 5) * 0.035,
-  speedY: 0.12 + (index % 4) * 0.028,
+  speedX: 0.09 + (index % 5) * 0.018,
+  speedY: 0.068 + (index % 4) * 0.014,
   directionX: index % 2 === 0 ? 1 : -1,
   directionY: index % 3 === 0 ? -1 : 1,
   rotation: (index * 19) % 360,
@@ -56,7 +56,12 @@ export default function SpaceScene() {
   useEffect(() => {
     if (!halloweenVisible) return;
 
-    const positions = halloweenFlyers.map((flyer) => ({ ...flyer }));
+    const positions = halloweenFlyers.map((flyer) => ({
+      ...flyer,
+      // Convert the distributed percentage seeds to pixels before the first frame.
+      x: (flyer.x / 100) * window.innerWidth,
+      y: (flyer.y / 100) * window.innerHeight,
+    }));
     let frame = 0;
     let lastTime = performance.now();
 
@@ -65,7 +70,7 @@ export default function SpaceScene() {
       lastTime = time;
       const width = window.innerWidth;
       const height = window.innerHeight;
-      const size = Math.min(58, Math.max(38, Math.round(Math.min(width, height) * 0.07)));
+      const size = Math.min(86, Math.max(56, Math.round(Math.min(width, height) * 0.105)));
 
       positions.forEach((position, index) => {
         const maxX = Math.max(0, width - size);
@@ -128,8 +133,8 @@ export default function SpaceScene() {
               draggable={false}
               className="absolute left-0 top-0 object-contain opacity-90 drop-shadow-[0_4px_8px_rgba(255,126,0,0.28)]"
               style={{
-                width: "48px",
-                height: "48px",
+                width: "68px",
+                height: "68px",
                 transform: `translate3d(${flyer.x}vw, ${flyer.y}vh, 0) rotate(${flyer.rotation}deg)`,
               }}
             />
