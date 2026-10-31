@@ -121,7 +121,7 @@ export default function SpaceScene() {
         />
       ))}
       {halloweenVisible && (
-        <div className="pointer-events-none fixed inset-0 z-[1] overflow-hidden" aria-hidden="true">
+        <div className="pointer-events-none fixed inset-0 z-[1] isolate overflow-hidden" aria-hidden="true">
           {halloweenFlyers.map((flyer, index) => (
             <img
               key={`halloween-flyer-${index}`}
@@ -131,7 +131,7 @@ export default function SpaceScene() {
               src={flyer.src}
               alt=""
               draggable={false}
-              className="absolute left-0 top-0 object-contain opacity-90 drop-shadow-[0_4px_8px_rgba(255,126,0,0.28)]"
+              className="absolute left-0 top-0 z-0 object-contain opacity-90 drop-shadow-[0_4px_8px_rgba(255,126,0,0.28)]"
               style={{
                 width: "68px",
                 height: "68px",
