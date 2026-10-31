@@ -251,7 +251,7 @@ const MANAGER_CONTACT_SLUGS = new Set([
   "ton",
 ]);
 
-const RRF_TOPUP_SLUGS = new Set([
+const RU_RUBLE_TOPUP_SLUGS = new Set([
   "steam",
   "sbp-payment",
   "site-topups",
@@ -281,11 +281,11 @@ function replyPolicy(product?: Product, hasPayment = false) {
   return hasPayment ? "payment" as const : "manager" as const;
 }
 
-function rrfEquivalent(priceRub?: number) {
-  if (!Number.isFinite(priceRub) || !priceRub || priceRub <= 0) return "";
-  // 30 PMR = 100 RRF; the requested rounding is down to a 5/0.
-  const rrf = Math.floor((priceRub * 100) / 30 / 5) * 5;
-  return `${rrf} RRF`;
+function ruRublesEquivalent(pricePmr?: number) {
+  if (!Number.isFinite(pricePmr) || !pricePmr || pricePmr <= 0) return "";
+  // The current rate is 30 PMR = 30 Russian rubles; round down to 5/0.
+  const rubles = Math.floor(pricePmr / 5) * 5;
+  return `${rubles} р РФ`;
 }
 
 async function resolveOrderPayment(orderMessage: string, orderCode: string): Promise<ResolvedOrderPayment> {
@@ -298,7 +298,7 @@ async function resolveOrderPayment(orderMessage: string, orderCode: string): Pro
     return candidate.slug.toLowerCase().replace(/[^a-z0-9]/g, "").startsWith(parsed.legacyPrefix || "");
   });
   if (!product) {
-    const amount = parsed.priceRub && parsed.priceRub > 0 ? `${parsed.priceRub}р` : "";
+    const amount = parsed.priceRub && parsed.priceRub > 0 ? `${parsed.priceRub} р ПМР` : "";
     return { amount, hasPayment: Boolean(amount) };
   }
 
@@ -308,7 +308,7 @@ async function resolveOrderPayment(orderMessage: string, orderCode: string): Pro
   const offer = offers.find((candidate) => orderMessage.toLowerCase().includes(candidate.label.toLowerCase()))
     || offers.find((candidate) => candidate.priceRub === parsed.priceRub)
     || (offers.length === 1 ? offers[0] : undefined);
-  if (offer) return { amount: `${offer.priceRub}р`, product, sitePrice: offer.priceRub, hasPayment: true };
+  if (offer) return { amount: `${offer.priceRub} р ПМР`, product, sitePrice: offer.priceRub, hasPayment: true };
 
   return { amount: "", product, hasPayment: false };
 }
@@ -361,8 +361,16 @@ async function sendOrderInstructions(
     "<b>Получатель: Владислав Б</b>",
     `<b>Сумма к оплате: ${escapeHtml(paymentAmount || extractOrderAmount(orderMessage))}</b>`,
   ];
-  const rrf = RRF_TOPUP_SLUGS.has(productData?.slug.toLowerCase() || "") ? rrfEquivalent(sitePrice) : "";
-  if (rrf) paymentLines.push(`<b>Баланс будет пополнен на ${escapeHtml(rrf)}.</b>`);
+  const ruRubles = RU_RUBLE_TOPUP_SLUGS.has(productData?.slug.toLowerCase() || "")
+    ? ruRublesEquivalent(sitePrice)
+    : "";
+  if (ruRubles) {
+    paymentLines.push(
+      "",
+      "<b>Курс: 30 р ПМР = 30 р РФ.</b>",
+      `<b>Баланс будет пополнен на ${escapeHtml(ruRubles)}.</b>`,
+    );
+  }
   if (productData?.slug.toLowerCase() === "world-of-tanks") {
     paymentLines.push("", "<b>После оплаты отправьте данные вашего аккаунта: логин и пароль.</b>");
   } else {
