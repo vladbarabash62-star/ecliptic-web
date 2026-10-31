@@ -135,6 +135,19 @@ html {
   }
 }
 
+@keyframes accountPanelEnter {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.992);
+    filter: blur(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
 .site-loader {
   background: rgba(0, 0, 0, 0.72);
   opacity: 1;
@@ -190,6 +203,11 @@ html {
 
 .page-intro {
   animation: homeRevealDown 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.account-panel-enter {
+  animation: accountPanelEnter 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: opacity, transform, filter;
 }
 
 .product-card {
@@ -295,6 +313,13 @@ html {
   animation: softReveal 320ms ease-out both;
   content-visibility: auto;
   contain-intrinsic-size: 720px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-intro,
+  .account-panel-enter {
+    animation: none !important;
+  }
 }
 
 .swipe-home-preview {

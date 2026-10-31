@@ -218,9 +218,10 @@ export default function AccountTabs({ orders, referral: initialReferral }: { ord
         </button>
       </div>
 
-      {tab === "orders" ? (
-        orders.length ? (
-          <section className="mt-7 grid gap-3">
+      <div key={tab} className="account-panel-enter">
+        {tab === "orders" ? (
+          orders.length ? (
+            <section className="mt-7 grid gap-3">
             <h2 className="text-xl font-black text-white">Мои заказы</h2>
             {orders.map((order) => {
               const rawOffer = typeof order.offer === "string" ? order.offer.trim() : "";
@@ -243,14 +244,14 @@ export default function AccountTabs({ orders, referral: initialReferral }: { ord
                 </article>
               );
             })}
-          </section>
+            </section>
+          ) : (
+            <div className="mt-7 rounded-2xl border border-white/10 bg-white/[0.045] p-5 text-sm font-semibold leading-relaxed text-white/62">
+              Заказов пока нет. Выберите товар, нажмите “Купить”, и он появится здесь.
+            </div>
+          )
         ) : (
-          <div className="mt-7 rounded-2xl border border-white/10 bg-white/[0.045] p-5 text-sm font-semibold leading-relaxed text-white/62">
-            Заказов пока нет. Выберите товар, нажмите “Купить”, и он появится здесь.
-          </div>
-        )
-      ) : (
-        <section className="mt-7 grid gap-4">
+          <section className="mt-7 grid gap-4">
           <div className="rounded-3xl border border-sky-300/18 bg-gradient-to-br from-sky-500/14 to-emerald-500/10 p-5">
             <h2 className="text-2xl font-black leading-tight text-white sm:text-3xl">
               Пригласи 5 друзей, соверши любую покупку в магазине и получи подарок стоимостью 50 Telegram Stars
@@ -339,8 +340,9 @@ export default function AccountTabs({ orders, referral: initialReferral }: { ord
               Кнопка заявки появится после 5 приглашённых участников и первой покупки.
             </div>
           ) : null}
-        </section>
-      )}
+          </section>
+        )}
+      </div>
 
       {isLogoutOpen && typeof document !== "undefined" ? createPortal(
         <div className="fixed inset-0 z-[70] grid place-items-center bg-black/70 p-4 backdrop-blur-sm" role="presentation">

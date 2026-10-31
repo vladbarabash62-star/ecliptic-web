@@ -45,7 +45,7 @@ export default async function AccountPage() {
           </Link>
         </div>
 
-        <div className="rounded-3xl border border-white/10 bg-[#090f1b]/88 p-5 shadow-[0_24px_90px_rgba(0,0,0,0.34)] backdrop-blur-md sm:p-8">
+        <div className="page-intro rounded-3xl border border-white/10 bg-[#090f1b]/88 p-5 shadow-[0_24px_90px_rgba(0,0,0,0.34)] backdrop-blur-md sm:p-8">
           {!user ? (
             <>
               <h1 className="mt-2 text-4xl font-black sm:text-5xl">Ecliptic Store</h1>
