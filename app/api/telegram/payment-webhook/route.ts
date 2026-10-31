@@ -252,26 +252,8 @@ const MANAGER_CONTACT_SLUGS = new Set([
 ]);
 
 const RU_RUBLE_TOPUP_SLUGS = new Set([
-  "steam",
   "sbp-payment",
   "site-topups",
-  "standoff-2",
-  "pubg-mobile",
-  "brawl-stars",
-  "roblox",
-  "mobile-legends",
-  "clash-of-clans",
-  "clash-royale",
-  "tiktok",
-  "free-fire",
-  "grand-mobile",
-  "black-russia",
-  "radmir-rp",
-  "amazing-rp",
-  "fortnite",
-  "delta-force",
-  "cursor",
-  "playstation",
 ]);
 
 function replyPolicy(product?: Product, hasPayment = false) {
@@ -305,8 +287,8 @@ async function resolveOrderPayment(orderMessage: string, orderCode: string): Pro
   const offers = product.offers.filter((offer): offer is Extract<Product["offers"][number], { priceRub: number }> =>
     offer.type !== "divider" && typeof offer.priceRub === "number" && offer.priceRub > 0
   );
-  const offer = offers.find((candidate) => orderMessage.toLowerCase().includes(candidate.label.toLowerCase()))
-    || offers.find((candidate) => candidate.priceRub === parsed.priceRub)
+  const offer = offers.find((candidate) => candidate.priceRub === parsed.priceRub)
+    || offers.find((candidate) => orderMessage.toLowerCase().includes(candidate.label.toLowerCase()))
     || (offers.length === 1 ? offers[0] : undefined);
   if (offer) return { amount: `${offer.priceRub} р ПМР`, product, sitePrice: offer.priceRub, hasPayment: true };
 
