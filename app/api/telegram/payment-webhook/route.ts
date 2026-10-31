@@ -204,6 +204,90 @@ type ResolvedOrderPayment = {
   hasPayment: boolean;
 };
 
+// Keep the reply policy explicit. Product offers can be edited in the admin,
+// but these service-level decisions should not change just because an offer
+// happens to be present or absent in storage.
+const PAYMENT_DETAILS_SLUGS = new Set([
+  "steam",
+  "telegram-premium",
+  "telegram-stars",
+  "telegram-accounts",
+  "sbp-payment",
+  "site-topups",
+  "spotify-premium",
+  "standoff-2",
+  "pubg-mobile",
+  "brawl-stars",
+  "roblox",
+  "mobile-legends",
+  "clash-of-clans",
+  "clash-royale",
+  "tiktok",
+  "world-of-tanks",
+  "free-fire",
+  "grand-mobile",
+  "black-russia",
+  "radmir-rp",
+  "amazing-rp",
+  "fortnite",
+  "youtube-premium",
+  "delta-force",
+  "cursor",
+  "playstation",
+]);
+
+const MANAGER_CONTACT_SLUGS = new Set([
+  "minecraft",
+  "chatgpt-plus",
+  "discord-nitro",
+  "netflix",
+  "epic-games-topup",
+  "call-of-duty-mobile",
+  "card-withdrawal-rf",
+  "card-withdrawal-md",
+  "nft",
+  "busd",
+  "twitch",
+  "ton",
+]);
+
+const RRF_TOPUP_SLUGS = new Set([
+  "steam",
+  "sbp-payment",
+  "site-topups",
+  "standoff-2",
+  "pubg-mobile",
+  "brawl-stars",
+  "roblox",
+  "mobile-legends",
+  "clash-of-clans",
+  "clash-royale",
+  "tiktok",
+  "free-fire",
+  "grand-mobile",
+  "black-russia",
+  "radmir-rp",
+  "amazing-rp",
+  "fortnite",
+  "delta-force",
+  "cursor",
+  "playstation",
+]);
+
+function replyPolicy(product?: Product, hasPayment = false) {
+  const slug = product?.slug.toLowerCase() || "";
+  if (MANAGER_CONTACT_SLUGS.has(slug)) return "manager" as const;
+  if (PAYMENT_DETAILS_SLUGS.has(slug)) return hasPayment ? "payment" as const : "manager" as const;
+  return hasPayment ? "payment" as const : "manager" as const;
+}
+
+function rrfEquivalent(priceRub?: number) {
+  if (!Number.isFinite(priceRub) || !priceRub || priceRub <= 0) return "";
+  // 30 PMR = 100 RRF; the requested rounding is down to a 5/0.
+  const rrf = Math.floor((priceRub * 100) / 30 / 5) * 5;
+  return `${rrf} RRF`;
+}
+
 async function resolveOrderPayment(orderMessage: string, orderCode: string): Promise<ResolvedOrderPayment> {
   const parsed = parseOrderCode(orderCode);
   if (!parsed) return { amount: "", hasPayment: false };
@@ -234,10 +318,13 @@ async function sendOrderInstructions(
   orderMessage: string,
   businessConnectionId?: string,
   paymentAmount?: string,
-  hasPayment = false
+  hasPayment = false,
+  productData?: Product,
+  sitePrice?: number
 ) {
   const category = extractOrderCategory(orderMessage);
   const product = extractOrderProduct(orderMessage);
+  const policy = replyPolicy(productData, hasPayment);
   const isTelegramAccount = category.value.trim().toLowerCase() === "telegram" && /аккаунт/i.test(product);
   const fallbackAccountSafetyNotice = isTelegramAccount
     ? applyAccountNoticeEmojiIds([
@@ -255,7 +342,7 @@ async function sendOrderInstructions(
       ].join("\n"), (await getTelegramCustomEmojiIds())?.ids || [])
     : "";
   const welcomeText = "<b>Здравствуйте,</b>\n\n<b>Добро пожаловать в Ecliptic Store!</b>";
-  if (!hasPayment) {
+  if (policy === "manager") {
     const response = await telegram("sendMessage", {
       chat_id: chatId,
       ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
@@ -264,7 +351,7 @@ async function sendOrderInstructions(
     });
     return Boolean(response);
   }
-  const paymentText = [
+  const paymentLines = [
     `<b>${category.label}: ${escapeHtml(category.value)}</b>`,
     `<b>Товар: ${escapeHtml(product)}</b>`,
     "",
@@ -273,9 +360,15 @@ async function sendOrderInstructions(
     "<b>Номер получателя: <code>77534682</code></b>",
     "<b>Получатель: Владислав Б</b>",
     `<b>Сумма к оплате: ${escapeHtml(paymentAmount || extractOrderAmount(orderMessage))}</b>`,
-    "",
-    "<b>После оплаты отправьте сюда скриншот операции.</b>",
-  ].join("\n");
+  ];
+  const rrf = RRF_TOPUP_SLUGS.has(productData?.slug.toLowerCase() || "") ? rrfEquivalent(sitePrice) : "";
+  if (rrf) paymentLines.push(`<b>Баланс будет пополнен на ${escapeHtml(rrf)}.</b>`);
+  if (productData?.slug.toLowerCase() === "world-of-tanks") {
+    paymentLines.push("", "<b>После оплаты отправьте данные вашего аккаунта: логин и пароль.</b>");
+  } else {
+    paymentLines.push("", "<b>После оплаты отправьте сюда скриншот операции.</b>");
+  }
+  const paymentText = paymentLines.join("\n");
   await showTyping(chatId, businessConnectionId);
   await telegram("sendMessage", {
     chat_id: chatId,
@@ -509,7 +602,9 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate, reque
       message.text,
       message.business_connection_id,
       resolvedPayment.amount,
-      resolvedPayment.hasPayment
+      resolvedPayment.hasPayment,
+      resolvedPayment.product,
+      resolvedPayment.sitePrice
     );
     if (replied && resolvedPayment.hasPayment) {
       await savePendingTelegramOrder({
