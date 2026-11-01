@@ -16,7 +16,7 @@ import {
   getTelegramAccountNoticeTemplate,
   getTelegramCustomEmojiIds,
 } from "../../../../lib/telegramCustomEmojiStore";
-import { claimDailyGreeting, noteTelegramChatActivity } from "../../../../lib/telegramDailyGreetingStore";
+import { claimDailyGreeting, claimInactiveChatNotice, noteTelegramChatActivity } from "../../../../lib/telegramDailyGreetingStore";
 import { compactProductCode } from "../../../../lib/orderCode";
 import { getProducts } from "../../../../lib/productStore";
 import type { Product } from "../../../../lib/products";
@@ -185,6 +185,16 @@ function extractOrderCode(message: string) {
 function isGreetingText(message: string) {
   const value = message.trim().toLowerCase().replace(/ё/g, "е");
   return /^(привет(?:ствую)?|здравствуйте|здрасьте|добрый\s+(?:день|вечер|утро)|доброе\s+утро|ку|hello|hi)(?:\s|[!,.?]|$)/i.test(value);
+}
+
+function isQuietHours() {
+  const hour = Number(new Intl.DateTimeFormat("en-US", {
+    timeZone: "Europe/Chisinau",
+    hour: "2-digit",
+    hourCycle: "h23",
+    hour12: false,
+  }).format(new Date()));
+  return hour >= 0 && hour < 8;
 }
 
 function normalizeSearchText(value: string) {
@@ -490,6 +500,16 @@ async function sendDailyGreeting(chatId: number, businessConnectionId?: string) 
   return Boolean(response);
 }
 
+async function sendQuietHoursNotice(chatId: number, businessConnectionId?: string) {
+  const text = "Здравствуйте! Сейчас нерабочее время. Рабочее время — с 08:00 до 00:00. Я могу не ответить сразу, потому что отдыхаю. Напишите свой вопрос или заказ — отвечу в рабочее время. Спасибо за понимание!";
+  const response = await telegram("sendMessage", {
+    chat_id: chatId,
+    ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
+    text,
+  });
+  return Boolean(response);
+}
+
 type PaymentAttachment = { kind: "photo" | "document"; fileId: string };
 
 const paymentBatches = new Map<string, PaymentAttachment[]>();
@@ -675,11 +695,16 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate, reque
       ? await resolveOrderPayment(message.text, orderCode)
       : await resolveProductRequest(message.text);
     if (!orderCode && !resolvedPayment.hasPayment) {
-      const shouldGreet = isGreetingText(message.text)
+      const shouldSendQuietHoursNotice = isQuietHours()
+        ? await claimInactiveChatNotice(message.chat.id).catch(() => false)
+        : false;
+      const shouldGreet = !shouldSendQuietHoursNotice && isGreetingText(message.text)
         ? await claimDailyGreeting(message.chat.id).catch(() => false)
         : false;
-      const replied = shouldGreet
-        ? await sendDailyGreeting(message.chat.id, message.business_connection_id)
+      const replied = shouldSendQuietHoursNotice
+        ? await sendQuietHoursNotice(message.chat.id, message.business_connection_id)
+        : shouldGreet
+          ? await sendDailyGreeting(message.chat.id, message.business_connection_id)
         : false;
       await noteTelegramChatActivity(message.chat.id).catch(() => undefined);
       return NextResponse.json({ ok: true, replied, ignored: "not-an-order" });
@@ -722,9 +747,16 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate, reque
   }
 
   if (message.sticker) {
-    const shouldGreet = await claimDailyGreeting(message.chat.id).catch(() => false);
-    const replied = shouldGreet
-      ? await sendDailyGreeting(message.chat.id, message.business_connection_id)
+    const shouldSendQuietHoursNotice = isQuietHours()
+      ? await claimInactiveChatNotice(message.chat.id).catch(() => false)
+      : false;
+    const shouldGreet = !shouldSendQuietHoursNotice
+      ? await claimDailyGreeting(message.chat.id).catch(() => false)
+      : false;
+    const replied = shouldSendQuietHoursNotice
+      ? await sendQuietHoursNotice(message.chat.id, message.business_connection_id)
+      : shouldGreet
+        ? await sendDailyGreeting(message.chat.id, message.business_connection_id)
       : false;
     await noteTelegramChatActivity(message.chat.id).catch(() => undefined);
     return NextResponse.json({ ok: true, replied, ignored: "sticker" });

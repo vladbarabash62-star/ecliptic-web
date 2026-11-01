@@ -52,3 +52,14 @@ export async function noteTelegramChatActivity(chatId: number) {
   store[key] = { ...(store[key] || {}), lastActivityAt: new Date().toISOString() };
   await writeStore(store);
 }
+
+export async function claimInactiveChatNotice(chatId: number, inactivityMs = 10 * 60 * 1000) {
+  const store = await readStore();
+  const key = String(chatId);
+  const current = store[key] || {};
+  const lastActivity = current.lastActivityAt ? Date.parse(current.lastActivityAt) : 0;
+  const shouldNotify = lastActivity <= 0 || Date.now() - lastActivity >= inactivityMs;
+  store[key] = { ...current, lastActivityAt: new Date().toISOString() };
+  await writeStore(store);
+  return shouldNotify;
+}
