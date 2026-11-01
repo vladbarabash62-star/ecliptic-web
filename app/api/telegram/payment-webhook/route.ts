@@ -17,7 +17,7 @@ import {
   getTelegramCustomEmojiIds,
 } from "../../../../lib/telegramCustomEmojiStore";
 import { claimDailyGreeting, claimInactiveChatNotice, noteTelegramChatActivity, wasGreetingRecentlySent } from "../../../../lib/telegramDailyGreetingStore";
-import { getTelegramProductContext, saveTelegramProductContext } from "../../../../lib/telegramProductContextStore";
+import { getTelegramProductContext } from "../../../../lib/telegramProductContextStore";
 import { compactProductCode } from "../../../../lib/orderCode";
 import { getProducts } from "../../../../lib/productStore";
 import type { Product } from "../../../../lib/products";
@@ -855,6 +855,11 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate, reque
         }
       }
     }
+    if (!orderCode && resolvedPayment.priceOnly) {
+      const replied = await sendPriceAnswer(message.chat.id, resolvedPayment, message.business_connection_id);
+      await noteTelegramChatActivity(message.chat.id).catch(() => undefined);
+      return NextResponse.json({ ok: true, replied, priceAnswer: replied });
+    }
     if (!orderCode && !resolvedPayment.hasPayment) {
       const shouldSendQuietHoursNotice = isQuietHours()
         ? await claimInactiveChatNotice(message.chat.id).catch(() => false)
@@ -869,20 +874,6 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate, reque
         : false;
       await noteTelegramChatActivity(message.chat.id).catch(() => undefined);
       return NextResponse.json({ ok: true, replied, ignored: "not-an-order" });
-    }
-    if (!orderCode && resolvedPayment.priceOnly) {
-      const replied = await sendPriceAnswer(message.chat.id, resolvedPayment, message.business_connection_id);
-      if (replied && resolvedPayment.product && resolvedPayment.offerLabel) {
-        await saveTelegramProductContext(message.chat.id, {
-          productSlug: resolvedPayment.product.slug,
-          offerLabel: resolvedPayment.offerLabel,
-          amount: resolvedPayment.amount,
-          sourceMessage: message.text,
-          ...(typeof resolvedPayment.sitePrice === "number" ? { sitePrice: resolvedPayment.sitePrice } : {}),
-        });
-      }
-      await noteTelegramChatActivity(message.chat.id).catch(() => undefined);
-      return NextResponse.json({ ok: true, replied, priceAnswer: replied });
     }
     const replied = await sendOrderInstructions(
       message.chat.id,
