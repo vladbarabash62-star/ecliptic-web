@@ -345,11 +345,19 @@ async function resolveProductRequest(orderMessage: string): Promise<ResolvedOrde
       || (offers.length === 1 ? offers[0] : undefined);
     if (!offer) return { amount: "", product, hasPayment: false };
 
+    const dollarMatch = orderMessage.match(/(\d+(?:[.,]\d+)?)\s*(?:\$|доллар(?:а|ов)?)/i);
+    const steamDollarAmount = product.slug === "steam" && dollarMatch
+      ? Number(dollarMatch[1].replace(",", "."))
+      : undefined;
+    const paymentPrice = steamDollarAmount && steamDollarAmount > 0
+      ? Math.round(steamDollarAmount * 21)
+      : offer.priceRub;
+
     return {
-      amount: `${offer.priceRub} р ПМР`,
+      amount: `${paymentPrice} р ПМР`,
       product,
       offerLabel: offer.label,
-      sitePrice: offer.priceRub,
+      sitePrice: paymentPrice,
       hasPayment: true,
     };
   }
