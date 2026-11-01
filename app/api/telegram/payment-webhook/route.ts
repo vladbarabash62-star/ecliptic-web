@@ -226,7 +226,7 @@ function normalizeProductQuery(value: string) {
 }
 
 const PRODUCT_REQUEST_ALIASES: Record<string, string[]> = {
-  roblox: ["робукс", "робукса", "робуксов", "роблоксе", "robux"],
+  roblox: ["робукс", "робукса", "робуксов", "робуксы", "роблоксе", "robux"],
   steam: ["стим"],
   "telegram-stars": ["телеграм звезд", "телега звезд", "звезд", "звезды", "stars"],
   "telegram-premium": ["телеграм премиум", "телега премиум", "тг прем", "tg premium", "tg prem", "премк", "премиум", "premium"],
@@ -413,12 +413,12 @@ function chooseBudgetBundle(
 
 async function resolveProductRequest(orderMessage: string): Promise<ResolvedOrderPayment> {
   const normalizedMessage = normalizeProductQuery(orderMessage);
-  const isPriceQuestion = /(сколько\s+(?:стоит|стоят|это|будет|нужно|выходит)|какая\s+цена|стоимость|почем|цена|во\s+сколько)/i.test(normalizedMessage);
+  const isPriceQuestion = /(сколько\s+(?:стоит|стоят|это|будет|нужно|нужен|выходит)|сколько\s+.+?\s+сто(?:ит|ят)|какая\s+цена|стоимость|почем|цена|во\s+сколько)/i.test(normalizedMessage);
   const isAvailabilityQuestion = /(^|\s)(есть|имеется|наличие|можно)(?=\s|$)/i.test(normalizedMessage);
-  const isStoreLinkRequest = /(купить|заказать|оформить|нужн|хочу)/i.test(normalizedMessage)
+  const isStoreLinkRequest = /(купить|заказать|оформить|нужн|хочу|ссылк|скин|скид|магазин)/i.test(normalizedMessage)
     || isPriceQuestion
     || isAvailabilityQuestion;
-  if (!/(купить|заказать|оформить|нужн|хочу|пополн)/i.test(normalizedMessage) && !isPriceQuestion && !isAvailabilityQuestion) {
+  if (!/(купить|заказать|оформить|нужн|хочу|пополн|ссылк|скин|скид|магазин)/i.test(normalizedMessage) && !isPriceQuestion && !isAvailabilityQuestion) {
     return { amount: "", hasPayment: false };
   }
 
