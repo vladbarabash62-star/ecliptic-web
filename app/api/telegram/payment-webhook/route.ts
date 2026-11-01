@@ -290,7 +290,8 @@ async function resolveOrderPayment(orderMessage: string, orderCode: string): Pro
   const offer = offers.find((candidate) => candidate.priceRub === parsed.priceRub)
     || offers.find((candidate) => orderMessage.toLowerCase().includes(candidate.label.toLowerCase()))
     || (offers.length === 1 ? offers[0] : undefined);
-  if (offer) return { amount: `${offer.priceRub} р ПМР`, product, sitePrice: offer.priceRub, hasPayment: true };
+  const orderPrice = parsed.priceRub && parsed.priceRub > 0 ? parsed.priceRub : offer?.priceRub;
+  if (orderPrice) return { amount: `${orderPrice} р ПМР`, product, sitePrice: orderPrice, hasPayment: true };
 
   return { amount: "", product, hasPayment: false };
 }
