@@ -17,6 +17,7 @@ import {
   getTelegramCustomEmojiIds,
 } from "../../../../lib/telegramCustomEmojiStore";
 import { claimDailyGreeting, claimInactiveChatNotice, noteTelegramChatActivity, wasGreetingRecentlySent } from "../../../../lib/telegramDailyGreetingStore";
+import { markTelegramChatOrder, noteTelegramCustomerMessage } from "../../../../lib/telegramChatHistoryStore";
 import { getTelegramProductContext } from "../../../../lib/telegramProductContextStore";
 import { compactProductCode } from "../../../../lib/orderCode";
 import { getProducts } from "../../../../lib/productStore";
@@ -821,6 +822,10 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate, reque
       return NextResponse.json({ ok: true, ignored: "manager-message" });
     }
   }
+  const chatHistory = await noteTelegramCustomerMessage(message.chat.id, message.message_id).catch(() => ({
+    messageCount: 0,
+    established: false,
+  }));
   await rememberManagerChat(message.from?.username, message.chat.id).catch(() => undefined);
   if (message.text?.trim() && !message.photo?.length && !message.document?.file_id) {
     const orderCode = extractOrderCode(message.text);
@@ -845,13 +850,13 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate, reque
             context.sourceMessage,
             message.business_connection_id,
             contextPayment.amount,
-            true,
+            chatHistory.established,
             contextPayment.product,
             contextPayment.sitePrice,
             contextPayment.offerLabel,
             await wasGreetingRecentlySent(message.chat.id).catch(() => false)
           );
-          if (replied) {
+          if (replied && chatHistory.established) {
             await savePendingTelegramOrder({
               chatId: message.chat.id,
               businessConnectionId: message.business_connection_id,
@@ -867,7 +872,31 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate, reque
       }
     }
     if (!orderCode && resolvedPayment.priceOnly) {
-      const replied = await sendPriceAnswer(message.chat.id, resolvedPayment, message.business_connection_id);
+      const shouldSendPaymentDetails = Boolean(resolvedPayment.quoteOnly && resolvedPayment.hasPayment && chatHistory.established);
+      const replied = shouldSendPaymentDetails
+        ? await sendOrderInstructions(
+            message.chat.id,
+            message.text,
+            message.business_connection_id,
+            resolvedPayment.amount,
+            true,
+            resolvedPayment.product,
+            resolvedPayment.sitePrice,
+            resolvedPayment.offerLabel,
+            await wasGreetingRecentlySent(message.chat.id).catch(() => false)
+          )
+        : await sendPriceAnswer(message.chat.id, resolvedPayment, message.business_connection_id);
+      if (replied && shouldSendPaymentDetails) {
+        await savePendingTelegramOrder({
+          chatId: message.chat.id,
+          businessConnectionId: message.business_connection_id,
+          orderCode: `TEXT-${message.message_id || Date.now()}`,
+          amount: resolvedPayment.amount,
+          orderMessage: message.text,
+          createdAt: new Date().toISOString(),
+        });
+        await markTelegramChatOrder(message.chat.id).catch(() => undefined);
+      }
       await noteTelegramChatActivity(message.chat.id).catch(() => undefined);
       return NextResponse.json({ ok: true, replied, priceAnswer: replied });
     }
@@ -891,13 +920,13 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate, reque
       message.text,
       message.business_connection_id,
       resolvedPayment.amount,
-      resolvedPayment.hasPayment,
+      resolvedPayment.hasPayment && chatHistory.established,
       resolvedPayment.product,
       resolvedPayment.sitePrice,
       resolvedPayment.offerLabel,
       await wasGreetingRecentlySent(message.chat.id).catch(() => false)
     );
-    if (replied && resolvedPayment.hasPayment) {
+    if (replied && resolvedPayment.hasPayment && chatHistory.established) {
       await savePendingTelegramOrder({
         chatId: message.chat.id,
         businessConnectionId: message.business_connection_id,
@@ -906,6 +935,7 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate, reque
         orderMessage: message.text,
         createdAt: new Date().toISOString(),
       });
+      await markTelegramChatOrder(message.chat.id).catch(() => undefined);
     }
     await noteTelegramChatActivity(message.chat.id).catch(() => undefined);
     return NextResponse.json({ ok: true, replied, awaitingPayment: replied });
