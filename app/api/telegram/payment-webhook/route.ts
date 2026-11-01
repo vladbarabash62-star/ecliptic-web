@@ -233,6 +233,7 @@ const PRODUCT_REQUEST_ALIASES: Record<string, string[]> = {
   "telegram-premium": ["телеграм премиум", "телега премиум", "тг прем", "tg premium", "tg prem", "премк", "премиум", "premium"],
   "telegram-accounts": ["телеграм аккаунт", "телеграм аккаунты", "тг акк", "тг акки", "tg account", "tg acc"],
   "spotify-premium": ["спотифай", "спотик", "spotify", "споти"],
+  "brawl-stars": ["brawl pass", "brawl pass plus", "бравл пасс", "бравл пас"],
 };
 
 function parseOrderCode(orderCode: string) {
@@ -442,11 +443,14 @@ async function resolveProductRequest(orderMessage: string): Promise<ResolvedOrde
     const budgetPmr = budgetMatch ? Number(budgetMatch[1].replace(",", ".")) : undefined;
     const messageQuantities = normalizedMessage.match(/\d+(?:[.,]\d+)?/g) || [];
     const hasOfferQualifier = messageQuantities.length > 0
-      || /(месяц|месяч|год|индивидуал|семейн|регион|вход|логин|росси|украин|другой регион)/i.test(normalizedMessage);
+      || /(месяц|месяч|год|индивидуал|семейн|регион|вход|логин|росси|украин|другой регион|pass|пасс)/i.test(normalizedMessage);
     const budgetBundle = budgetPmr && budgetPmr > 0
       ? chooseBudgetBundle(offers, budgetPmr)
       : undefined;
-    const offer = budgetBundle ? undefined : offers.find((candidate) => {
+    const textualOffer = [...offers]
+      .sort((left, right) => normalizeProductQuery(right.label).length - normalizeProductQuery(left.label).length)
+      .find((candidate) => normalizedMessage.includes(normalizeProductQuery(candidate.label)));
+    const offer = budgetBundle ? undefined : textualOffer || offers.find((candidate) => {
       const quantityTokens = candidate.label.match(/\d+(?:[.,]\d+)?/g) || [];
       return quantityTokens.some((token) => messageQuantities.some(
         (messageQuantity) => Number(messageQuantity.replace(",", ".")) === Number(token.replace(",", "."))
@@ -872,7 +876,9 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate, reque
       }
     }
     if (!orderCode && resolvedPayment.priceOnly) {
-      const shouldSendPaymentDetails = Boolean(resolvedPayment.quoteOnly && resolvedPayment.hasPayment && chatHistory.established);
+      // A concrete offer is enough to provide payment details. Do not gate
+      // this on chat history: a first-time customer can place a precise order.
+      const shouldSendPaymentDetails = Boolean(resolvedPayment.quoteOnly && resolvedPayment.hasPayment);
       const replied = shouldSendPaymentDetails
         ? await sendOrderInstructions(
             message.chat.id,
@@ -920,13 +926,13 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate, reque
       message.text,
       message.business_connection_id,
       resolvedPayment.amount,
-      resolvedPayment.hasPayment && chatHistory.established,
+      resolvedPayment.hasPayment,
       resolvedPayment.product,
       resolvedPayment.sitePrice,
       resolvedPayment.offerLabel,
       await wasGreetingRecentlySent(message.chat.id).catch(() => false)
     );
-    if (replied && resolvedPayment.hasPayment && chatHistory.established) {
+    if (replied && resolvedPayment.hasPayment) {
       await savePendingTelegramOrder({
         chatId: message.chat.id,
         businessConnectionId: message.business_connection_id,
