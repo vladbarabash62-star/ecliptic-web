@@ -16,7 +16,7 @@ import {
   getTelegramAccountNoticeTemplate,
   getTelegramCustomEmojiIds,
 } from "../../../../lib/telegramCustomEmojiStore";
-import { claimDailyGreeting, claimInactiveChatNotice, noteTelegramChatActivity } from "../../../../lib/telegramDailyGreetingStore";
+import { claimDailyGreeting, claimInactiveChatNotice, noteTelegramChatActivity, wasGreetingRecentlySent } from "../../../../lib/telegramDailyGreetingStore";
 import { getTelegramProductContext, saveTelegramProductContext } from "../../../../lib/telegramProductContextStore";
 import { compactProductCode } from "../../../../lib/orderCode";
 import { getProducts } from "../../../../lib/productStore";
@@ -409,7 +409,8 @@ async function sendOrderInstructions(
   hasPayment = false,
   productData?: Product,
   sitePrice?: number,
-  offerLabel?: string
+  offerLabel?: string,
+  suppressWelcome = false
 ) {
   const category = extractOrderCategory(orderMessage);
   const product = extractOrderProduct(orderMessage);
@@ -438,7 +439,9 @@ async function sendOrderInstructions(
       chat_id: chatId,
       ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
       parse_mode: "HTML",
-      text: `${welcomeText}\n\n<b>В ближайшее время с вами свяжется менеджер.</b>`,
+      text: suppressWelcome
+        ? "<b>В ближайшее время с вами свяжется менеджер.</b>"
+        : `${welcomeText}\n\n<b>В ближайшее время с вами свяжется менеджер.</b>`,
     });
     return Boolean(response);
   }
@@ -468,6 +471,24 @@ async function sendOrderInstructions(
     paymentLines.push("", "<b>После оплаты отправьте сюда скриншот операции.</b>");
   }
   const paymentText = paymentLines.join("\n");
+  if (suppressWelcome) {
+    const response = await telegram("sendMessage", {
+      chat_id: chatId,
+      ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
+      parse_mode: "HTML",
+      text: paymentText,
+    });
+    if (!response || !isTelegramAccount) return Boolean(response);
+    const customTemplate = await getTelegramAccountNoticeTemplate();
+    const notice = customTemplate || { text: fallbackAccountSafetyNotice, entities: [] };
+    const noticeResponse = await telegram("sendMessage", {
+      chat_id: chatId,
+      ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
+      text: notice.text,
+      ...(notice.entities.length ? { entities: notice.entities } : { parse_mode: "HTML" }),
+    });
+    return Boolean(noticeResponse);
+  }
   await showTyping(chatId, businessConnectionId);
   await telegram("sendMessage", {
     chat_id: chatId,
@@ -721,7 +742,8 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate, reque
             true,
             contextPayment.product,
             contextPayment.sitePrice,
-            contextPayment.offerLabel
+            contextPayment.offerLabel,
+            await wasGreetingRecentlySent(message.chat.id).catch(() => false)
           );
           if (replied) {
             await savePendingTelegramOrder({
@@ -775,7 +797,8 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate, reque
       resolvedPayment.hasPayment,
       resolvedPayment.product,
       resolvedPayment.sitePrice,
-      resolvedPayment.offerLabel
+      resolvedPayment.offerLabel,
+      await wasGreetingRecentlySent(message.chat.id).catch(() => false)
     );
     if (replied && resolvedPayment.hasPayment) {
       await savePendingTelegramOrder({

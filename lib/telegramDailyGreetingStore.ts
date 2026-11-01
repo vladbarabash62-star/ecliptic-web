@@ -4,7 +4,7 @@ import { hasCloudflareState, readCloudflareState, writeCloudflareState } from ".
 
 const STATE_KEY = "telegram-daily-greetings-v1";
 const BLOB_KEY = "customers/telegram-daily-greetings-v1.json";
-type GreetingRecord = { greetingDate?: string; lastActivityAt?: string };
+type GreetingRecord = { greetingDate?: string; lastActivityAt?: string; greetingSentAt?: string };
 type GreetingStore = Record<string, GreetingRecord>;
 
 function normalize(value: unknown): GreetingStore {
@@ -16,6 +16,7 @@ function normalize(value: unknown): GreetingStore {
     return [chatId, {
       ...(typeof record.greetingDate === "string" ? { greetingDate: record.greetingDate } : {}),
       ...(typeof record.lastActivityAt === "string" ? { lastActivityAt: record.lastActivityAt } : {}),
+      ...(typeof record.greetingSentAt === "string" ? { greetingSentAt: record.greetingSentAt } : {}),
     } satisfies GreetingRecord];
   }));
 }
@@ -41,9 +42,16 @@ export async function claimDailyGreeting(chatId: number) {
   const current = store[key] || {};
   const lastActivity = current.lastActivityAt ? Date.parse(current.lastActivityAt) : 0;
   const shouldGreet = lastActivity <= 0 || Date.now() - lastActivity >= 24 * 60 * 60 * 1000;
-  store[key] = { ...current, lastActivityAt: new Date().toISOString() };
+  const now = new Date().toISOString();
+  store[key] = { ...current, lastActivityAt: now, ...(shouldGreet ? { greetingSentAt: now } : {}) };
   await writeStore(store);
   return shouldGreet;
+}
+
+export async function wasGreetingRecentlySent(chatId: number, windowMs = 10 * 60 * 1000) {
+  const current = (await readStore())[String(chatId)];
+  const sentAt = current?.greetingSentAt ? Date.parse(current.greetingSentAt) : 0;
+  return Number.isFinite(sentAt) && sentAt > 0 && Date.now() - sentAt < windowMs;
 }
 
 export async function noteTelegramChatActivity(chatId: number) {
