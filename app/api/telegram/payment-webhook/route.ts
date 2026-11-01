@@ -21,6 +21,7 @@ import { getTelegramProductContext, saveTelegramProductContext } from "../../../
 import { compactProductCode } from "../../../../lib/orderCode";
 import { getProducts } from "../../../../lib/productStore";
 import type { Product } from "../../../../lib/products";
+import { SITE_URL } from "../../../../lib/seo";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -207,11 +208,26 @@ function normalizeSearchText(value: string) {
   return value.toLowerCase().replace(/ё/g, "е").replace(/[^a-zа-я0-9]+/gi, " ").trim();
 }
 
+function normalizeProductQuery(value: string) {
+  return normalizeSearchText(value)
+    .replace(/\bскоко\b/g, "сколько")
+    .replace(/\bскока\b/g, "сколько")
+    .replace(/\bскок\b/g, "сколько")
+    .replace(/\bпо\s*чем\b/g, "почем")
+    .replace(/\bспотифай\b/g, "spotify")
+    .replace(/\bспотик(?:а|е|у)?\b/g, "spotify")
+    .replace(/\bпремк(?:а|у|е)?\b/g, "премиум")
+    .replace(/\bзвезд(?:а|ы|е|у|ой|ами)?\b/g, "звезды")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 const PRODUCT_REQUEST_ALIASES: Record<string, string[]> = {
-  roblox: ["робукс", "робуксов", "robux"],
+  roblox: ["робукс", "робукса", "робуксов", "роблоксе", "robux"],
   steam: ["стим"],
-  "telegram-stars": ["звезд", "звезды", "stars"],
-  "telegram-premium": ["премк", "премиум", "premium"],
+  "telegram-stars": ["телеграм звезд", "телега звезд", "звезд", "звезды", "stars"],
+  "telegram-premium": ["телеграм премиум", "телега премиум", "премк", "премиум", "premium"],
+  "spotify-premium": ["спотифай", "спотик", "spotify", "споти"],
 };
 
 function parseOrderCode(orderCode: string) {
@@ -337,8 +353,8 @@ async function resolveOrderPayment(orderMessage: string, orderCode: string): Pro
 }
 
 async function resolveProductRequest(orderMessage: string): Promise<ResolvedOrderPayment> {
-  const normalizedMessage = normalizeSearchText(orderMessage);
-  const isPriceQuestion = /(сколько\s+(?:стоит|это|будет|нужно)|какая\s+цена|стоимость|по\s+чем|почем)/i.test(normalizedMessage);
+  const normalizedMessage = normalizeProductQuery(orderMessage);
+  const isPriceQuestion = /(сколько\s+(?:стоит|это|будет|нужно|выходит)|какая\s+цена|стоимость|почем|цена|во\s+сколько)/i.test(normalizedMessage);
   if (!/(купить|заказать|оформить|нужн|хочу|пополн)/i.test(normalizedMessage) && !isPriceQuestion) {
     return { amount: "", hasPayment: false };
   }
@@ -349,7 +365,7 @@ async function resolveProductRequest(orderMessage: string): Promise<ResolvedOrde
       product.name,
       product.slug.replace(/[-_]+/g, " "),
       ...(PRODUCT_REQUEST_ALIASES[product.slug] || []),
-    ].map(normalizeSearchText).filter(Boolean);
+    ].map(normalizeProductQuery).filter(Boolean);
     if (!aliases.some((alias) => normalizedMessage.includes(alias))) continue;
 
     const offers = product.offers.filter((offer): offer is Extract<Product["offers"][number], { priceRub: number }> =>
@@ -392,11 +408,12 @@ async function sendPriceAnswer(
   businessConnectionId?: string
 ) {
   if (!payment.product || !payment.offerLabel || !payment.amount) return false;
+  const productUrl = `${SITE_URL}/products/${encodeURIComponent(payment.product.slug)}`;
   const response = await telegram("sendMessage", {
     chat_id: chatId,
     ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
     parse_mode: "HTML",
-    text: `<b>${escapeHtml(payment.product.name)}</b>\n<b>${escapeHtml(payment.offerLabel)}</b>\n\n<b>Стоимость: ${escapeHtml(payment.amount)}</b>`,
+    text: `<b>${escapeHtml(payment.product.name)}</b>\n<b>${escapeHtml(payment.offerLabel)}</b>\n\n<b>Стоимость: ${escapeHtml(payment.amount)}</b>\n\n<a href="${productUrl}">Открыть товар в магазине</a>`,
   });
   return Boolean(response);
 }
