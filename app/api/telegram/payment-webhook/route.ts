@@ -352,6 +352,61 @@ async function resolveOrderPayment(orderMessage: string, orderCode: string): Pro
   return { amount: "", product, hasPayment: false };
 }
 
+function offerQuantity(label: string) {
+  const quantity = label.match(/\d+(?:[.,]\d+)?/)?.[0];
+  return quantity ? Number(quantity.replace(",", ".")) : 0;
+}
+
+function chooseBudgetBundle(
+  offers: Array<Extract<Product["offers"][number], { priceRub: number }>>,
+  budgetPmr: number
+) {
+  const limit = Math.floor(budgetPmr);
+  if (limit <= 0) return undefined;
+
+  type Bundle = { stars: number; cost: number; labels: string[] };
+  const bestByCost: Array<Bundle | undefined> = Array.from({ length: limit + 1 });
+  bestByCost[0] = { stars: 0, cost: 0, labels: [] };
+
+  for (let cost = 0; cost <= limit; cost += 1) {
+    const current = bestByCost[cost];
+    if (!current) continue;
+    for (const offer of offers) {
+      const nextCost = cost + offer.priceRub;
+      const quantity = offerQuantity(offer.label);
+      if (nextCost > limit || quantity <= 0) continue;
+      const candidate: Bundle = {
+        stars: current.stars + quantity,
+        cost: nextCost,
+        labels: [...current.labels, offer.label],
+      };
+      const existing = bestByCost[nextCost];
+      if (!existing || candidate.stars > existing.stars) bestByCost[nextCost] = candidate;
+    }
+  }
+
+  const best = bestByCost.filter((bundle): bundle is Bundle => Boolean(bundle)).reduce<Bundle | undefined>(
+    (currentBest, candidate) => {
+      if (!currentBest || candidate.stars > currentBest.stars) return candidate;
+      if (candidate.stars === currentBest.stars && candidate.cost > currentBest.cost) return candidate;
+      return currentBest;
+    },
+    undefined
+  );
+  if (!best || best.labels.length === 0) return undefined;
+
+  const labels = best.labels.reduce<string[]>((result, label) => {
+    const index = result.findIndex((entry) => entry === label);
+    if (index === -1) result.push(label);
+    return result;
+  }, []);
+  const labelCounts = labels.map((label) => {
+    const count = best.labels.filter((entry) => entry === label).length;
+    return count > 1 ? `${label} x${count}` : label;
+  });
+  return { label: labelCounts.join(" + "), priceRub: best.cost };
+}
+
 async function resolveProductRequest(orderMessage: string): Promise<ResolvedOrderPayment> {
   const normalizedMessage = normalizeProductQuery(orderMessage);
   const isPriceQuestion = /(сколько\s+(?:стоит|это|будет|нужно|выходит)|какая\s+цена|стоимость|почем|цена|во\s+сколько)/i.test(normalizedMessage);
@@ -376,19 +431,17 @@ async function resolveProductRequest(orderMessage: string): Promise<ResolvedOrde
       : null;
     const budgetPmr = budgetMatch ? Number(budgetMatch[1].replace(",", ".")) : undefined;
     const messageQuantities = normalizedMessage.match(/\d+(?:[.,]\d+)?/g) || [];
-    const budgetOffer = budgetPmr && budgetPmr > 0
-      ? offers
-        .filter((candidate) => candidate.priceRub <= budgetPmr)
-        .sort((left, right) => right.priceRub - left.priceRub)[0]
+    const budgetBundle = budgetPmr && budgetPmr > 0
+      ? chooseBudgetBundle(offers, budgetPmr)
       : undefined;
-    const offer = budgetOffer || offers.find((candidate) => {
+    const offer = budgetBundle ? undefined : offers.find((candidate) => {
       const quantityTokens = candidate.label.match(/\d+(?:[.,]\d+)?/g) || [];
       return quantityTokens.some((token) => messageQuantities.some(
         (messageQuantity) => Number(messageQuantity.replace(",", ".")) === Number(token.replace(",", "."))
       ));
     })
       || (offers.length === 1 ? offers[0] : undefined);
-    if (!offer) return { amount: "", product, hasPayment: false };
+    if (!budgetBundle && !offer) return { amount: "", product, hasPayment: false };
 
     const dollarMatch = orderMessage.match(/(\d+(?:[.,]\d+)?)\s*(?:\$|доллар(?:а|ов)?)/i);
     const steamDollarAmount = product.slug === "steam" && dollarMatch
@@ -396,12 +449,13 @@ async function resolveProductRequest(orderMessage: string): Promise<ResolvedOrde
       : undefined;
     const paymentPrice = steamDollarAmount && steamDollarAmount > 0
       ? Math.round(steamDollarAmount * 21)
-      : offer.priceRub;
+      : budgetBundle?.priceRub || offer?.priceRub;
+    const offerLabel = budgetBundle?.label || offer?.label;
 
     return {
       amount: `${paymentPrice} р ПМР`,
       product,
-      offerLabel: offer.label,
+      offerLabel,
       sitePrice: paymentPrice,
       hasPayment: true,
       priceOnly: isPriceQuestion,
