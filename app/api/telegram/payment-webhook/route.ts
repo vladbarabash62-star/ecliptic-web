@@ -338,7 +338,10 @@ async function resolveProductRequest(orderMessage: string): Promise<ResolvedOrde
       offer.type !== "divider" && typeof offer.priceRub === "number" && offer.priceRub > 0
     );
     const compactMessage = normalizedMessage.replace(/\s+/g, "");
-    const offer = offers.find((candidate) => compactMessage.includes(String(candidate.priceRub)))
+    const offer = offers.find((candidate) => {
+      const quantityTokens = candidate.label.match(/\d+(?:[.,]\d+)?/g) || [];
+      return quantityTokens.some((token) => compactMessage.includes(token.replace(/[.,]/g, "")));
+    })
       || (offers.length === 1 ? offers[0] : undefined);
     if (!offer) return { amount: "", product, hasPayment: false };
 
