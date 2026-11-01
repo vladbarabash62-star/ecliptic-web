@@ -548,14 +548,19 @@ async function sendOrderInstructions(
       ].join("\n"), (await getTelegramCustomEmojiIds())?.ids || [])
     : "";
   const welcomeText = "<b>Здравствуйте,</b>\n\n<b>Добро пожаловать в Ecliptic Store!</b>";
+  const workingHoursNotice = [
+    "",
+    "<b>Рабочее время: с 08:00 до 00:00.</b>",
+    "<b>В нерабочее время могу ответить не сразу, так как отдыхаю.</b>",
+  ].join("\n");
   if (policy === "manager") {
     const response = await telegram("sendMessage", {
       chat_id: chatId,
       ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
       parse_mode: "HTML",
       text: suppressWelcome
-        ? "<b>В ближайшее время с вами свяжется менеджер.</b>"
-        : `${welcomeText}\n\n<b>В ближайшее время с вами свяжется менеджер.</b>`,
+        ? `<b>В ближайшее время с вами свяжется менеджер.</b>${workingHoursNotice}`
+        : `${welcomeText}\n\n<b>В ближайшее время с вами свяжется менеджер.</b>${workingHoursNotice}`,
     });
     return Boolean(response);
   }
@@ -584,6 +589,7 @@ async function sendOrderInstructions(
   } else {
     paymentLines.push("", "<b>После оплаты отправьте сюда скриншот операции.</b>");
   }
+  paymentLines.push(workingHoursNotice);
   const paymentText = paymentLines.join("\n");
   if (suppressWelcome) {
     const response = await telegram("sendMessage", {
