@@ -17,6 +17,7 @@ import {
   getTelegramCustomEmojiIds,
 } from "../../../../lib/telegramCustomEmojiStore";
 import { claimDailyGreeting, claimInactiveChatNotice, noteTelegramChatActivity } from "../../../../lib/telegramDailyGreetingStore";
+import { getTelegramProductContext, saveTelegramProductContext } from "../../../../lib/telegramProductContextStore";
 import { compactProductCode } from "../../../../lib/orderCode";
 import { getProducts } from "../../../../lib/productStore";
 import type { Product } from "../../../../lib/products";
@@ -185,6 +186,11 @@ function extractOrderCode(message: string) {
 function isGreetingText(message: string) {
   const value = message.trim().toLowerCase().replace(/ё/g, "е");
   return /^(привет(?:ствую)?|здравствуйте|здрасьте|добрый\s+(?:день|вечер|утро)|доброе\s+утро|ку|hello|hi)(?:\s|[!,.?]|$)/i.test(value);
+}
+
+function isPaymentDetailsRequest(message: string) {
+  const value = normalizeSearchText(message);
+  return /(?:куда|как)\s+(?:платить|кидать|переводить|оплачивать)|(?:скиньте|скинь|пришлите|пришли|дайте|дай|отправьте|отправь).{0,24}(?:реквизит|номер|оплат|перевод)|реквизит(?:ы)?/i.test(value);
 }
 
 function isQuietHours() {
@@ -694,6 +700,44 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate, reque
     const resolvedPayment = orderCode
       ? await resolveOrderPayment(message.text, orderCode)
       : await resolveProductRequest(message.text);
+    if (!orderCode && isPaymentDetailsRequest(message.text)) {
+      const context = await getTelegramProductContext(message.chat.id).catch(() => null);
+      if (context) {
+        const products = await getProducts({ cached: false }).catch(() => []);
+        const product = products.find((candidate) => candidate.slug === context.productSlug);
+        if (product) {
+          const contextPayment: ResolvedOrderPayment = {
+            amount: context.amount,
+            product,
+            offerLabel: context.offerLabel,
+            sitePrice: context.sitePrice,
+            hasPayment: true,
+          };
+          const replied = await sendOrderInstructions(
+            message.chat.id,
+            context.sourceMessage,
+            message.business_connection_id,
+            contextPayment.amount,
+            true,
+            contextPayment.product,
+            contextPayment.sitePrice,
+            contextPayment.offerLabel
+          );
+          if (replied) {
+            await savePendingTelegramOrder({
+              chatId: message.chat.id,
+              businessConnectionId: message.business_connection_id,
+              orderCode: `TEXT-${message.message_id || Date.now()}`,
+              amount: contextPayment.amount,
+              orderMessage: context.sourceMessage,
+              createdAt: new Date().toISOString(),
+            });
+          }
+          await noteTelegramChatActivity(message.chat.id).catch(() => undefined);
+          return NextResponse.json({ ok: true, replied, awaitingPayment: replied, paymentDetails: true });
+        }
+      }
+    }
     if (!orderCode && !resolvedPayment.hasPayment) {
       const shouldSendQuietHoursNotice = isQuietHours()
         ? await claimInactiveChatNotice(message.chat.id).catch(() => false)
@@ -711,6 +755,15 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate, reque
     }
     if (!orderCode && resolvedPayment.priceOnly) {
       const replied = await sendPriceAnswer(message.chat.id, resolvedPayment, message.business_connection_id);
+      if (replied && resolvedPayment.product && resolvedPayment.offerLabel) {
+        await saveTelegramProductContext(message.chat.id, {
+          productSlug: resolvedPayment.product.slug,
+          offerLabel: resolvedPayment.offerLabel,
+          amount: resolvedPayment.amount,
+          sourceMessage: message.text,
+          ...(typeof resolvedPayment.sitePrice === "number" ? { sitePrice: resolvedPayment.sitePrice } : {}),
+        });
+      }
       await noteTelegramChatActivity(message.chat.id).catch(() => undefined);
       return NextResponse.json({ ok: true, replied, priceAnswer: replied });
     }
