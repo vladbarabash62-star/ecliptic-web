@@ -11,5 +11,9 @@ assert.match(source, /sendOrderInstructions\([\s\S]*?resolvedPayment\.hasPayment
 assert.match(source, /if \(replied && resolvedPayment\.hasPayment\) \{/);
 assert.match(source, /"brawl-stars": \["brawl pass", "brawl pass plus", "бравл пасс", "бравл пас"\]/);
 assert.match(source, /другой регион\|pass\|пасс/);
+assert.match(source, /const paymentPrice = budgetBundle\?\.priceRub \?\? offer\?\.priceRub;/);
+assert.doesNotMatch(source, /steamDollarAmount|Math\.round\(steamDollarAmount/);
+assert.match(source, /const orderProductText = normalizeProductQuery\(extractOrderProduct\(orderMessage\)\);/);
+assert.match(source, /const orderPrice = offer\?\.priceRub;/);
 
 console.log("PASS telegram-payment-routing.test.mjs");

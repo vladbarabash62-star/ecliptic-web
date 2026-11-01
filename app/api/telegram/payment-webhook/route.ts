@@ -344,10 +344,17 @@ async function resolveOrderPayment(orderMessage: string, orderCode: string): Pro
   const offers = product.offers.filter((offer): offer is Extract<Product["offers"][number], { priceRub: number }> =>
     offer.type !== "divider" && typeof offer.priceRub === "number" && offer.priceRub > 0
   );
-  const offer = offers.find((candidate) => candidate.priceRub === parsed.priceRub)
+  const orderProductText = normalizeProductQuery(extractOrderProduct(orderMessage));
+  const offerByLabel = [...offers]
+    .sort((left, right) => normalizeProductQuery(right.label).length - normalizeProductQuery(left.label).length)
+    .find((candidate) => orderProductText.includes(normalizeProductQuery(candidate.label)));
+  const offer = offerByLabel
+    || offers.find((candidate) => candidate.priceRub === parsed.priceRub)
     || offers.find((candidate) => orderMessage.toLowerCase().includes(candidate.label.toLowerCase()))
     || (offers.length === 1 ? offers[0] : undefined);
-  const orderPrice = parsed.priceRub && parsed.priceRub > 0 ? parsed.priceRub : offer?.priceRub;
+  // The live catalog is authoritative. The amount embedded in an order code is
+  // only used to locate a matching current offer, never as an independent price.
+  const orderPrice = offer?.priceRub;
   if (orderPrice) return {
     amount: `${orderPrice} р ПМР`,
     product,
@@ -463,13 +470,9 @@ async function resolveProductRequest(orderMessage: string): Promise<ResolvedOrde
         : { amount: "", product, hasPayment: false };
     }
 
-    const dollarMatch = orderMessage.match(/(\d+(?:[.,]\d+)?)\s*(?:\$|доллар(?:а|ов)?)/i);
-    const steamDollarAmount = product.slug === "steam" && dollarMatch
-      ? Number(dollarMatch[1].replace(",", "."))
-      : undefined;
-    const paymentPrice = steamDollarAmount && steamDollarAmount > 0
-      ? Math.round(steamDollarAmount * 21)
-      : budgetBundle?.priceRub || offer?.priceRub;
+    // Never recalculate a price from the customer's wording. Both a concrete
+    // offer and a Telegram Stars bundle are composed from current site offers.
+    const paymentPrice = budgetBundle?.priceRub ?? offer?.priceRub;
     const offerLabel = budgetBundle?.label || offer?.label;
 
     return {
