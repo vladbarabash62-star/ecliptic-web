@@ -410,6 +410,7 @@ function chooseBudgetBundle(
 async function resolveProductRequest(orderMessage: string): Promise<ResolvedOrderPayment> {
   const normalizedMessage = normalizeProductQuery(orderMessage);
   const isPriceQuestion = /(сколько\s+(?:стоит|это|будет|нужно|выходит)|какая\s+цена|стоимость|почем|цена|во\s+сколько)/i.test(normalizedMessage);
+  const isStoreLinkRequest = /(купить|заказать|оформить|нужн|хочу)/i.test(normalizedMessage) || isPriceQuestion;
   if (!/(купить|заказать|оформить|нужн|хочу|пополн)/i.test(normalizedMessage) && !isPriceQuestion) {
     return { amount: "", hasPayment: false };
   }
@@ -441,7 +442,11 @@ async function resolveProductRequest(orderMessage: string): Promise<ResolvedOrde
       ));
     })
       || (offers.length === 1 ? offers[0] : undefined);
-    if (!budgetBundle && !offer) return { amount: "", product, hasPayment: false };
+    if (!budgetBundle && !offer) {
+      return isStoreLinkRequest
+        ? { amount: "", product, hasPayment: false, priceOnly: true, offerLabel: `Купить ${product.name}` }
+        : { amount: "", product, hasPayment: false };
+    }
 
     const dollarMatch = orderMessage.match(/(\d+(?:[.,]\d+)?)\s*(?:\$|доллар(?:а|ов)?)/i);
     const steamDollarAmount = product.slug === "steam" && dollarMatch
@@ -470,13 +475,23 @@ async function sendPriceAnswer(
   payment: ResolvedOrderPayment,
   businessConnectionId?: string
 ) {
-  if (!payment.product || !payment.offerLabel || !payment.amount) return false;
+  if (!payment.product) return false;
   const productUrl = `${SITE_URL}/products/${encodeURIComponent(payment.product.slug)}`;
+  const linkLabel = payment.product.slug === "telegram-stars"
+    ? "Купить звёзды"
+    : `Купить ${payment.product.name}`;
+  const text = payment.priceOnly
+    ? `<b><a href="${productUrl}">${escapeHtml(linkLabel)}</a></b>`
+    : payment.offerLabel && payment.amount
+      ? `<b>${escapeHtml(payment.product.name)}</b>\n<b>${escapeHtml(payment.offerLabel)}</b>\n\n<b>Стоимость: ${escapeHtml(payment.amount)}</b>\n\n<b><a href="${productUrl}">${escapeHtml(linkLabel)}</a></b>`
+      : "";
+  if (!text) return false;
   const response = await telegram("sendMessage", {
     chat_id: chatId,
     ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
     parse_mode: "HTML",
-    text: `<b>${escapeHtml(payment.product.name)}</b>\n<b>${escapeHtml(payment.offerLabel)}</b>\n\n<b>Стоимость: ${escapeHtml(payment.amount)}</b>\n\n<a href="${productUrl}">Открыть товар в магазине</a>`,
+    disable_web_page_preview: true,
+    text,
   });
   return Boolean(response);
 }
