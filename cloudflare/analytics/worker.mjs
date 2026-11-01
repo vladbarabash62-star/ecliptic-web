@@ -18,7 +18,7 @@ const worker = {
     const path = new URL(request.url).pathname.replace(/^\/_analytics(?=\/|$)/, "");
     try {
       if (request.method === "GET" && path === "/events") {
-        const result = await env.DB.prepare("SELECT data FROM events ORDER BY time DESC LIMIT 5000").all();
+        const result = await env.DB.prepare("SELECT data FROM events ORDER BY time DESC").all();
         return json({ events: result.results.map((row) => JSON.parse(row.data)) });
       }
       if (request.method === "GET" && path === "/health") {

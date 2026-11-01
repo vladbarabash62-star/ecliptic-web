@@ -8,6 +8,7 @@ const publicApi = readFileSync(join(rootDir, "app", "api", "analytics", "route.t
 const adminApi = readFileSync(join(rootDir, "app", "api", "admin", "analytics", "route.ts"), "utf8");
 const adminPage = readFileSync(join(rootDir, "app", "admin", "route.ts"), "utf8");
 const tracker = readFileSync(join(rootDir, "app", "components", "AnalyticsTracker.tsx"), "utf8");
+const analyticsWorker = readFileSync(join(rootDir, "cloudflare", "analytics", "worker.mjs"), "utf8");
 
 assert.match(publicApi, /checkRateLimit\("analytics", 5000, 60\)/);
 assert.match(publicApi, /HINCRBY", ANALYTICS_TOTALS_KEY, "total", "1"/);
@@ -26,6 +27,8 @@ assert.match(adminApi, /"HGETALL", ANALYTICS_TOTALS_KEY/);
 assert.match(adminApi, /"HGETALL", ANALYTICS_ACTIONS_KEY/);
 assert.match(adminApi, /"HGETALL", ANALYTICS_PRODUCTS_KEY/);
 assert.match(adminApi, /summary: \{/);
+assert.match(analyticsWorker, /SELECT data FROM events ORDER BY time DESC/);
+assert.doesNotMatch(analyticsWorker, /SELECT data FROM events ORDER BY time DESC LIMIT 5000/);
 
 assert.match(adminPage, /var analyticsSummary = \{ total: 0, views: 0, buys: 0, telegram: 0, actions: \{\}, products: \{\} \};/);
 assert.match(adminPage, /page_view: 'Просмотр страницы'/);
@@ -39,6 +42,10 @@ assert.match(adminPage, /loadMoreEventsBtn/);
 assert.match(adminPage, /analyticsEvents\.map/);
 assert.match(adminPage, /analyticsEvents\.concat/);
 assert.match(adminPage, /loadAnalytics\(analyticsPagination\.nextOffset \|\| analyticsEvents\.length\)/);
+assert.match(adminPage, /chartWeeklyEvents/);
+assert.match(adminPage, /type === 'all_events'/);
+assert.match(adminPage, /Math\.floor\(totalEvents \/ 10000\) \* 10000/);
+assert.match(adminPage, /statTotalOffset/);
 
 assert.match(tracker, /navigator\.sendBeacon/);
 assert.match(tracker, /new Blob\(\[payload\], \{ type: "application\/json" \}\)/);

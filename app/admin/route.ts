@@ -39,6 +39,8 @@ const STYLE = `
   .stats { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; margin-bottom:16px; }
   .stat { padding:16px; }
   .stat .value { margin-top:8px; font-size:32px; font-weight:1000; }
+  .stat-value-row { display:flex; align-items:baseline; gap:10px; }
+  .stat-offset { color:#7dd3fc; font-size:14px; font-weight:950; }
   .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
   .panel { padding:16px; }
   .list { display:grid; gap:8px; margin-top:14px; }
@@ -265,7 +267,7 @@ const ADMIN_HTML = `<!doctype html>
       </div>
       <p class="muted" id="analyticsUpdatedAt" style="margin:-4px 0 14px;text-align:right">Статистика загружается...</p>
       <div class="stats">
-        <div class="card stat"><p class="muted">Всего событий</p><div id="statTotal" class="value">0</div></div>
+        <div class="card stat"><p class="muted">Всего событий</p><div class="stat-value-row"><div id="statTotal" class="value">0</div><span id="statTotalOffset" class="stat-offset"></span></div></div>
         <div class="card stat"><p class="muted">Открытия товаров</p><div id="statViews" class="value">0</div></div>
         <div class="card stat"><p class="muted">Клики купить</p><div id="statBuys" class="value">0</div></div>
         <div class="card stat"><p class="muted" title="Все события, связанные с Telegram: вход, поддержка, канал и отзывы">События Telegram</p><div id="statTelegram" class="value">0</div></div>
@@ -291,6 +293,11 @@ const ADMIN_HTML = `<!doctype html>
           <p class="muted" id="chartsUpdatedAt" style="margin-top:6px">Данные загружаются...</p>
         </div>
         <button class="btn secondary" id="reloadChartsBtn" type="button">Обновить диаграммы</button>
+      </div>
+      <div class="card wide-chart">
+        <h2>Число событий</h2>
+        <p class="muted" style="margin-top:6px">Количество событий по неделям. Наведите на столбец, чтобы увидеть разбивку по каждому дню.</p>
+        <div id="chartWeeklyEvents"></div>
       </div>
       <div class="card wide-chart">
         <h2>Клики «Купить» по неделям</h2>
@@ -899,6 +906,7 @@ const ADMIN_HTML = `<!doctype html>
       return ranges;
     }
     function matchesWeeklyEvent(event, type) {
+      if (type === 'all_events') return isCountedEvent(event);
       if (type === 'product_page_view') return event.type === 'product_open' && Boolean(eventProductSlug(event));
       return event.type === type;
     }
@@ -943,7 +951,9 @@ const ADMIN_HTML = `<!doctype html>
         }).join('') || '<div class="week-tip-row"><span>Нет действий</span><b>-</b></div>';
         var totalText = type === 'buy_click'
           ? 'Заказов: ' + row.value + '<br>Сумма: ' + row.sum + ' р'
-          : 'Открытий: ' + row.value;
+          : type === 'all_events'
+            ? 'Событий: ' + row.value
+            : 'Открытий: ' + row.value;
         var tip = '<strong>' + esc(row.label) + '</strong>' + dayRows + '<div class="week-tip-total">' + totalText + '</div>';
         var visibleValue = type === 'buy_click'
           ? row.value + '<small>заказов</small><em>' + row.sum + ' р</em>'
@@ -1175,7 +1185,10 @@ const ADMIN_HTML = `<!doctype html>
     }
     function renderAnalytics() {
       hotVisitorOpenCounts = productOpenCountsByVisitorLastDay(analyticsEvents);
-      $('statTotal').textContent = analyticsSummary.total || analyticsEvents.length;
+      var totalEvents = Math.max(Number(analyticsSummary.total) || 0, Number(analyticsPagination.totalStored) || 0, analyticsEvents.length);
+      var eventOffset = Math.floor(totalEvents / 10000) * 10000;
+      $('statTotal').textContent = (totalEvents % 10000).toLocaleString('ru-RU');
+      $('statTotalOffset').textContent = eventOffset ? '+' + (eventOffset / 1000) + 'k' : '';
       $('statViews').textContent = analyticsSummary.views || analyticsEvents.filter(function(e) { return e.type === 'product_open'; }).length;
       $('statBuys').textContent = analyticsSummary.buys || analyticsEvents.filter(function(e) { return e.type === 'buy_click'; }).length;
       $('statTelegram').textContent = analyticsSummary.telegram || analyticsEvents.filter(function(e) { return String(e.type || '').indexOf('telegram') !== -1; }).length;
@@ -1305,6 +1318,7 @@ const ADMIN_HTML = `<!doctype html>
 
       renderPie('chartProducts', topEntries(productCounts, products.length || 100));
       renderPie('chartProductBuys', topEntries(productBuyCountsData, products.length || 100));
+      renderWeekBars('chartWeeklyEvents', chartEvents, 'all_events', 'событий');
       renderWeekBars('chartWeeklyBuys', chartEvents, 'buy_click', 'кликов');
       renderWeekBars('chartWeeklyProductViews', chartEvents, 'product_page_view', 'открытий');
       renderUniqueVisitorWeekBars('chartWeeklyUniqueVisitors', chartEvents);
