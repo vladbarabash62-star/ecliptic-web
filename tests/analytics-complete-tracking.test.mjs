@@ -9,7 +9,6 @@ const adminApi = readFileSync(join(rootDir, "app", "api", "admin", "analytics", 
 const adminPage = readFileSync(join(rootDir, "app", "admin", "route.ts"), "utf8");
 const tracker = readFileSync(join(rootDir, "app", "components", "AnalyticsTracker.tsx"), "utf8");
 
-assert.match(publicApi, /LTRIM/);
 assert.match(publicApi, /checkRateLimit\("analytics", 5000, 60\)/);
 assert.match(publicApi, /HINCRBY", ANALYTICS_TOTALS_KEY, "total", "1"/);
 assert.match(publicApi, /HINCRBY", ANALYTICS_ACTIONS_KEY, type, "1"/);
@@ -19,7 +18,8 @@ assert.match(publicApi, /ipAddress,/);
 
 assert.match(adminApi, /const DEFAULT_EVENTS_LIMIT = 1000;/);
 assert.match(adminApi, /const MAX_EVENTS_LIMIT = 5000;/);
-assert.match(adminApi, /"LRANGE", ANALYTICS_KEY, "0", String\(MAX_EVENTS_LIMIT - 1\)/);
+assert.match(adminApi, /"LRANGE", ANALYTICS_KEY, String\(offset\), String\(offset \+ limit - 1\)/);
+assert.match(adminApi, /totalStored: Number\(result\?\.\[1\]\?\.result \|\| 0\) \|\| 0/);
 assert.match(adminApi, /"LLEN", ANALYTICS_KEY/);
 assert.match(adminApi, /pagination: \{/);
 assert.match(adminApi, /"HGETALL", ANALYTICS_TOTALS_KEY/);

@@ -19,13 +19,20 @@ function escapeXml(value: string) {
 
 export async function GET() {
   const products = await getProducts({ cached: false }).catch(() => fallbackProducts);
+  const siteOrigin = SITE_URL.replace(/\/$/, "");
+  const productUrls = products
+    .filter(productShouldBeIndexed)
+    .map((product) => product.slug.trim().toLowerCase())
+    .filter((slug) => /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug))
+    .filter((slug) => !new Set(["admin", "account", "api", "go", "robots", "sitemap", "sitemap-xml"]).has(slug))
+    .map((slug) => `${siteOrigin}/products/${slug}`);
   const urls = Array.from(new Set([
-    `${SITE_URL.replace(/\/$/, "")}/`,
-    ...products.filter(productShouldBeIndexed).map((product) => `${SITE_URL.replace(/\/$/, "")}/products/${product.slug}`),
+    `${siteOrigin}/`,
+    ...productUrls,
     ...seoLandingPages.map((page) => landingPageUrl(page.slug)),
-    `${SITE_URL.replace(/\/$/, "")}/policy`,
-    `${SITE_URL.replace(/\/$/, "")}/terms`,
-    `${SITE_URL.replace(/\/$/, "")}/refund`,
+    `${siteOrigin}/policy`,
+    `${siteOrigin}/terms`,
+    `${siteOrigin}/refund`,
   ]));
 
   const body = [
@@ -41,10 +48,7 @@ export async function GET() {
     headers: {
       "Content-Type": "application/xml; charset=utf-8",
       "Content-Length": String(Buffer.byteLength(body, "utf8")),
-      "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
-      Pragma: "no-cache",
-      Expires: "0",
-      "X-Robots-Tag": "noindex",
+      "Cache-Control": "public, max-age=0, s-maxage=300, stale-while-revalidate=600",
     },
   });
 }

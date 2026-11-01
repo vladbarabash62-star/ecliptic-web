@@ -75,7 +75,7 @@ export async function POST(request: Request) {
       result = null;
     } else {
     result = await redisPipeline([
-      ["LRANGE", ANALYTICS_KEY, "0", "-1"],
+      ["LRANGE", ANALYTICS_KEY, String(offset), String(offset + limit - 1)],
       ["LLEN", ANALYTICS_KEY],
       ["HGETALL", ANALYTICS_TOTALS_KEY],
       ["HGETALL", ANALYTICS_ACTIONS_KEY],
@@ -134,14 +134,14 @@ export async function POST(request: Request) {
   return NextResponse.json({
     ok: true,
     configured: Boolean(getRedisConfig()),
-    events: events.slice(offset, offset + limit),
+    events,
     pagination: {
       offset,
       limit,
-      loaded: events.slice(offset, offset + limit).length,
-      totalStored: events.length,
-      hasMore: offset + limit < events.length,
-      nextOffset: offset + events.slice(offset, offset + limit).length,
+      loaded: events.length,
+      totalStored: Number(result?.[1]?.result || 0) || 0,
+      hasMore: offset + limit < (Number(result?.[1]?.result || 0) || 0),
+      nextOffset: offset + limit,
     },
     summary,
   });

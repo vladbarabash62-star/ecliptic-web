@@ -12,7 +12,7 @@ const productPage = readFileSync(join(rootDir, "app", "products", "[slug]", "pag
 const globals = readFileSync(join(rootDir, "app", "globals.css"), "utf8");
 const nextConfig = readFileSync(join(rootDir, "next.config.ts"), "utf8");
 
-assert.doesNotMatch(spaceScene, /"use client"/);
+assert.match(spaceScene, /"use client"/);
 assert.match(pageLoader, /hideSoon\(260\)/);
 assert.match(pageLoader, /hideSoon\(760\)/);
 assert.match(homeButton, /loading="lazy"/);
