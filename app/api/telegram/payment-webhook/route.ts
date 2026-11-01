@@ -322,7 +322,7 @@ async function resolveOrderPayment(orderMessage: string, orderCode: string): Pro
 
 async function resolveProductRequest(orderMessage: string): Promise<ResolvedOrderPayment> {
   const normalizedMessage = normalizeSearchText(orderMessage);
-  const isPriceQuestion = /(сколько\s+стоит|какая\s+цена|стоимость|почем)/i.test(normalizedMessage);
+  const isPriceQuestion = /(сколько\s+(?:стоит|это|будет|нужно)|какая\s+цена|стоимость|по\s+чем|почем)/i.test(normalizedMessage);
   if (!/(купить|заказать|оформить|нужн|хочу|пополн)/i.test(normalizedMessage) && !isPriceQuestion) {
     return { amount: "", hasPayment: false };
   }
@@ -339,10 +339,12 @@ async function resolveProductRequest(orderMessage: string): Promise<ResolvedOrde
     const offers = product.offers.filter((offer): offer is Extract<Product["offers"][number], { priceRub: number }> =>
       offer.type !== "divider" && typeof offer.priceRub === "number" && offer.priceRub > 0
     );
-    const compactMessage = normalizedMessage.replace(/\s+/g, "");
+    const messageQuantities = normalizedMessage.match(/\d+(?:[.,]\d+)?/g) || [];
     const offer = offers.find((candidate) => {
       const quantityTokens = candidate.label.match(/\d+(?:[.,]\d+)?/g) || [];
-      return quantityTokens.some((token) => compactMessage.includes(token.replace(/[.,]/g, "")));
+      return quantityTokens.some((token) => messageQuantities.some(
+        (messageQuantity) => Number(messageQuantity.replace(",", ".")) === Number(token.replace(",", "."))
+      ));
     })
       || (offers.length === 1 ? offers[0] : undefined);
     if (!offer) return { amount: "", product, hasPayment: false };
