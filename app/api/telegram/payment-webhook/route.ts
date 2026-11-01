@@ -371,8 +371,17 @@ async function resolveProductRequest(orderMessage: string): Promise<ResolvedOrde
     const offers = product.offers.filter((offer): offer is Extract<Product["offers"][number], { priceRub: number }> =>
       offer.type !== "divider" && typeof offer.priceRub === "number" && offer.priceRub > 0
     );
+    const budgetMatch = product.slug === "telegram-stars"
+      ? normalizedMessage.match(/(?:на|за)\s+(\d+(?:[.,]\d+)?)\s*(?:р|руб|рубл(?:ь|я|ей))/i)
+      : null;
+    const budgetPmr = budgetMatch ? Number(budgetMatch[1].replace(",", ".")) : undefined;
     const messageQuantities = normalizedMessage.match(/\d+(?:[.,]\d+)?/g) || [];
-    const offer = offers.find((candidate) => {
+    const budgetOffer = budgetPmr && budgetPmr > 0
+      ? offers
+        .filter((candidate) => candidate.priceRub <= budgetPmr)
+        .sort((left, right) => right.priceRub - left.priceRub)[0]
+      : undefined;
+    const offer = budgetOffer || offers.find((candidate) => {
       const quantityTokens = candidate.label.match(/\d+(?:[.,]\d+)?/g) || [];
       return quantityTokens.some((token) => messageQuantities.some(
         (messageQuantity) => Number(messageQuantity.replace(",", ".")) === Number(token.replace(",", "."))
