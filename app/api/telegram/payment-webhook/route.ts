@@ -210,6 +210,9 @@ function normalizeSearchText(value: string) {
 
 function normalizeProductQuery(value: string) {
   return normalizeSearchText(value)
+    .replace(/(^|\s)(?:тг|tg)(?=\s|$)/g, "$1телеграм")
+    .replace(/(^|\s)(?:акк|акки|аккаунты?)(?=\s|$)/g, "$1аккаунт")
+    .replace(/(^|\s)прем(?=\s|$)/g, "$1премиум")
     .replace(/\bскоко\b/g, "сколько")
     .replace(/\bскока\b/g, "сколько")
     .replace(/\bскок\b/g, "сколько")
@@ -226,7 +229,8 @@ const PRODUCT_REQUEST_ALIASES: Record<string, string[]> = {
   roblox: ["робукс", "робукса", "робуксов", "роблоксе", "robux"],
   steam: ["стим"],
   "telegram-stars": ["телеграм звезд", "телега звезд", "звезд", "звезды", "stars"],
-  "telegram-premium": ["телеграм премиум", "телега премиум", "премк", "премиум", "premium"],
+  "telegram-premium": ["телеграм премиум", "телега премиум", "тг прем", "tg premium", "tg prem", "премк", "премиум", "premium"],
+  "telegram-accounts": ["телеграм аккаунт", "телеграм аккаунты", "тг акк", "тг акки", "tg account", "tg acc"],
   "spotify-premium": ["спотифай", "спотик", "spotify", "споти"],
 };
 
@@ -410,8 +414,11 @@ function chooseBudgetBundle(
 async function resolveProductRequest(orderMessage: string): Promise<ResolvedOrderPayment> {
   const normalizedMessage = normalizeProductQuery(orderMessage);
   const isPriceQuestion = /(сколько\s+(?:стоит|стоят|это|будет|нужно|выходит)|какая\s+цена|стоимость|почем|цена|во\s+сколько)/i.test(normalizedMessage);
-  const isStoreLinkRequest = /(купить|заказать|оформить|нужн|хочу)/i.test(normalizedMessage) || isPriceQuestion;
-  if (!/(купить|заказать|оформить|нужн|хочу|пополн)/i.test(normalizedMessage) && !isPriceQuestion) {
+  const isAvailabilityQuestion = /(^|\s)(есть|имеется|наличие|можно)(?=\s|$)/i.test(normalizedMessage);
+  const isStoreLinkRequest = /(купить|заказать|оформить|нужн|хочу)/i.test(normalizedMessage)
+    || isPriceQuestion
+    || isAvailabilityQuestion;
+  if (!/(купить|заказать|оформить|нужн|хочу|пополн)/i.test(normalizedMessage) && !isPriceQuestion && !isAvailabilityQuestion) {
     return { amount: "", hasPayment: false };
   }
 
