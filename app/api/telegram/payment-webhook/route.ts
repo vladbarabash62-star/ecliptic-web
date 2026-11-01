@@ -219,6 +219,7 @@ type ResolvedOrderPayment = {
   offerLabel?: string;
   sitePrice?: number;
   hasPayment: boolean;
+  priceOnly?: boolean;
 };
 
 // Keep the reply policy explicit. Product offers can be edited in the admin,
@@ -321,7 +322,8 @@ async function resolveOrderPayment(orderMessage: string, orderCode: string): Pro
 
 async function resolveProductRequest(orderMessage: string): Promise<ResolvedOrderPayment> {
   const normalizedMessage = normalizeSearchText(orderMessage);
-  if (!/(купить|заказать|оформить|нужн|хочу|пополн)/i.test(normalizedMessage)) {
+  const isPriceQuestion = /(сколько\s+стоит|какая\s+цена|стоимость|почем)/i.test(normalizedMessage);
+  if (!/(купить|заказать|оформить|нужн|хочу|пополн)/i.test(normalizedMessage) && !isPriceQuestion) {
     return { amount: "", hasPayment: false };
   }
 
@@ -359,10 +361,26 @@ async function resolveProductRequest(orderMessage: string): Promise<ResolvedOrde
       offerLabel: offer.label,
       sitePrice: paymentPrice,
       hasPayment: true,
+      priceOnly: isPriceQuestion,
     };
   }
 
   return { amount: "", hasPayment: false };
+}
+
+async function sendPriceAnswer(
+  chatId: number,
+  payment: ResolvedOrderPayment,
+  businessConnectionId?: string
+) {
+  if (!payment.product || !payment.offerLabel || !payment.amount) return false;
+  const response = await telegram("sendMessage", {
+    chat_id: chatId,
+    ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
+    parse_mode: "HTML",
+    text: `<b>${escapeHtml(payment.product.name)}</b>\n<b>${escapeHtml(payment.offerLabel)}</b>\n\n<b>Стоимость: ${escapeHtml(payment.amount)}</b>`,
+  });
+  return Boolean(response);
 }
 
 async function sendOrderInstructions(
@@ -663,6 +681,11 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate, reque
         : false;
       await noteTelegramChatActivity(message.chat.id).catch(() => undefined);
       return NextResponse.json({ ok: true, replied, ignored: "not-an-order" });
+    }
+    if (!orderCode && resolvedPayment.priceOnly) {
+      const replied = await sendPriceAnswer(message.chat.id, resolvedPayment, message.business_connection_id);
+      await noteTelegramChatActivity(message.chat.id).catch(() => undefined);
+      return NextResponse.json({ ok: true, replied, priceAnswer: replied });
     }
     const replied = await sendOrderInstructions(
       message.chat.id,
