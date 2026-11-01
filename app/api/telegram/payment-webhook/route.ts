@@ -256,6 +256,7 @@ type ResolvedOrderPayment = {
   sitePrice?: number;
   hasPayment: boolean;
   priceOnly?: boolean;
+  quoteOnly?: boolean;
 };
 
 // Keep the reply policy explicit. Product offers can be edited in the admin,
@@ -439,6 +440,8 @@ async function resolveProductRequest(orderMessage: string): Promise<ResolvedOrde
       : null;
     const budgetPmr = budgetMatch ? Number(budgetMatch[1].replace(",", ".")) : undefined;
     const messageQuantities = normalizedMessage.match(/\d+(?:[.,]\d+)?/g) || [];
+    const hasOfferQualifier = messageQuantities.length > 0
+      || /(месяц|месяч|год|индивидуал|семейн|регион|вход|логин|росси|украин|другой регион)/i.test(normalizedMessage);
     const budgetBundle = budgetPmr && budgetPmr > 0
       ? chooseBudgetBundle(offers, budgetPmr)
       : undefined;
@@ -448,10 +451,10 @@ async function resolveProductRequest(orderMessage: string): Promise<ResolvedOrde
         (messageQuantity) => Number(messageQuantity.replace(",", ".")) === Number(token.replace(",", "."))
       ));
     })
-      || (offers.length === 1 ? offers[0] : undefined);
+      || (hasOfferQualifier && offers.length === 1 ? offers[0] : undefined);
     if (!budgetBundle && !offer) {
       return isStoreLinkRequest
-        ? { amount: "", product, hasPayment: false, priceOnly: true, offerLabel: `Купить ${product.name}` }
+        ? { amount: "", product, hasPayment: false, priceOnly: true }
         : { amount: "", product, hasPayment: false };
     }
 
@@ -471,6 +474,7 @@ async function resolveProductRequest(orderMessage: string): Promise<ResolvedOrde
       sitePrice: paymentPrice,
       hasPayment: true,
       priceOnly: isPriceQuestion,
+      quoteOnly: isPriceQuestion && hasOfferQualifier,
     };
   }
 
@@ -487,7 +491,7 @@ async function sendPriceAnswer(
   const linkLabel = payment.product.slug === "telegram-stars"
     ? "Купить звёзды"
     : `Купить ${payment.product.name}`;
-  const text = payment.priceOnly
+  const text = payment.priceOnly && !payment.quoteOnly
     ? `<b><a href="${productUrl}">${escapeHtml(linkLabel)}</a></b>`
     : payment.offerLabel && payment.amount
       ? `<b>${escapeHtml(payment.product.name)}</b>\n<b>${escapeHtml(payment.offerLabel)}</b>\n\n<b>Стоимость: ${escapeHtml(payment.amount)}</b>\n\n<b><a href="${productUrl}">${escapeHtml(linkLabel)}</a></b>`
