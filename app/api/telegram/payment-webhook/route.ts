@@ -182,6 +182,22 @@ function extractOrderCode(message: string) {
   return message.match(/\b(?:E-[A-Z0-9]{5}-(?:\d+|NA)-[A-Z0-9]{4}|ECL-[A-Z0-9]+(?:-[A-Z0-9]+){2,})\b/i)?.[0] || "";
 }
 
+function isGreetingText(message: string) {
+  const value = message.trim().toLowerCase().replace(/ё/g, "е");
+  return /^(привет(?:ствую)?|здравствуйте|здрасьте|добрый\s+(?:день|вечер|утро)|доброе\s+утро|ку|hello|hi)(?:\s|[!,.?]|$)/i.test(value);
+}
+
+function normalizeSearchText(value: string) {
+  return value.toLowerCase().replace(/ё/g, "е").replace(/[^a-zа-я0-9]+/gi, " ").trim();
+}
+
+const PRODUCT_REQUEST_ALIASES: Record<string, string[]> = {
+  roblox: ["робукс", "робуксов", "robux"],
+  steam: ["стим"],
+  "telegram-stars": ["звезд", "звезды", "stars"],
+  "telegram-premium": ["премк", "премиум", "premium"],
+};
+
 function parseOrderCode(orderCode: string) {
   const compact = orderCode.match(/^E-([A-Z0-9]{5})-(\d+|NA)-([A-Z0-9]{4})$/i);
   if (compact) {
@@ -200,6 +216,7 @@ function parseOrderCode(orderCode: string) {
 type ResolvedOrderPayment = {
   amount: string;
   product?: Product;
+  offerLabel?: string;
   sitePrice?: number;
   hasPayment: boolean;
 };
@@ -291,9 +308,50 @@ async function resolveOrderPayment(orderMessage: string, orderCode: string): Pro
     || offers.find((candidate) => orderMessage.toLowerCase().includes(candidate.label.toLowerCase()))
     || (offers.length === 1 ? offers[0] : undefined);
   const orderPrice = parsed.priceRub && parsed.priceRub > 0 ? parsed.priceRub : offer?.priceRub;
-  if (orderPrice) return { amount: `${orderPrice} р ПМР`, product, sitePrice: orderPrice, hasPayment: true };
+  if (orderPrice) return {
+    amount: `${orderPrice} р ПМР`,
+    product,
+    offerLabel: offer?.label,
+    sitePrice: orderPrice,
+    hasPayment: true,
+  };
 
   return { amount: "", product, hasPayment: false };
+}
+
+async function resolveProductRequest(orderMessage: string): Promise<ResolvedOrderPayment> {
+  const normalizedMessage = normalizeSearchText(orderMessage);
+  if (!/(купить|заказать|оформить|нужн|хочу|пополн)/i.test(normalizedMessage)) {
+    return { amount: "", hasPayment: false };
+  }
+
+  const products = await getProducts({ cached: false }).catch(() => []);
+  for (const product of products) {
+    const aliases = [
+      product.name,
+      product.slug.replace(/[-_]+/g, " "),
+      ...(PRODUCT_REQUEST_ALIASES[product.slug] || []),
+    ].map(normalizeSearchText).filter(Boolean);
+    if (!aliases.some((alias) => normalizedMessage.includes(alias))) continue;
+
+    const offers = product.offers.filter((offer): offer is Extract<Product["offers"][number], { priceRub: number }> =>
+      offer.type !== "divider" && typeof offer.priceRub === "number" && offer.priceRub > 0
+    );
+    const compactMessage = normalizedMessage.replace(/\s+/g, "");
+    const offer = offers.find((candidate) => compactMessage.includes(String(candidate.priceRub)))
+      || (offers.length === 1 ? offers[0] : undefined);
+    if (!offer) return { amount: "", product, hasPayment: false };
+
+    return {
+      amount: `${offer.priceRub} р ПМР`,
+      product,
+      offerLabel: offer.label,
+      sitePrice: offer.priceRub,
+      hasPayment: true,
+    };
+  }
+
+  return { amount: "", hasPayment: false };
 }
 
 async function sendOrderInstructions(
@@ -303,12 +361,15 @@ async function sendOrderInstructions(
   paymentAmount?: string,
   hasPayment = false,
   productData?: Product,
-  sitePrice?: number
+  sitePrice?: number,
+  offerLabel?: string
 ) {
   const category = extractOrderCategory(orderMessage);
   const product = extractOrderProduct(orderMessage);
+  const displayCategory = category.value === "не указан" ? productData?.name || category.value : category.value;
+  const displayProduct = product === "Заказ" ? offerLabel || productData?.name || product : product;
   const policy = replyPolicy(productData, hasPayment);
-  const isTelegramAccount = category.value.trim().toLowerCase() === "telegram" && /аккаунт/i.test(product);
+  const isTelegramAccount = displayCategory.trim().toLowerCase() === "telegram" && /аккаунт/i.test(displayProduct);
   const fallbackAccountSafetyNotice = isTelegramAccount
     ? applyAccountNoticeEmojiIds([
         "",
@@ -335,8 +396,8 @@ async function sendOrderInstructions(
     return Boolean(response);
   }
   const paymentLines = [
-    `<b>${category.label}: ${escapeHtml(category.value)}</b>`,
-    `<b>Товар: ${escapeHtml(product)}</b>`,
+    `<b>${category.label}: ${escapeHtml(displayCategory)}</b>`,
+    `<b>Товар: ${escapeHtml(displayProduct)}</b>`,
     "",
     "<b>Реквизиты для оплаты переводилкой:</b>",
     "",
@@ -579,15 +640,19 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate, reque
   await rememberManagerChat(message.from?.username, message.chat.id).catch(() => undefined);
   if (message.text?.trim() && !message.photo?.length && !message.document?.file_id) {
     const orderCode = extractOrderCode(message.text);
-    if (!orderCode) {
-      const shouldGreet = await claimDailyGreeting(message.chat.id).catch(() => false);
+    const resolvedPayment = orderCode
+      ? await resolveOrderPayment(message.text, orderCode)
+      : await resolveProductRequest(message.text);
+    if (!orderCode && !resolvedPayment.hasPayment) {
+      const shouldGreet = isGreetingText(message.text)
+        ? await claimDailyGreeting(message.chat.id).catch(() => false)
+        : false;
       const replied = shouldGreet
         ? await sendDailyGreeting(message.chat.id, message.business_connection_id)
         : false;
       await noteTelegramChatActivity(message.chat.id).catch(() => undefined);
       return NextResponse.json({ ok: true, replied, ignored: "not-an-order" });
     }
-    const resolvedPayment = await resolveOrderPayment(message.text, orderCode);
     const replied = await sendOrderInstructions(
       message.chat.id,
       message.text,
@@ -595,13 +660,14 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate, reque
       resolvedPayment.amount,
       resolvedPayment.hasPayment,
       resolvedPayment.product,
-      resolvedPayment.sitePrice
+      resolvedPayment.sitePrice,
+      resolvedPayment.offerLabel
     );
     if (replied && resolvedPayment.hasPayment) {
       await savePendingTelegramOrder({
         chatId: message.chat.id,
         businessConnectionId: message.business_connection_id,
-        orderCode,
+        orderCode: orderCode || `TEXT-${message.message_id || Date.now()}`,
         amount: resolvedPayment.amount,
         orderMessage: message.text,
         createdAt: new Date().toISOString(),
