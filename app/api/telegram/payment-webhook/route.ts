@@ -409,7 +409,7 @@ function chooseBudgetBundle(
 
 async function resolveProductRequest(orderMessage: string): Promise<ResolvedOrderPayment> {
   const normalizedMessage = normalizeProductQuery(orderMessage);
-  const isPriceQuestion = /(сколько\s+(?:стоит|это|будет|нужно|выходит)|какая\s+цена|стоимость|почем|цена|во\s+сколько)/i.test(normalizedMessage);
+  const isPriceQuestion = /(сколько\s+(?:стоит|стоят|это|будет|нужно|выходит)|какая\s+цена|стоимость|почем|цена|во\s+сколько)/i.test(normalizedMessage);
   const isStoreLinkRequest = /(купить|заказать|оформить|нужн|хочу)/i.test(normalizedMessage) || isPriceQuestion;
   if (!/(купить|заказать|оформить|нужн|хочу|пополн)/i.test(normalizedMessage) && !isPriceQuestion) {
     return { amount: "", hasPayment: false };
