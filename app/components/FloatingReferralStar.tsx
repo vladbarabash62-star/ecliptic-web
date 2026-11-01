@@ -58,7 +58,7 @@ const CONTENT_SELECTOR = [
 ].join(",");
 
 function shouldShowOnCurrentPage(path: string) {
-  return path === "/" || path.startsWith("/products/");
+  return !path.startsWith("/admin") && !path.startsWith("/api");
 }
 
 function overlaps(left: number, top: number, width: number, height: number, rect: DOMRect, gap = 28) {
@@ -462,7 +462,6 @@ export default function FloatingReferralStar() {
   }, [isVisible, pathname, locationSearch]);
 
   function handlePointerDown(event: ReactPointerEvent<HTMLButtonElement>) {
-    if (window.innerWidth >= 701 || event.pointerType === "mouse") return;
     event.preventDefault();
     event.stopPropagation();
     const element = buttonRef.current;
