@@ -548,11 +548,13 @@ async function sendOrderInstructions(
       ].join("\n"), (await getTelegramCustomEmojiIds())?.ids || [])
     : "";
   const welcomeText = "<b>Здравствуйте,</b>\n\n<b>Добро пожаловать в Ecliptic Store!</b>";
-  const workingHoursNotice = [
-    "",
-    "<b>Рабочее время: с 08:00 до 00:00.</b>",
-    "<b>В нерабочее время могу ответить не сразу, так как отдыхаю.</b>",
-  ].join("\n");
+  const workingHoursNotice = isQuietHours()
+    ? [
+        "",
+        "<b>Рабочее время: с 08:00 до 00:00.</b>",
+        "<b>В нерабочее время могу ответить не сразу, так как отдыхаю.</b>",
+      ].join("\n")
+    : "";
   if (policy === "manager") {
     const response = await telegram("sendMessage", {
       chat_id: chatId,
@@ -589,7 +591,7 @@ async function sendOrderInstructions(
   } else {
     paymentLines.push("", "<b>После оплаты отправьте сюда скриншот операции.</b>");
   }
-  paymentLines.push(workingHoursNotice);
+  if (workingHoursNotice) paymentLines.push(workingHoursNotice);
   const paymentText = paymentLines.join("\n");
   if (suppressWelcome) {
     const response = await telegram("sendMessage", {
