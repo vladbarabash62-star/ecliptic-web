@@ -327,6 +327,14 @@ function ruRublesEquivalent(pricePmr?: number) {
   return `${rubles} р РФ`;
 }
 
+function catalogOfferPrice(product: Product, offer: Extract<Product["offers"][number], { priceRub: number }>) {
+  if (product.slug.toLowerCase() === "steam") {
+    const dollars = Number(offer.label.match(/(\d+(?:[.,]\d+)?)\s*\$/)?.[1]?.replace(",", "."));
+    if (Number.isFinite(dollars) && dollars > 0) return dollars * 21;
+  }
+  return offer.priceRub;
+}
+
 async function resolveOrderPayment(orderMessage: string, orderCode: string): Promise<ResolvedOrderPayment> {
   const parsed = parseOrderCode(orderCode);
   if (!parsed) return { amount: "", hasPayment: false };
@@ -349,17 +357,18 @@ async function resolveOrderPayment(orderMessage: string, orderCode: string): Pro
     .sort((left, right) => normalizeProductQuery(right.label).length - normalizeProductQuery(left.label).length)
     .find((candidate) => orderProductText.includes(normalizeProductQuery(candidate.label)));
   const offer = offerByLabel
-    || offers.find((candidate) => candidate.priceRub === parsed.priceRub)
+    || offers.find((candidate) => catalogOfferPrice(product, candidate) === parsed.priceRub)
     || offers.find((candidate) => orderMessage.toLowerCase().includes(candidate.label.toLowerCase()))
     || (offers.length === 1 ? offers[0] : undefined);
   // The live catalog is authoritative. The amount embedded in an order code is
   // only used to locate a matching current offer, never as an independent price.
   const orderPrice = offer?.priceRub;
-  if (orderPrice) return {
-    amount: `${orderPrice} р ПМР`,
+  const resolvedOrderPrice = offer ? catalogOfferPrice(product, offer) : orderPrice;
+  if (resolvedOrderPrice) return {
+    amount: `${resolvedOrderPrice} р ПМР`,
     product,
     offerLabel: offer?.label,
-    sitePrice: orderPrice,
+    sitePrice: resolvedOrderPrice,
     hasPayment: true,
   };
 
@@ -473,13 +482,14 @@ async function resolveProductRequest(orderMessage: string): Promise<ResolvedOrde
     // Never recalculate a price from the customer's wording. Both a concrete
     // offer and a Telegram Stars bundle are composed from current site offers.
     const paymentPrice = budgetBundle?.priceRub ?? offer?.priceRub;
+    const resolvedPaymentPrice = offer ? catalogOfferPrice(product, offer) : paymentPrice;
     const offerLabel = budgetBundle?.label || offer?.label;
 
     return {
-      amount: `${paymentPrice} р ПМР`,
+      amount: `${resolvedPaymentPrice} р ПМР`,
       product,
       offerLabel,
-      sitePrice: paymentPrice,
+      sitePrice: resolvedPaymentPrice,
       hasPayment: true,
       priceOnly: isPriceQuestion,
       quoteOnly: isPriceQuestion && hasOfferQualifier,
