@@ -14,6 +14,11 @@ import {
 } from "../../../../lib/telegramCustomEmojiStore";
 import { processTelegramPaymentUpdate } from "../payment-webhook/route";
 import { ensurePrimaryTelegramWebhook } from "../../../../lib/telegramWebhook";
+import {
+  clearTelegramStarsDraft,
+  getTelegramStarsDraft,
+  saveTelegramStarsDraft,
+} from "../../../../lib/telegramStarsStore";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -183,23 +188,23 @@ async function sendManagerMenu(
     ? await savePendingTelegramLogin(loginToken, manager)
     : false;
 
-  if (loginSaved) {
-    return sendTelegramMessage(
-      chatId,
-      "Меню управления Ecliptic Store",
-      token,
-      loginToken,
-      "Войти в аккаунт",
-    );
-  }
-
   const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       chat_id: chatId,
       text: "Меню управления Ecliptic Store",
-      reply_markup: { inline_keyboard: [[{ text: "Войти в Ecliptic Store", url: "https://ecliptic.website" }]] },
+      reply_markup: {
+        inline_keyboard: [
+          [{
+            text: "Войти в аккаунт",
+            url: loginSaved
+              ? `https://ecliptic.website/api/auth/telegram/complete?token=${encodeURIComponent(loginToken)}`
+              : "https://ecliptic.website",
+          }],
+          [{ text: "Звёзды", callback_data: "stars_start" }],
+        ],
+      },
     }),
   }).catch(() => null);
   return Boolean(response?.ok);
@@ -247,6 +252,36 @@ export async function POST(request: Request) {
   const callback = update.callback_query;
   if (callback?.id) {
     await answerCallback(callback.id, token);
+    const callbackManager = String(callback.from?.username || "").replace(/^@/, "").toLowerCase() === "ecliptic_store_pmr";
+    if (callbackManager && callback.message?.chat?.id && callback.data === "stars_start") {
+      await saveTelegramStarsDraft({
+        chatId: callback.message.chat.id,
+        step: "username",
+        updatedAt: new Date().toISOString(),
+      });
+      await sendPlainTelegramMessage(callback.message.chat.id, "Отправьте username получателя в формате @username.", token);
+      return NextResponse.json({ ok: true, stars: "username" });
+    }
+    if (callbackManager && callback.message?.chat?.id && callback.data?.startsWith("stars_confirm:")) {
+      const draft = await getTelegramStarsDraft(callback.message.chat.id);
+      if (!draft?.username || !draft.amount) {
+        await sendPlainTelegramMessage(callback.message.chat.id, "Заявка устарела. Нажмите «Звёзды» и начните заново.", token);
+        return NextResponse.json({ ok: true, stars: "expired" });
+      }
+      await clearTelegramStarsDraft(callback.message.chat.id);
+      await sendPlainTelegramMessage(
+        callback.message.chat.id,
+        `Заявка подтверждена: ${draft.amount} Stars для ${draft.username}. Откройте Fragment и завершите оплату вручную. Статус доставки отметьте только после подтверждения в Telegram.`,
+        token,
+        { inline_keyboard: [[{ text: "Открыть Fragment", url: "https://fragment.com/" }]] },
+      );
+      return NextResponse.json({ ok: true, stars: "confirmed" });
+    }
+    if (callbackManager && callback.message?.chat?.id && callback.data?.startsWith("stars_cancel:")) {
+      await clearTelegramStarsDraft(callback.message.chat.id);
+      await sendPlainTelegramMessage(callback.message.chat.id, "Заявка на отправку Stars отменена.", token);
+      return NextResponse.json({ ok: true, stars: "cancelled" });
+    }
     if (callback.data?.startsWith("referral_reward:") && callback.message?.chat?.id) {
       const manager = String(callback.from?.username || "").replace(/^@/, "").toLowerCase() === "ecliptic_store_pmr";
       if (manager) {
@@ -341,6 +376,35 @@ export async function POST(request: Request) {
     if (isStartCommand(text)) {
       await sendManagerMenu(managerChat, token, message?.from);
       return NextResponse.json({ ok: true, managerMenu: true });
+    }
+    const starsDraft = await getTelegramStarsDraft(managerChat);
+    if (starsDraft) {
+      if (starsDraft.step === "username") {
+        const username = text.trim().replace(/^@/, "");
+        if (!/^[A-Za-z0-9_]{5,32}$/.test(username)) {
+          await sendPlainTelegramMessage(managerChat, "Не удалось распознать username. Отправьте его в формате @username.", token);
+          return NextResponse.json({ ok: true, stars: "invalid_username" });
+        }
+        await saveTelegramStarsDraft({ ...starsDraft, username: `@${username}`, step: "amount", updatedAt: new Date().toISOString() });
+        await sendPlainTelegramMessage(managerChat, "Введите количество Telegram Stars целым числом.", token);
+        return NextResponse.json({ ok: true, stars: "amount" });
+      }
+      if (starsDraft.step === "amount") {
+        const amount = Number(text.trim().replace(/[^0-9]/g, ""));
+        if (!Number.isInteger(amount) || amount < 1 || amount > 100000) {
+          await sendPlainTelegramMessage(managerChat, "Введите целое количество Stars от 1 до 100 000.", token);
+          return NextResponse.json({ ok: true, stars: "invalid_amount" });
+        }
+        const next = { ...starsDraft, amount, step: "confirm" as const, updatedAt: new Date().toISOString() };
+        await saveTelegramStarsDraft(next);
+        await sendPlainTelegramMessage(managerChat, `Проверьте заявку:\n\nПолучатель: <b>${escapeHtml(next.username || "")}</b>\nКоличество: <b>${amount} Stars</b>\n\nПодтвердить действие?`, token, {
+          inline_keyboard: [[
+            { text: "Да, продолжить", callback_data: `stars_confirm:${managerChat}` },
+            { text: "Отмена", callback_data: `stars_cancel:${managerChat}` },
+          ]],
+        });
+        return NextResponse.json({ ok: true, stars: "confirm" });
+      }
     }
     const saved = await saveTelegramAccountNoticeTemplate(
       managerChat,
