@@ -37,6 +37,23 @@ async function sendManagerNotification(text: string, claimUserId: string) {
   return Boolean(response?.ok);
 }
 
+function referralNotificationText(
+  user: { id: string; name?: string; username?: string },
+  claim: { id: string; userId: string },
+  invitedCount: number,
+) {
+  return [
+    "🎁 <b>Реферальная программа</b>",
+    "",
+    `Пользователь выполнил условия: 5 приглашённых друзей и хотя бы один заказ. Просит подарок до <b>50 Telegram Stars</b>.`,
+    `Имя: <b>${escapeHtml(user.name || "не указано")}</b>`,
+    `Telegram: <b>${escapeHtml(user.username || "не указан")}</b>`,
+    `Приглашено участников: <b>${invitedCount}</b>`,
+    `Заявка: <code>${escapeHtml(claim.id)}</code>`,
+    `ID сайта: <code>${escapeHtml(user.id)}</code>`,
+  ].join("\n");
+}
+
 function escapeHtml(value: string) {
   return value
     .replace(/&/g, "&amp;")
@@ -83,6 +100,24 @@ export async function POST() {
   }
 
   if (result.duplicate) {
+    if (!result.rewarded && claim.status === "pending_manager") {
+      const managerSent = await sendManagerNotification(
+        referralNotificationText(user, claim, result.invitedCount),
+        claim.userId,
+      );
+
+      if (managerSent) {
+        const finalClaim = await markCustomerReferralClaimSent(claim.id);
+        return NextResponse.json({
+          ok: true,
+          sent: true,
+          duplicate: true,
+          claim: finalClaim || claim,
+          message: "Заявка уже была создана и сейчас отправлена менеджеру.",
+        });
+      }
+    }
+
     const retryAfterMs = Math.max(0, result.retryAfterMs || REFERRAL_CLAIM_COOLDOWN_MS);
     return NextResponse.json(
       {
@@ -97,16 +132,7 @@ export async function POST() {
   }
 
   const managerSent = await sendManagerNotification(
-    [
-      "🎁 <b>Реферальная программа</b>",
-      "",
-      `Пользователь выполнил условия: 5 приглашённых друзей и хотя бы один заказ. Просит подарок до <b>50 Telegram Stars</b>.`,
-      `Имя: <b>${escapeHtml(user.name || "не указано")}</b>`,
-      `Telegram: <b>${escapeHtml(user.username || "не указан")}</b>`,
-      `Приглашено участников: <b>${result.invitedCount}</b>`,
-      `Заявка: <code>${escapeHtml(claim.id)}</code>`,
-      `ID сайта: <code>${escapeHtml(user.id)}</code>`,
-    ].join("\n"),
+    referralNotificationText(user, claim, result.invitedCount),
     claim.userId,
   );
 
