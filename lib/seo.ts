@@ -7,7 +7,7 @@ export const SITE_NAME = "Ecliptic Store";
 export const SITE_IMAGE = `${SITE_URL}/ecliptic-link-icon-v5.png`;
 export const SITE_LOGO = `${SITE_URL}/google-favicon.png`;
 export const SITE_DESCRIPTION =
-  "Ecliptic Store PMR — цифровые товары для ПМР: пополнение Steam, Telegram Premium и Stars, Spotify, YouTube Premium, игровые валюты и подписки.";
+  "Ecliptic Store PMR — цифровые товары и услуги для ПМР: пополнение Steam и сайтов, оплата по СБП, Telegram Premium и Stars, Spotify, YouTube Premium, игровые валюты и подписки.";
 export const SITE_TITLE =
   "Ecliptic Store — цифровые товары";
 export const SITE_KEYWORDS = [

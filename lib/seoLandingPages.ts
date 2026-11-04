@@ -1,3 +1,5 @@
+import { products, type Product, type ProductOffer } from "./products";
+
 const LANDING_SITE_URL = "https://ecliptic.website";
 
 export type SeoLandingPage = {
@@ -482,8 +484,91 @@ const manualSeoLandingPages: SeoLandingPage[] = [
   },
 ];
 
+function normalizeSearchText(value: string) {
+  return value
+    .toLocaleLowerCase("ru-RU")
+    .replace(/[«»"']/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function offerItems(product: Product) {
+  return product.offers.filter((offer): offer is ProductOffer => offer.type !== "divider");
+}
+
+function productSearchPhrases(product: Product) {
+  const name = normalizeSearchText(product.name);
+  const slugName = normalizeSearchText(product.slug.replace(/-/g, " "));
+  const phrases = new Set([
+    `${name} пмр`,
+    `${name} тирасполь`,
+    `${name} приднестровье`,
+    `купить ${name} пмр`,
+    `цена ${name} пмр`,
+    `сколько стоит ${name}`,
+    `${slugName} пмр`,
+  ]);
+
+  if (product.slug === "steam") {
+    [
+      "пополнить steam в пмр",
+      "пополнение steam в приднестровье",
+      "пополнить стим пмр",
+      "пополнение стима в тирасполе",
+    ].forEach((phrase) => phrases.add(phrase));
+  }
+  if (product.slug === "sbp-payment") {
+    [
+      "оплата по сбп пмр",
+      "сбп пмр",
+      "перевод по сбп пмр",
+      "пополнение сайтов пмр",
+      "оплатить по сбп в приднестровье",
+    ].forEach((phrase) => phrases.add(phrase));
+  }
+  if (product.slug === "standoff-2") {
+    ["standoff 2 пмр", "стандофф 2 пмр", "standoff 2 тирасполь", "донат standoff 2 пмр"].forEach((phrase) => phrases.add(phrase));
+  }
+  if (product.slug === "telegram-stars") {
+    ["telegram stars пмр", "звезды telegram пмр", "купить звезды в пмр", "пополнить telegram stars"].forEach((phrase) => phrases.add(phrase));
+  }
+  if (product.slug === "telegram-premium") {
+    ["telegram premium пмр", "телеграм премиум пмр", "tg premium пмр", "купить премиум telegram"].forEach((phrase) => phrases.add(phrase));
+  }
+
+  return Array.from(phrases);
+}
+
+function buildProductLandingPage(product: Product): SeoLandingPage {
+  const offers = offerItems(product);
+  const offerLabels = offers.map((offer) => offer.label).filter(Boolean);
+  const services = Array.from(new Set([product.name, ...offerLabels])).slice(0, 16);
+  const phrases = productSearchPhrases(product);
+  const pageSlug = `${product.slug}-pmr`;
+
+  return {
+    slug: pageSlug,
+    title: `${product.name} ПМР — купить в Ecliptic Store`,
+    description: `${product.name} в ПМР и Тирасполе: актуальные варианты цифрового товара или услуги в Ecliptic Store. Оформление заказа онлайн.`,
+    h1: `${product.name} в ПМР`,
+    intro: `Ecliptic Store помогает оформить ${product.name} для покупателей из ПМР, Тирасполя и Приднестровья. На странице указаны доступные варианты товара и актуальные цены.`,
+    productSlug: product.slug,
+    phrases,
+    services,
+  };
+}
+
+const manualProductSlugs = new Set(
+  manualSeoLandingPages.flatMap((page) => (page.productSlug ? [page.productSlug] : []))
+);
+
+const catalogSeoLandingPages = products
+  .filter((product) => !manualProductSlugs.has(product.slug))
+  .map(buildProductLandingPage);
+
 export const seoLandingPages: SeoLandingPage[] = [
   ...manualSeoLandingPages,
+  ...catalogSeoLandingPages,
 ];
 
 export function landingPageUrl(slug: string) {
