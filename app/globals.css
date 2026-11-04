@@ -257,6 +257,113 @@ html {
   animation: homeRevealDown 560ms cubic-bezier(0.22, 1, 0.36, 1) var(--home-card-delay, 220ms) backwards;
 }
 
+.giveaway-cta {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-color: rgba(103, 232, 249, 0.58);
+  animation: giveawayBorderGlow 3.2s ease-in-out infinite;
+}
+
+.giveaway-cta::after {
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  border-radius: inherit;
+  background: linear-gradient(110deg, transparent 12%, rgba(125, 211, 252, 0.36) 48%, transparent 84%);
+  content: "";
+  opacity: 0.2;
+  transform: translateX(-105%);
+  animation: giveawayEdgeSweep 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.giveaway-emoji {
+  display: inline-block;
+  margin-right: 0.38rem;
+  transform-origin: 50% 80%;
+  animation: giveawayEmojiPulse 3.2s ease-in-out infinite;
+}
+
+.giveaway-letter {
+  display: inline-block;
+  animation: giveawayLetterWave 3.2s ease-in-out infinite;
+  animation-delay: calc(var(--giveaway-letter-index) * 42ms);
+  transform-origin: 50% 90%;
+}
+
+.giveaway-space {
+  width: 0.32em;
+}
+
+@keyframes giveawayBorderGlow {
+  0%,
+  100% {
+    border-color: rgba(103, 232, 249, 0.42);
+    box-shadow: 0 10px 34px rgba(34, 211, 238, 0.12), inset 0 0 24px rgba(59, 130, 246, 0.09);
+  }
+  50% {
+    border-color: rgba(165, 243, 252, 0.9);
+    box-shadow: 0 10px 42px rgba(34, 211, 238, 0.28), inset 0 0 30px rgba(59, 130, 246, 0.2);
+  }
+}
+
+@keyframes giveawayEdgeSweep {
+  0%,
+  58%,
+  100% {
+    opacity: 0;
+    transform: translateX(-105%);
+  }
+  68% {
+    opacity: 0.45;
+  }
+  82% {
+    opacity: 0;
+    transform: translateX(105%);
+  }
+}
+
+@keyframes giveawayLetterWave {
+  0%,
+  68%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  71% {
+    transform: translateY(-0.32em) rotate(-5deg);
+  }
+  75% {
+    transform: translateY(0.06em) rotate(2deg);
+  }
+  78% {
+    transform: translateY(0) rotate(0deg);
+  }
+}
+
+@keyframes giveawayEmojiPulse {
+  0%,
+  68%,
+  100% {
+    transform: translateY(0) rotate(0deg) scale(1);
+  }
+  73% {
+    transform: translateY(-0.16em) rotate(-8deg) scale(1.08);
+  }
+  78% {
+    transform: translateY(0) rotate(0deg) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .giveaway-cta,
+  .giveaway-cta::after,
+  .giveaway-letter,
+  .giveaway-emoji {
+    animation: none;
+  }
+}
+
 .contact-float {
   animation: contactPulse 2600ms ease-in-out infinite;
 }
