@@ -59,6 +59,15 @@ export default async function HomePage() {
           <span className="tracking-wide text-white/95">
             {settings.reviewsCountLabel} успешных покупок <span className="text-lg text-emerald-300">✓</span>
           </span>
+          <a
+            href="https://t.me/x_pmr/32"
+            target="_blank"
+            rel="noopener noreferrer"
+            data-analytics="x_pmr_click"
+            className="rounded-full bg-white/12 px-5 py-2 text-white shadow-inner transition hover:bg-white/18"
+          >
+            X — PMR
+          </a>
         </div>
 
         <div className="home-reveal home-reveal--trust mx-auto mb-8 flex justify-center">
