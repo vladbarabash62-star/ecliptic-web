@@ -61,6 +61,18 @@ export default async function HomePage() {
           </span>
         </div>
 
+        <div className="home-reveal home-reveal--trust mx-auto mb-8 flex justify-center">
+          <a
+            href="https://t.me/Ecliptic_Store"
+            target="_blank"
+            rel="noopener noreferrer"
+            data-analytics="giveaway_click"
+            className="inline-flex items-center justify-center rounded-xl border border-amber-300/70 bg-amber-300 px-7 py-3 text-center text-sm font-extrabold uppercase text-slate-950 shadow-[0_10px_35px_rgba(251,191,36,0.28)] transition hover:bg-amber-200 hover:shadow-[0_12px_42px_rgba(251,191,36,0.4)] active:scale-[0.98]"
+          >
+            🎁 Участвовать в розыгрыше
+          </a>
+        </div>
+
         <ProductSearchGrid products={products} />
       </div>
       </main>
