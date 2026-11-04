@@ -67,7 +67,7 @@ export default async function HomePage() {
             target="_blank"
             rel="noopener noreferrer"
             data-analytics="giveaway_click"
-            className="inline-flex items-center justify-center rounded-xl border border-amber-300/70 bg-amber-300 px-7 py-3 text-center text-sm font-extrabold uppercase text-slate-950 shadow-[0_10px_35px_rgba(251,191,36,0.28)] transition hover:bg-amber-200 hover:shadow-[0_12px_42px_rgba(251,191,36,0.4)] active:scale-[0.98]"
+            className="inline-flex w-full max-w-[360px] items-center justify-center rounded-xl border border-cyan-300/45 bg-slate-950/90 px-5 py-3 text-center text-xs font-extrabold uppercase tracking-wide text-white shadow-[0_10px_34px_rgba(34,211,238,0.16),inset_0_0_24px_rgba(59,130,246,0.12)] backdrop-blur-md transition hover:border-cyan-200/75 hover:bg-slate-900 hover:shadow-[0_12px_42px_rgba(34,211,238,0.28),inset_0_0_28px_rgba(59,130,246,0.18)] active:scale-[0.98] sm:px-7 sm:py-3 sm:text-sm"
           >
             🎁 Участвовать в розыгрыше
           </a>
