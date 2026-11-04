@@ -78,7 +78,13 @@ function botToken() {
   return process.env.TELEGRAM_LOGIN_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN || process.env.TELEGRAM_WEBAPP_BOT_TOKEN || "";
 }
 
-async function sendTelegramMessage(chatId: number, text: string, token: string, loginToken: string) {
+async function sendTelegramMessage(
+  chatId: number,
+  text: string,
+  token: string,
+  loginToken: string,
+  buttonText = "Войти в Ecliptic Store",
+) {
   const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -89,7 +95,7 @@ async function sendTelegramMessage(chatId: number, text: string, token: string, 
         inline_keyboard: [
           [
             {
-              text: "Войти в Ecliptic Store",
+              text: buttonText,
               url: `https://ecliptic.website/api/auth/telegram/complete?token=${encodeURIComponent(loginToken)}`,
             },
           ],
@@ -108,7 +114,6 @@ async function sendWelcomeMessage(chatId: number, token: string) {
     "У нас можно посмотреть цифровые товары, игровые пополнения, подписки и Telegram Stars. Ассортимент и актуальные цены доступны на сайте:",
     "https://ecliptic.website",
   ].join("\n");
-  await showTyping(chatId, token, text);
   const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -164,14 +169,33 @@ async function answerCallback(callbackId: string, token: string) {
   }).catch(() => undefined);
 }
 
-async function sendManagerMenu(chatId: number, token: string) {
+async function sendManagerMenu(
+  chatId: number,
+  token: string,
+  manager: NonNullable<TelegramUpdate["message"]>["from"]
+) {
+  const loginToken = await createPendingTelegramLogin();
+  const loginSaved = manager?.id
+    ? await savePendingTelegramLogin(loginToken, manager)
+    : false;
+
+  if (loginSaved) {
+    return sendTelegramMessage(
+      chatId,
+      "Меню управления Ecliptic Store",
+      token,
+      loginToken,
+      "Войти в аккаунт",
+    );
+  }
+
   const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       chat_id: chatId,
-      text: "Меню управления Ecliptic Store\\n\\nВыберите, что хотите изменить:",
-      reply_markup: { inline_keyboard: [[{ text: "Telegram аккаунт", callback_data: "edit_account_notice" }]] },
+      text: "Меню управления Ecliptic Store",
+      reply_markup: { inline_keyboard: [[{ text: "Войти в Ecliptic Store", url: "https://ecliptic.website" }]] },
     }),
   }).catch(() => null);
   return Boolean(response?.ok);
@@ -311,8 +335,7 @@ export async function POST(request: Request) {
   const managerRemembered = await rememberManagerChat(message?.from?.username, message?.chat?.id);
   if (managerUsername === "ecliptic_store_pmr" && Number.isFinite(managerChat)) {
     if (/^\/start(?:\s|$)/i.test(text)) {
-      await flushPendingReferralClaims(managerChat, token);
-      await sendManagerMenu(managerChat, token);
+      await sendManagerMenu(managerChat, token, message?.from);
       return NextResponse.json({ ok: true, managerMenu: true });
     }
     const saved = await saveTelegramAccountNoticeTemplate(
