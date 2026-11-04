@@ -26,6 +26,10 @@ function typingDelay(text: string) {
   return Math.min(5000, Math.max(1800, 1200 + text.length * 18));
 }
 
+function isStartCommand(text: string) {
+  return /^(?:\/start|start)(?:\s|$)/i.test(text.trim());
+}
+
 async function showTyping(chatId: number, token: string, text: string) {
   await fetch(`https://api.telegram.org/bot${token}/sendChatAction`, {
     method: "POST",
@@ -334,7 +338,7 @@ export async function POST(request: Request) {
   const managerUsername = String(message?.from?.username || "").replace(/^@/, "").toLowerCase();
   const managerRemembered = await rememberManagerChat(message?.from?.username, message?.chat?.id);
   if (managerUsername === "ecliptic_store_pmr" && Number.isFinite(managerChat)) {
-    if (/^\/start(?:\s|$)/i.test(text)) {
+    if (isStartCommand(text)) {
       await sendManagerMenu(managerChat, token, message?.from);
       return NextResponse.json({ ok: true, managerMenu: true });
     }
@@ -359,7 +363,7 @@ export async function POST(request: Request) {
     await flushPendingReferralClaims(message.chat.id, token);
   }
 
-  if (!loginToken && /^\/start(?:\s|$)/i.test(text) && message?.chat?.id) {
+  if (!loginToken && isStartCommand(text) && message?.chat?.id) {
     if (message.from?.id) {
       const freshLoginToken = await createPendingTelegramLogin();
       const saved = await savePendingTelegramLogin(freshLoginToken, message.from);
