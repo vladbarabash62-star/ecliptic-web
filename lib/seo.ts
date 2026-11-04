@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
 import { products, type Product, type ProductOffer } from "./products";
-import { landingPageUrl, seoLandingPages } from "./seoLandingPages";
 
 export const SITE_URL = "https://ecliptic.website";
 export const SITE_NAME = "Ecliptic Store";
 export const SITE_IMAGE = `${SITE_URL}/ecliptic-link-icon-v5.png`;
 export const SITE_LOGO = `${SITE_URL}/google-favicon.png`;
 export const SITE_DESCRIPTION =
-  "Ecliptic Store PMR — цифровые товары и услуги для ПМР: пополнение Steam и сайтов, оплата по СБП, Telegram Premium и Stars, Spotify, YouTube Premium, игровые валюты и подписки.";
+  "Ecliptic Store — цифровые товары.";
 export const SITE_TITLE =
   "Ecliptic Store — цифровые товары";
 export const SITE_KEYWORDS = [
@@ -371,18 +370,6 @@ export function buildProductKeywords(product: Product) {
 }
 
 export function buildStoreJsonLd() {
-  const navigationPages = googleSitelinkCandidates.map((item, index) => ({
-    "@type": "WebPage",
-    "@id": `${SITE_URL}/products/${item.slug}#webpage`,
-    name: item.name,
-    url: `${SITE_URL}/products/${item.slug}`,
-    description: item.description,
-    position: index + 1,
-    isPartOf: {
-      "@id": `${SITE_URL}/#website`,
-    },
-  }));
-
   return [
     {
       "@context": "https://schema.org",
@@ -393,7 +380,6 @@ export function buildStoreJsonLd() {
       url: SITE_URL,
       inLanguage: "ru",
       description: SITE_DESCRIPTION,
-      hasPart: navigationPages,
       publisher: {
         "@type": "Organization",
         "@id": `${SITE_URL}/#organization`,
@@ -451,38 +437,6 @@ export function buildStoreJsonLd() {
         "https://t.me/Ecliptic_Store_PMR",
         "https://t.me/Ecliptic_Store_Reviews",
       ],
-    },
-    {
-      "@context": "https://schema.org",
-      "@type": "SiteNavigationElement",
-      "@id": `${SITE_URL}/#site-navigation`,
-      name: googleSitelinkCandidates.map((item) => item.name),
-      url: googleSitelinkCandidates.map((item) => `${SITE_URL}/products/${item.slug}`),
-      description: "Основные разделы Ecliptic Store PMR для быстрых ссылок в поиске Google.",
-    },
-    {
-      "@context": "https://schema.org",
-      "@type": "ItemList",
-      "@id": `${SITE_URL}/#google-sitelink-candidates`,
-      name: "Основные разделы Ecliptic Store PMR",
-      itemListElement: googleSitelinkCandidates.map((item, index) => ({
-        "@type": "ListItem",
-        position: index + 1,
-        name: item.name,
-        description: item.description,
-        url: `${SITE_URL}/products/${item.slug}`,
-      })),
-    },
-    {
-      "@context": "https://schema.org",
-      "@type": "ItemList",
-      name: `${SITE_NAME} search directions`,
-      itemListElement: seoLandingPages.map((page, index) => ({
-        "@type": "ListItem",
-        position: index + 1,
-        name: page.h1,
-        url: landingPageUrl(page.slug),
-      })),
     },
   ];
 }

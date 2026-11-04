@@ -5,12 +5,11 @@ import FloatingReferralStar from "./components/FloatingReferralStar";
 import HomeButton from "./components/HomeButton";
 import PageLoader from "./components/PageLoader";
 import SiteFooter from "./components/SiteFooter";
-import SwipeHomePreview from "./components/SwipeHomePreview";
 import SwipeHomeGesture from "./components/SwipeHomeGesture";
+import SwipeHomePreview from "./components/SwipeHomePreview";
 import TelegramStartRouter from "./components/TelegramStartRouter";
 import UserAuthButton from "./components/UserAuthButton";
 import SpaceScene from "../components/space-scene";
-import { getCustomerUserFromCookies } from "../lib/customerAuth";
 import {
   buildSeoKeywords,
   buildStoreJsonLd,
@@ -112,8 +111,8 @@ export const metadata: Metadata = {
     apple: [{ url: "/apple-icon.png", sizes: "512x512" }],
   },
   openGraph: {
-    title: "Ecliptic Store PMR",
-    description: "Цифровые товары и пополнение игр в ПМР",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
     url: SITE_URL,
     siteName: SITE_NAME,
     locale: "ru_RU",
@@ -144,20 +143,18 @@ const rootJsonLd = [
   {
     "@context": "https://schema.org",
     "@type": "OnlineStore",
-    name: "Ecliptic Store PMR",
+    name: SITE_NAME,
     url: SITE_URL,
-    description: "Цифровые товары, пополнение Steam и Telegram Premium в ПМР",
+    description: SITE_DESCRIPTION,
   },
   ...buildStoreJsonLd(),
 ];
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const initialUser = await getCustomerUserFromCookies().catch(() => null);
-
   return (
     <html
       lang="ru"
@@ -181,15 +178,15 @@ export default async function RootLayout({
         {/* КНОПКА */}
         <PageLoader />
         <HomeButton />
-        <UserAuthButton initialUser={initialUser} />
+        <UserAuthButton />
         <FloatingReferralStar />
         <ContactButton />
         <SwipeHomeGesture />
         <TelegramStartRouter />
-        <SwipeHomePreview />
         <AnalyticsTracker />
 
         {/* КОНТЕНТ */}
+        <SwipeHomePreview />
         <div className="site-content relative z-10 flex min-h-screen w-full flex-col">
           {children}
           <SiteFooter />

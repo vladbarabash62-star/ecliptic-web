@@ -5,16 +5,7 @@ export default function SiteFooter() {
         <div>
           <p className="text-xl font-black">Ecliptic Store</p>
           <p className="mt-3 max-w-[460px] text-sm leading-6 text-white/62">
-            Ecliptic Store — цифровые товары, донат игр и подписки для ПМР.
-          </p>
-          <p className="mt-3 max-w-[560px] text-sm leading-6 text-white/55">
-            Steam, Telegram Premium, Telegram Stars, Roblox, PUBG Mobile,
-            Brawl Stars, Standoff 2, PlayStation, Minecraft и другие
-            направления.
-          </p>
-          <p className="mt-3 max-w-[560px] text-sm leading-6 text-white/48">
-            Для запросов: Ecliptic Store, Эклиптик Стор, донат ПМР, игровые
-            пополнения Тирасполь и Приднестровье.
+            Ecliptic Store — цифровые товары.
           </p>
         </div>
 
