@@ -18,8 +18,11 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ ok: false, stored: false, error: "Unauthorized" }, { status: 401 });
 
   const body = await request.json().catch(() => ({}));
+  const clientOrderId = typeof body?.clientOrderId === "string" ? body.clientOrderId.trim() : "";
+  const existingOrders = clientOrderId ? await getCustomerOrders(user.id) : [];
+  const alreadyStored = Boolean(clientOrderId && existingOrders.some((item) => item.clientOrderId === clientOrderId));
   const order = await addCustomerOrder(user, body);
-  if (order?.productSlug === "telegram-stars") {
+  if (order?.productSlug === "telegram-stars" && !alreadyStored) {
     await notifyStarsOrder(order, user).catch(() => undefined);
   }
   return NextResponse.json({ ok: true, stored: Boolean(order), order });
