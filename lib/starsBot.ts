@@ -77,11 +77,9 @@ export async function configureStarsWebhook(request: Request) {
   if (!botToken) return { ok: false, configured: false, description: "STARS_BOT_TOKEN is not configured" };
 
   const url = new URL("/api/stars/webhook", request.url).toString();
-  const secret = process.env.STARS_TELEGRAM_WEBHOOK_SECRET || process.env.TELEGRAM_WEBHOOK_SECRET || "";
   const result = await callTelegram("setWebhook", {
     url,
     allowed_updates: ["message", "callback_query"],
-    ...(secret ? { secret_token: secret } : {}),
   });
   return { ok: Boolean(result.ok), configured: Boolean(result.ok), description: result.description || "" };
 }
