@@ -320,9 +320,13 @@ function replyPolicy(product?: Product, hasPayment = false) {
   return hasPayment ? "payment" as const : "manager" as const;
 }
 
-function isPremiumLoginOffer(product?: Product, offerLabel?: string) {
-  return product?.slug.toLowerCase() === "telegram-premium"
-    && /1\s*месяц\s*\(\s*со\s*входом\s*\)/i.test(offerLabel || "");
+function isPremiumLoginOffer(product?: Product, offerLabel?: string, orderMessage = "") {
+  const productText = [product?.slug, product?.name, orderMessage].filter(Boolean).join(" ");
+  const offerText = [offerLabel, orderMessage].filter(Boolean).join(" ");
+  const isTelegramPremium = product?.slug.toLowerCase() === "telegram-premium"
+    || /telegram[\s_-]*premium/i.test(productText);
+  const isOneMonthWithLogin = /1\s*(?:месяц|мес\.?)\s*\(?\s*(?:со|с)\s*входом\s*\)?/i.test(offerText);
+  return isTelegramPremium && isOneMonthWithLogin;
 }
 
 function ruRublesEquivalent(pricePmr?: number) {
@@ -545,7 +549,7 @@ async function sendOrderInstructions(
   const product = extractOrderProduct(orderMessage);
   const displayCategory = category.value === "не указан" ? productData?.name || category.value : category.value;
   const displayProduct = product === "Заказ" ? offerLabel || productData?.name || product : product;
-  const policy = isPremiumLoginOffer(productData, offerLabel)
+  const policy = isPremiumLoginOffer(productData, offerLabel, orderMessage)
     ? "manager"
     : replyPolicy(productData, hasPayment);
   const isTelegramAccount = displayCategory.trim().toLowerCase() === "telegram" && /аккаунт/i.test(displayProduct);
