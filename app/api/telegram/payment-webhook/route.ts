@@ -16,7 +16,7 @@ import {
   getTelegramAccountNoticeTemplate,
   getTelegramCustomEmojiIds,
 } from "../../../../lib/telegramCustomEmojiStore";
-import { claimDailyGreeting, claimInactiveChatNotice, noteTelegramChatActivity, wasGreetingRecentlySent } from "../../../../lib/telegramDailyGreetingStore";
+import { claimDailyGreeting, claimInactiveChatNotice, claimWelcomeWithin, noteTelegramChatActivity } from "../../../../lib/telegramDailyGreetingStore";
 import { markTelegramChatOrder, noteTelegramCustomerMessage } from "../../../../lib/telegramChatHistoryStore";
 import { getTelegramProductContext } from "../../../../lib/telegramProductContextStore";
 import { compactProductCode } from "../../../../lib/orderCode";
@@ -557,7 +557,7 @@ async function sendOrderInstructions(
         "🤝 Следуя этим простым рекомендациям, вы снизите вероятность возникновения каких-либо ограничений.",
       ].join("\n"), (await getTelegramCustomEmojiIds())?.ids || [])
     : "";
-  const welcomeText = "<b>Здравствуйте,</b>\n\n<b>Добро пожаловать в Ecliptic Store!</b>";
+  const welcomeText = "<b>Здравствуйте, добро пожаловать в Ecliptic Store!</b>";
   const workingHoursNotice = isQuietHours()
     ? [
         "",
@@ -879,7 +879,7 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate, reque
             contextPayment.product,
             contextPayment.sitePrice,
             contextPayment.offerLabel,
-            await wasGreetingRecentlySent(message.chat.id).catch(() => false)
+            !(await claimWelcomeWithin(message.chat.id).catch(() => true))
           );
           if (replied && chatHistory.established) {
             await savePendingTelegramOrder({
@@ -910,7 +910,7 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate, reque
             resolvedPayment.product,
             resolvedPayment.sitePrice,
             resolvedPayment.offerLabel,
-            await wasGreetingRecentlySent(message.chat.id).catch(() => false)
+            !(await claimWelcomeWithin(message.chat.id).catch(() => true))
           )
         : await sendPriceAnswer(message.chat.id, resolvedPayment, message.business_connection_id);
       if (replied && shouldSendPaymentDetails) {
@@ -951,7 +951,7 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate, reque
       resolvedPayment.product,
       resolvedPayment.sitePrice,
       resolvedPayment.offerLabel,
-      await wasGreetingRecentlySent(message.chat.id).catch(() => false)
+      !(await claimWelcomeWithin(message.chat.id).catch(() => true))
     );
     if (replied && resolvedPayment.hasPayment) {
       await savePendingTelegramOrder({

@@ -54,6 +54,21 @@ export async function wasGreetingRecentlySent(chatId: number, windowMs = 10 * 60
   return Number.isFinite(sentAt) && sentAt > 0 && Date.now() - sentAt < windowMs;
 }
 
+/** Reserve the welcome message for an order within a rolling time window. */
+export async function claimWelcomeWithin(chatId: number, windowMs = 12 * 60 * 60 * 1000) {
+  const store = await readStore();
+  const key = String(chatId);
+  const current = store[key] || {};
+  const sentAt = current.greetingSentAt ? Date.parse(current.greetingSentAt) : 0;
+  const shouldSend = !Number.isFinite(sentAt) || sentAt <= 0 || Date.now() - sentAt >= windowMs;
+  if (shouldSend) {
+    const now = new Date().toISOString();
+    store[key] = { ...current, greetingSentAt: now, lastActivityAt: now };
+    await writeStore(store);
+  }
+  return shouldSend;
+}
+
 export async function noteTelegramChatActivity(chatId: number) {
   const store = await readStore();
   const key = String(chatId);
