@@ -4,7 +4,6 @@ import {
   configureStarsWebhook,
   editStarsMessage,
   isStarsAdmin,
-  manualFragmentUrl,
   sendStarsMessage,
 } from "../../../../lib/starsBot";
 import {
@@ -61,8 +60,8 @@ export async function POST(request: Request) {
       if (!draft?.username || !draft.amount || draft.step !== "confirm") {
         await sendStarsMessage(chatId, "Сначала создайте заявку через кнопку ⭐ Отправить Stars.", menu());
       } else {
-        await editStarsMessage(chatId, callback.message.message_id, "✅ Заявка подтверждена. Откройте ссылку и завершите оплату вручную в Fragment/Wallet:");
-        await sendStarsMessage(chatId, `<a href="${manualFragmentUrl(draft.username, draft.amount)}">Открыть Fragment для отправки Stars</a>\n\nПроверьте username и количество перед подтверждением в кошельке.`);
+        await editStarsMessage(chatId, callback.message.message_id, "✅ Заявка подтверждена. Неверная ссылка на Fragment не отправляется.");
+        await sendStarsMessage(chatId, `Получатель: <code>@${draft.username}</code>\nКоличество: <b>${draft.amount} Stars</b>\n\nПлатёжный шаг Fragment/Wallet пока не подключён: откройте Fragment вручную и проверьте данные перед оплатой.`);
         await clearTelegramStarsDraft(chatId);
       }
     } else if (data.startsWith("stars:cancel:")) {
