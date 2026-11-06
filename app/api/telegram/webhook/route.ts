@@ -202,7 +202,6 @@ async function sendManagerMenu(
               ? `https://ecliptic.website/api/auth/telegram/complete?token=${encodeURIComponent(loginToken)}`
               : "https://ecliptic.website",
           }],
-          [{ text: "Звёзды", callback_data: "stars_start" }],
         ],
       },
     }),
