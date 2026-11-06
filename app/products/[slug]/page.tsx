@@ -99,7 +99,15 @@ export default async function ProductPage({ params }: PageProps) {
     : product.slug === "black-russia" ? BLACK_RUSSIA_SERVERS : undefined;
   const needsRpTopup = isGrandProduct || Boolean(rpServers);
   const detailFields =
-    product.slug === "mobile-legends"
+    product.slug === "telegram-stars" || product.slug === "telegram-premium"
+      ? [
+          {
+            id: "telegramUsername",
+            label: "Введите Telegram юзернейм (имя пользователя)",
+            placeholder: "Например, @username",
+          },
+        ]
+      : product.slug === "mobile-legends"
       ? [
           { id: "accountId", label: "ID аккаунта", placeholder: "Введите ID аккаунта", numeric: true },
           { id: "serverId", label: "ID сервера", placeholder: "Введите ID сервера", numeric: true },

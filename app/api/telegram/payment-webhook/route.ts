@@ -320,6 +320,11 @@ function replyPolicy(product?: Product, hasPayment = false) {
   return hasPayment ? "payment" as const : "manager" as const;
 }
 
+function isPremiumLoginOffer(product?: Product, offerLabel?: string) {
+  return product?.slug.toLowerCase() === "telegram-premium"
+    && /1\s*месяц\s*\(\s*со\s*входом\s*\)/i.test(offerLabel || "");
+}
+
 function ruRublesEquivalent(pricePmr?: number) {
   if (!Number.isFinite(pricePmr) || !pricePmr || pricePmr <= 0) return "";
   // The current rate is 30 PMR = 30 Russian rubles; round down to 5/0.
@@ -540,7 +545,9 @@ async function sendOrderInstructions(
   const product = extractOrderProduct(orderMessage);
   const displayCategory = category.value === "не указан" ? productData?.name || category.value : category.value;
   const displayProduct = product === "Заказ" ? offerLabel || productData?.name || product : product;
-  const policy = replyPolicy(productData, hasPayment);
+  const policy = isPremiumLoginOffer(productData, offerLabel)
+    ? "manager"
+    : replyPolicy(productData, hasPayment);
   const isTelegramAccount = displayCategory.trim().toLowerCase() === "telegram" && /аккаунт/i.test(displayProduct);
   const fallbackAccountSafetyNotice = isTelegramAccount
     ? applyAccountNoticeEmojiIds([
