@@ -146,6 +146,7 @@ function saveCustomerOrder(input: {
   offer: string;
   priceRub?: number;
   message: string;
+  recipientUsername?: string;
 }) {
   const payload = JSON.stringify({
     ...input,
@@ -212,6 +213,7 @@ function TelegramOrderLink({
   confirmation,
   visible = true,
   children,
+  recipientUsername,
 }: {
   message: string;
   productSlug: string;
@@ -226,6 +228,7 @@ function TelegramOrderLink({
     confirmLabel: string;
   };
   children: ReactNode;
+  recipientUsername?: string;
   visible?: boolean;
 }) {
   const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
@@ -234,7 +237,7 @@ function TelegramOrderLink({
 
   function completeOrder() {
     const orderMessage = addOrderCode(message, productSlug, priceRub);
-    saveCustomerOrder({ productSlug, offer, priceRub, message: orderMessage });
+    saveCustomerOrder({ productSlug, offer, priceRub, message: orderMessage, recipientUsername });
     openTelegramOrderMessage(orderMessage);
   }
 
@@ -265,7 +268,7 @@ function TelegramOrderLink({
           }
 
           const orderMessage = addOrderCode(message, productSlug, priceRub);
-          saveCustomerOrder({ productSlug, offer, priceRub, message: orderMessage });
+          saveCustomerOrder({ productSlug, offer, priceRub, message: orderMessage, recipientUsername });
           handleTelegramOrderClick(event, orderMessage);
         }}
         className={className}
@@ -1310,6 +1313,7 @@ export function ProductOffersWithDetails({
               productSlug={productSlug}
               offer={telegramOfferLabel}
               priceRub={offer.priceRub}
+              recipientUsername={productSlug === "telegram-stars" ? values["telegramUsername"] : undefined}
               validate={fields.length > 0 ? validateDetails : undefined}
               onInvalid={showNotice}
               confirmation={

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { addCustomerOrder, getCustomerOrders, getCustomerUserFromCookies } from "../../../lib/customerAuth";
 import { notifyStarsOrder } from "../../../lib/starsBot";
+import { enqueueStarsOrder, isStarsDispatcherConfigured } from "../../../lib/starsDispatcher";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,7 +24,11 @@ export async function POST(request: Request) {
   const alreadyStored = Boolean(clientOrderId && existingOrders.some((item) => item.clientOrderId === clientOrderId));
   const order = await addCustomerOrder(user, body);
   if (order?.productSlug === "telegram-stars" && !alreadyStored) {
-    await notifyStarsOrder(order, user).catch(() => undefined);
+    if (isStarsDispatcherConfigured()) {
+      await enqueueStarsOrder(order, user).catch(() => undefined);
+    } else {
+      await notifyStarsOrder(order, user).catch(() => undefined);
+    }
   }
   return NextResponse.json({ ok: true, stored: Boolean(order), order });
 }

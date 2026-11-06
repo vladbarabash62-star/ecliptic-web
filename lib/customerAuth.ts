@@ -32,6 +32,7 @@ export type CustomerOrder = {
   offer: string;
   priceRub?: number;
   message?: string;
+  recipientUsername?: string;
 };
 
 export type CustomerReferralClaim = {
@@ -294,6 +295,7 @@ export async function addCustomerOrder(user: CustomerUser, input: Partial<Custom
     offer,
     priceRub: Number.isFinite(Number(input.priceRub)) ? Math.max(0, Number(input.priceRub)) : undefined,
     message: cleanText(input.message, "", 900),
+    recipientUsername: cleanText(input.recipientUsername, "", 80) || undefined,
   };
 
   // Keep the canonical user record. The session cookie can be older than the

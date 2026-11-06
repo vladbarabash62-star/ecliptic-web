@@ -60,8 +60,12 @@ export async function POST(request: Request) {
       if (!draft?.username || !draft.amount || draft.step !== "confirm") {
         await sendStarsMessage(chatId, "Сначала создайте заявку через кнопку ⭐ Отправить Stars.", menu());
       } else {
-        await editStarsMessage(chatId, callback.message.message_id, "✅ Заявка подтверждена. Неверная ссылка на Fragment не отправляется.");
-        await sendStarsMessage(chatId, `Получатель: <code>@${draft.username}</code>\nКоличество: <b>${draft.amount} Stars</b>\n\nПлатёжный шаг Fragment/Wallet пока не подключён: откройте Fragment вручную и проверьте данные перед оплатой.`);
+        await editStarsMessage(chatId, callback.message.message_id, "✅ Заявка подтверждена и передана на ручную оплату.");
+        await sendStarsMessage(
+          chatId,
+          `Получатель: <code>@${draft.username}</code>\nКоличество: <b>${draft.amount} Stars</b>\n\nОткройте официальный Fragment, проверьте получателя и количество Stars, затем завершите оплату вручную в Wallet. PIN и подтверждение кошелька бот не запрашивает.`,
+          { inline_keyboard: [[{ text: "Открыть официальный Fragment", url: "https://fragment.com/" }]] },
+        );
         await clearTelegramStarsDraft(chatId);
       }
     } else if (data.startsWith("stars:cancel:")) {
