@@ -77,6 +77,9 @@ export async function configureStarsWebhook(request: Request) {
   if (!botToken) return { ok: false, configured: false, description: "STARS_BOT_TOKEN is not configured" };
 
   const url = new URL("/api/stars/webhook", request.url).toString();
+  // Preview deployments are protected by Vercel SSO. Clear any stale webhook
+  // first so Telegram cannot remain pointed at a protected preview URL.
+  await callTelegram("deleteWebhook", { drop_pending_updates: false });
   const result = await callTelegram("setWebhook", {
     url,
     allowed_updates: ["message", "callback_query"],
