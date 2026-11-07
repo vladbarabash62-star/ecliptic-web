@@ -320,20 +320,10 @@ function replyPolicy(product?: Product, hasPayment = false) {
   ));
 
   // A concrete site offer is always paid through the fixed payment block.
-  // Manager-only replies are reserved for products without a selectable price
-  // and for the explicit Premium login exception handled above.
+  // Manager-only replies are reserved for products without a selectable price.
   if (MANAGER_CONTACT_SLUGS.has(slug) && !hasSellableOffers) return "manager" as const;
   if (!hasSellableOffers) return "manager" as const;
   return hasPayment ? "payment" as const : "manager" as const;
-}
-
-function isPremiumLoginOffer(product?: Product, offerLabel?: string, orderMessage = "") {
-  const productText = [product?.slug, product?.name, orderMessage].filter(Boolean).join(" ");
-  const offerText = [offerLabel, orderMessage].filter(Boolean).join(" ");
-  const isTelegramPremium = product?.slug.toLowerCase() === "telegram-premium"
-    || /telegram[\s_-]*premium/i.test(productText);
-  const isOneMonthWithLogin = /1\s*(?:месяц|мес\.?)\s*\(?\s*(?:со|с)\s*входом\s*\)?/i.test(offerText);
-  return isTelegramPremium && isOneMonthWithLogin;
 }
 
 function ruRublesEquivalent(pricePmr?: number) {
@@ -556,9 +546,7 @@ async function sendOrderInstructions(
   const product = extractOrderProduct(orderMessage);
   const displayCategory = category.value === "не указан" ? productData?.name || category.value : category.value;
   const displayProduct = product === "Заказ" ? offerLabel || productData?.name || product : product;
-  const policy = isPremiumLoginOffer(productData, offerLabel, orderMessage)
-    ? "manager"
-    : replyPolicy(productData, hasPayment);
+  const policy = replyPolicy(productData, hasPayment);
   const isTelegramAccount = displayCategory.trim().toLowerCase() === "telegram" && /аккаунт/i.test(displayProduct);
   const fallbackAccountSafetyNotice = isTelegramAccount
     ? applyAccountNoticeEmojiIds([

@@ -232,11 +232,16 @@ function TelegramOrderLink({
   visible?: boolean;
 }) {
   const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
-  const href = sellerChatHref(message);
+  // Keep the fully formed order in the native link too. If a user clicks
+  // before hydration finishes, Telegram must still receive the order text.
+  const orderMessage = useMemo(
+    () => addOrderCode(message, productSlug, priceRub),
+    [message, productSlug, priceRub]
+  );
+  const href = sellerChatHref(orderMessage);
   if (!visible) return null;
 
   function completeOrder() {
-    const orderMessage = addOrderCode(message, productSlug, priceRub);
     saveCustomerOrder({ productSlug, offer, priceRub, message: orderMessage, recipientUsername });
     openTelegramOrderMessage(orderMessage);
   }
@@ -267,7 +272,6 @@ function TelegramOrderLink({
             return;
           }
 
-          const orderMessage = addOrderCode(message, productSlug, priceRub);
           saveCustomerOrder({ productSlug, offer, priceRub, message: orderMessage, recipientUsername });
           handleTelegramOrderClick(event, orderMessage);
         }}
