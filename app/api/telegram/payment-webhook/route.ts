@@ -315,8 +315,15 @@ const RU_RUBLE_TOPUP_SLUGS = new Set([
 
 function replyPolicy(product?: Product, hasPayment = false) {
   const slug = product?.slug.toLowerCase() || "";
-  if (MANAGER_CONTACT_SLUGS.has(slug)) return "manager" as const;
-  if (PAYMENT_DETAILS_SLUGS.has(slug)) return hasPayment ? "payment" as const : "manager" as const;
+  const hasSellableOffers = Boolean(product?.offers.some((offer) =>
+    offer.type !== "divider" && typeof offer.priceRub === "number" && offer.priceRub > 0
+  ));
+
+  // A concrete site offer is always paid through the fixed payment block.
+  // Manager-only replies are reserved for products without a selectable price
+  // and for the explicit Premium login exception handled above.
+  if (MANAGER_CONTACT_SLUGS.has(slug) && !hasSellableOffers) return "manager" as const;
+  if (!hasSellableOffers) return "manager" as const;
   return hasPayment ? "payment" as const : "manager" as const;
 }
 
@@ -886,7 +893,7 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate, reque
             context.sourceMessage,
             message.business_connection_id,
             contextPayment.amount,
-            chatHistory.established,
+            true,
             contextPayment.product,
             contextPayment.sitePrice,
             contextPayment.offerLabel,
