@@ -1849,7 +1849,8 @@ const ADMIN_HTML = `<!doctype html>
         var pagination = null;
         var summary = analyticsSummary;
         do {
-          var data = await postJson('/api/admin/analytics', { offset: nextOffset, limit: analyticsPagination.limit });
+          // Load the full history in a few requests so charts do not render with only the first 500 events.
+          var data = await postJson('/api/admin/analytics', { offset: nextOffset, limit: 5000 });
           allEvents = allEvents.concat(data.events || []);
           summary = data.summary || summary;
           pagination = data.pagination || { hasMore: false, nextOffset: allEvents.length, totalStored: allEvents.length };
