@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { getProducts } from "../../lib/productStore";
 import { products as fallbackProducts } from "../../lib/products";
 import { productShouldBeIndexed, SITE_URL } from "../../lib/seo";
 import { landingPageUrl, seoLandingPages } from "../../lib/seoLandingPages";
@@ -7,6 +6,10 @@ import { landingPageUrl, seoLandingPages } from "../../lib/seoLandingPages";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+
+const SITEMAP_CACHE_TTL_MS = 300_000;
+let sitemapCache: { expiresAt: number; body: string } | null = null;
+let sitemapInFlight: Promise<string> | null = null;
 
 function escapeXml(value: string) {
   return value
@@ -18,30 +21,46 @@ function escapeXml(value: string) {
 }
 
 export async function GET() {
-  const products = await getProducts({ cached: false }).catch(() => fallbackProducts);
-  const siteOrigin = SITE_URL.replace(/\/$/, "");
-  const productUrls = products
-    .filter(productShouldBeIndexed)
-    .map((product) => product.slug.trim().toLowerCase())
-    .filter((slug) => /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug))
-    .filter((slug) => !new Set(["admin", "account", "api", "go", "robots", "sitemap", "sitemap-xml"]).has(slug))
-    .map((slug) => `${siteOrigin}/products/${slug}`);
-  const urls = Array.from(new Set([
-    `${siteOrigin}/`,
-    ...productUrls,
-    ...seoLandingPages.map((page) => landingPageUrl(page.slug)),
-    `${siteOrigin}/policy`,
-    `${siteOrigin}/terms`,
-    `${siteOrigin}/refund`,
-  ]));
+  if (!sitemapCache || sitemapCache.expiresAt <= Date.now()) {
+    if (!sitemapInFlight) {
+      sitemapInFlight = (async () => {
+        // Keep sitemap generation independent from remote state reads. The public
+        // catalog can be customized at runtime, but sitemap requests must remain
+        // cheap and deterministic on the edge.
+        const products = fallbackProducts;
+        const siteOrigin = SITE_URL.replace(/\/$/, "");
+        const productUrls = products
+          .filter(productShouldBeIndexed)
+          .map((product) => product.slug.trim().toLowerCase())
+          .filter((slug) => /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug))
+          .filter((slug) => !new Set(["admin", "account", "api", "go", "robots", "sitemap", "sitemap-xml"]).has(slug))
+          .map((slug) => `${siteOrigin}/products/${slug}`);
+        const urls = Array.from(new Set([
+          `${siteOrigin}/`,
+          ...productUrls,
+          ...seoLandingPages.map((page) => landingPageUrl(page.slug)),
+          `${siteOrigin}/policy`,
+          `${siteOrigin}/terms`,
+          `${siteOrigin}/refund`,
+        ]));
 
-  const body = [
-    '<?xml version="1.0" encoding="UTF-8"?>',
-    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
-    ...urls.map((url) => `  <url><loc>${escapeXml(url)}</loc></url>`),
-    '</urlset>',
-    '',
-  ].join("\n");
+        return [
+          '<?xml version="1.0" encoding="UTF-8"?>',
+          '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+          ...urls.map((url) => `  <url><loc>${escapeXml(url)}</loc></url>`),
+          '</urlset>',
+          '',
+        ].join("\n");
+      })().finally(() => {
+        sitemapInFlight = null;
+      });
+    }
+
+    const body = await sitemapInFlight;
+    sitemapCache = { expiresAt: Date.now() + SITEMAP_CACHE_TTL_MS, body };
+  }
+
+  const body = sitemapCache.body;
 
   return new NextResponse(body, {
     status: 200,

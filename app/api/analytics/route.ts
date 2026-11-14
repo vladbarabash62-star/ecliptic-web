@@ -113,7 +113,7 @@ export async function POST(request: Request) {
       await addCloudflareAnalyticsEvent(event);
       return NextResponse.json({ ok: true, stored: true, storage: "cloudflare-d1" });
     } catch {
-      return NextResponse.json({ ok: false, stored: false, error: "Analytics storage unavailable" }, { status: 503 });
+      // Continue to the configured fallback store when the analytics Worker is unavailable.
     }
   }
 

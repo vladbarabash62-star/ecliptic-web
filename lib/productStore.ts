@@ -1,4 +1,4 @@
-import { products, type Product, type ProductOffer } from "./products";
+import { products, type Product, type ProductItem, type ProductOffer } from "./products";
 import { unstable_cache } from "next/cache";
 import { redisPipeline } from "./security";
 import { readAdminFallback, writeAdminFallback } from "./adminFallbackStore";
@@ -62,14 +62,24 @@ function normalizeOverrides(value: unknown): ProductOverrides {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {};
 
   return Object.fromEntries(
-    Object.entries(value as ProductOverrides).filter(([, product]) => {
-      return Boolean(
-        product &&
-          typeof product.name === "string" &&
-          typeof product.icon === "string" &&
-          Array.isArray(product.offers)
-      );
-    })
+    Object.entries(value as ProductOverrides)
+      .filter(([, product]) => {
+        return Boolean(
+          product &&
+            typeof product.name === "string" &&
+            typeof product.icon === "string" &&
+            Array.isArray(product.offers)
+        );
+      })
+      .map(([slug, product]) => {
+        const safeProduct = product as ProductOverride;
+        const offers = safeProduct.offers
+          .filter((offer): offer is Product["offers"][number] => Boolean(offer && typeof offer === "object"))
+          .map(normalizeOfferItem)
+          .filter((offer): offer is NonNullable<typeof offer> => Boolean(offer));
+
+        return [slug, { ...safeProduct, offers }] as const;
+      })
   );
 }
 
@@ -152,6 +162,24 @@ function safeOptionalIconUrl(value: unknown) {
 
   const icon = safeIconUrl(value);
   return icon === FALLBACK_ICON ? undefined : icon;
+}
+
+function sanitizeProduct(product: Product): Product {
+  const offers = product.offers.map((offer): ProductItem => {
+    if (offer.type === "divider") return offer;
+
+    const nextOffer: ProductOffer = { ...offer };
+    const icon = safeOptionalIconUrl(offer.icon);
+    if (icon) nextOffer.icon = icon;
+    else delete nextOffer.icon;
+    return nextOffer;
+  });
+
+  return {
+    ...product,
+    icon: safeIconUrl(product.icon),
+    offers,
+  };
 }
 
 function safeScale(value: unknown, fallback = 1, min = 0, max = 2) {
@@ -264,8 +292,14 @@ type ProductReadOptions = {
 
 async function readProductStorageUncached(options: ProductReadOptions = {}): Promise<ProductStorage> {
   if (hasCloudflareState()) {
-    const state = await readCloudflareState<ProductStorage>(PRODUCTS_FALLBACK_KEY);
-    if (state) return normalizeProductStorage(state);
+    const state = await readCloudflareState<ProductStorage>(PRODUCTS_FALLBACK_KEY).catch(() => null);
+    if (state) {
+      try {
+        return normalizeProductStorage(state);
+      } catch {
+        // Continue to the other recovery sources if a stored override is malformed.
+      }
+    }
   }
   const blobStorage = await readBlobJson<ProductStorage>(PRODUCTS_BLOB).catch(() => null);
   if (blobStorage) return normalizeProductStorage(blobStorage);
@@ -315,7 +349,7 @@ function shouldPreferCodeAuthoredOffers(storage: ProductStorage, slug: string) {
   return storage.version < PRODUCT_STORAGE_VERSION && CODE_AUTHORED_OFFER_SLUGS.has(slug);
 }
 
-export async function getProducts(options: ProductReadOptions = {}) {
+async function getProductsInternal(options: ProductReadOptions = {}) {
   const storage = await readProductStorage(options);
   const hiddenBaseSlugs = new Set(storage.hiddenBaseSlugs);
   const overrides = storage.overrides;
@@ -382,11 +416,14 @@ export async function getProducts(options: ProductReadOptions = {}) {
   const mergedProducts = [...orderedBaseProducts, ...customProducts].filter(
     (product) => !/majestic/i.test(product.name) && !/majestic/i.test(product.slug)
   );
+  // Stored admin overrides can be older than the current schema. Sanitize the
+  // final merged payload so malformed markup can never reach the public UI.
+  const sanitizedProducts = mergedProducts.map(sanitizeProduct);
   const productOrder = storage.order;
 
-  if (!productOrder.length) return mergedProducts;
+  if (!productOrder.length) return sanitizedProducts;
 
-  const productsBySlug = new Map(mergedProducts.map((product) => [product.slug, product]));
+  const productsBySlug = new Map(sanitizedProducts.map((product) => [product.slug, product]));
   const orderedSlugs = new Set<string>();
   const storedOrderProducts = productOrder
     .map((slug) => productsBySlug.get(slug))
@@ -395,9 +432,18 @@ export async function getProducts(options: ProductReadOptions = {}) {
       orderedSlugs.add(product.slug);
       return true;
     });
-  const remainingProducts = mergedProducts.filter((product) => !orderedSlugs.has(product.slug));
+  const remainingProducts = sanitizedProducts.filter((product) => !orderedSlugs.has(product.slug));
 
   return [...storedOrderProducts, ...remainingProducts];
+}
+
+export async function getProducts(options: ProductReadOptions = {}) {
+  try {
+    return await getProductsInternal(options);
+  } catch {
+    // A bad admin override must never take down the public catalog.
+    return products.map((product) => ({ ...product, baseSlug: product.slug }));
+  }
 }
 
 export async function getProductBySlug(slug: string, options: ProductReadOptions = {}) {

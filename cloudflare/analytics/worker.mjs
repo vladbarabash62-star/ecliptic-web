@@ -1,6 +1,44 @@
 const excludedVisitor = "8cf99251-32be-4daa-bd0a-4e9543668326";
 const json = (body, status = 200) => Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
 
+async function ensureSchema(env) {
+  if (!env.DB) return;
+  await env.DB.batch([
+    env.DB.prepare("CREATE TABLE IF NOT EXISTS events (id TEXT PRIMARY KEY, time TEXT NOT NULL, data TEXT NOT NULL)"),
+    env.DB.prepare("CREATE INDEX IF NOT EXISTS events_time ON events(time DESC)"),
+    env.DB.prepare("CREATE TABLE IF NOT EXISTS state (key TEXT PRIMARY KEY, data TEXT NOT NULL, updated_at TEXT NOT NULL)"),
+    env.DB.prepare("CREATE TABLE IF NOT EXISTS state_history (id INTEGER PRIMARY KEY AUTOINCREMENT, key TEXT NOT NULL, data TEXT NOT NULL, updated_at TEXT NOT NULL)"),
+    env.DB.prepare("CREATE INDEX IF NOT EXISTS state_history_key_id ON state_history(key, id DESC)"),
+  ]);
+}
+
+function filteredEvents(rows) {
+  return rows
+    .map((row) => {
+      try { return JSON.parse(row.data); } catch { return null; }
+    })
+    .filter((event) => event && event.type !== "page_view" && event.visitorId !== excludedVisitor);
+}
+
+function summarize(events) {
+  const actions = {};
+  const products = {};
+  let views = 0;
+  let buys = 0;
+  let telegram = 0;
+  for (const event of events) {
+    const type = String(event.type || "unknown");
+    actions[type] = (actions[type] || 0) + 1;
+    if (type === "product_open") {
+      views += 1;
+      if (event.product) products[event.product] = (products[event.product] || 0) + 1;
+    }
+    if (type === "buy_click") buys += 1;
+    if (type.includes("telegram")) telegram += 1;
+  }
+  return { total: events.length, views, buys, telegram, actions, products };
+}
+
 async function eventStatement(db, event) {
   if (!event || typeof event !== "object" || event.visitorId === excludedVisitor || event.type === "page_view") return null;
   if (!event.type || !event.time || !Number.isFinite(Date.parse(event.time))) throw new Error("Invalid event");
@@ -17,9 +55,20 @@ const worker = {
     if (!env.ANALYTICS_BRIDGE_SECRET || request.headers.get("Authorization") !== `Bearer ${env.ANALYTICS_BRIDGE_SECRET}`) return json({ error: "Unauthorized" }, 401);
     const path = new URL(request.url).pathname.replace(/^\/_analytics(?=\/|$)/, "");
     try {
+      await ensureSchema(env);
       if (request.method === "GET" && path === "/events") {
+        const url = new URL(request.url);
+        const offset = Math.max(0, Number.parseInt(url.searchParams.get("offset") || "0", 10) || 0);
+        const limit = Math.min(5000, Math.max(1, Number.parseInt(url.searchParams.get("limit") || "1000", 10) || 1000));
         const result = await env.DB.prepare("SELECT data FROM events ORDER BY time DESC").all();
-        return json({ events: result.results.map((row) => JSON.parse(row.data)) });
+        const allEvents = filteredEvents(result.results);
+        const events = allEvents.slice(offset, offset + limit);
+        return json({ events, pagination: { offset, limit, loaded: events.length, totalStored: allEvents.length, hasMore: offset + events.length < allEvents.length, nextOffset: offset + events.length } });
+      }
+      if (request.method === "GET" && path === "/summary") {
+        const result = await env.DB.prepare("SELECT data FROM events ORDER BY time DESC").all();
+        const events = filteredEvents(result.results);
+        return json({ summary: summarize(events), totalStored: events.length });
       }
       if (request.method === "GET" && path === "/health") {
         const count = await env.DB.prepare("SELECT COUNT(*) AS count FROM events").first();

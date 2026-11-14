@@ -3,7 +3,10 @@ import { get, put, del, BlobNotFoundError } from "@vercel/blob";
 const ACCESS = "private" as const;
 
 function blobEnabled() {
-  return Boolean(process.env.BLOB_STORE_ID || process.env.BLOB_READ_WRITE_TOKEN);
+  // BLOB_STORE_ID is a Vercel deployment identifier, not a usable Blob
+  // credential. Cloudflare must fall back to its own state store unless the
+  // actual read/write token is present.
+  return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
 }
 
 async function streamToText(stream: ReadableStream<Uint8Array>) {

@@ -1333,6 +1333,18 @@ export function ProductOffersWithDetails({
         );
       })
       )}
+
+      {productSlug === "fortnite" ? (
+        <>
+          <div className="category-divider mt-4" style={{ animationDelay: "220ms" }}>
+            <div className="category-divider__line" />
+            <div className="category-divider__content">
+              <h3>Наборы</h3>
+            </div>
+          </div>
+          <ManagerButtonForm productName={productName} productSlug={productSlug} />
+        </>
+      ) : null}
       </div>
     </>
   );

@@ -410,7 +410,7 @@ const ADMIN_HTML = `<!doctype html>
     var settings = { reviewsCountLabel: '400+' };
     var analyticsEvents = [];
     var analyticsSummary = { total: 0, views: 0, buys: 0, telegram: 0, actions: {}, products: {} };
-    var analyticsPagination = { offset: 0, limit: 5000, loaded: 0, totalStored: 0, hasMore: false, nextOffset: 0 };
+    var analyticsPagination = { offset: 0, limit: 500, loaded: 0, totalStored: 0, hasMore: false, nextOffset: 0 };
     var hotVisitorOpenCounts = {};
     var referralUsers = [];
     var referralFilter = 'all';
@@ -1779,7 +1779,7 @@ const ADMIN_HTML = `<!doctype html>
       } catch (error) {
         analyticsEvents = mergeAnalyticsSources([]);
         analyticsSummary = summarizeEvents(analyticsEvents);
-        analyticsPagination = { offset: 0, limit: 5000, loaded: analyticsEvents.length, totalStored: analyticsEvents.length, hasMore: false, nextOffset: analyticsEvents.length };
+        analyticsPagination = { offset: 0, limit: 500, loaded: analyticsEvents.length, totalStored: analyticsEvents.length, hasMore: false, nextOffset: analyticsEvents.length };
         renderAnalytics();
         $('analyticsUpdatedAt').textContent = 'Статистика временно не обновилась';
         showNotice('Товары загружены. Аналитика временно недоступна.', true);
@@ -1858,7 +1858,7 @@ const ADMIN_HTML = `<!doctype html>
 
         analyticsEvents = mergeAnalyticsSources(allEvents);
         analyticsSummary = mergeSummary(summary, analyticsEvents);
-        analyticsPagination = pagination || { offset: 0, limit: 5000, loaded: allEvents.length, totalStored: allEvents.length, hasMore: false, nextOffset: allEvents.length };
+        analyticsPagination = pagination || { offset: 0, limit: 500, loaded: allEvents.length, totalStored: allEvents.length, hasMore: false, nextOffset: allEvents.length };
         analyticsPagination.totalStored = Math.max(analyticsPagination.totalStored || 0, analyticsEvents.length);
         renderAnalytics();
         updateAnalyticsTimestamp();
@@ -1880,7 +1880,7 @@ const ADMIN_HTML = `<!doctype html>
         try { localStorage.removeItem(LOCAL_ANALYTICS_KEY); } catch (storageError) {}
         analyticsEvents = data.events || [];
         analyticsSummary = data.summary || { total: 0, views: 0, buys: 0, telegram: 0, actions: {}, products: {} };
-        analyticsPagination = data.pagination || { offset: 0, limit: 5000, loaded: 0, totalStored: 0, hasMore: false, nextOffset: 0 };
+        analyticsPagination = data.pagination || { offset: 0, limit: 500, loaded: 0, totalStored: 0, hasMore: false, nextOffset: 0 };
         renderAnalytics();
         updateAnalyticsTimestamp();
         showNotice('Статистика сброшена.', false);

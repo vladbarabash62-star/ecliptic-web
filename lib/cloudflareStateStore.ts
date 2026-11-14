@@ -1,4 +1,5 @@
 const stateUrl = () => String(process.env.CLOUDFLARE_ANALYTICS_URL || "").replace(/\/$/, "");
+const STATE_REQUEST_TIMEOUT_MS = 15000;
 
 function headers() {
   return {
@@ -16,6 +17,7 @@ export async function readCloudflareState<T>(key: string): Promise<T | null> {
   const response = await fetch(`${stateUrl()}/state?key=${encodeURIComponent(key)}`, {
     headers: headers(),
     cache: "no-store",
+    signal: AbortSignal.timeout(STATE_REQUEST_TIMEOUT_MS),
   });
   if (!response.ok) throw new Error(`Cloudflare state read failed: ${response.status}`);
   const body = await response.json() as { data?: T | null };
@@ -29,6 +31,7 @@ export async function writeCloudflareState(key: string, data: unknown) {
     headers: headers(),
     body: JSON.stringify({ key, data }),
     cache: "no-store",
+    signal: AbortSignal.timeout(STATE_REQUEST_TIMEOUT_MS),
   });
   if (!response.ok) throw new Error(`Cloudflare state write failed: ${response.status}`);
 }

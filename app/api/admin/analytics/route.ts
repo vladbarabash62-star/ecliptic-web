@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { isExcludedAnalyticsVisitor } from "../../../../lib/analyticsExclusions";
-import { clearCloudflareAnalyticsEvents, hasCloudflareAnalytics, readCloudflareAnalyticsEvents } from "../../../../lib/cloudflareAnalytics";
+import { clearCloudflareAnalyticsEvents, hasCloudflareAnalytics, readCloudflareAnalyticsEventsPage, readCloudflareAnalyticsSummary } from "../../../../lib/cloudflareAnalytics";
 import {
   clearFallbackAnalyticsEvents,
   readFallbackAnalyticsEvents,
@@ -36,15 +36,16 @@ export async function POST(request: Request) {
   if (hasCloudflareAnalytics()) {
     try {
       if (body.reset) await clearCloudflareAnalyticsEvents();
-      const allEvents = body.reset ? [] : (await readCloudflareAnalyticsEvents()).filter((event) => event.type !== "page_view" && !isExcludedAnalyticsVisitor(event.visitorId));
-      const events = allEvents.slice(offset, offset + limit);
+      const [page, storedSummary] = body.reset
+        ? [{ events: [], pagination: { offset, limit, loaded: 0, totalStored: 0, hasMore: false, nextOffset: 0 } }, { totalStored: 0, summary: { total: 0, views: 0, buys: 0, telegram: 0, actions: {}, products: {} } }]
+        : await Promise.all([readCloudflareAnalyticsEventsPage(offset, limit), readCloudflareAnalyticsSummary()]);
       return NextResponse.json({
-        ok: true, configured: true, storage: "cloudflare-d1", reset: Boolean(body.reset), events,
-        pagination: { offset, limit, loaded: events.length, totalStored: allEvents.length, hasMore: offset + events.length < allEvents.length, nextOffset: offset + events.length },
-        summary: summarizeAnalyticsEvents(allEvents),
+        ok: true, configured: true, storage: "cloudflare-d1", reset: Boolean(body.reset), events: page.events,
+        pagination: page.pagination,
+        summary: storedSummary.summary,
       });
     } catch {
-      return NextResponse.json({ ok: false, error: "Analytics storage unavailable" }, { status: 503 });
+      // Fall through to Redis/Blob fallback so the admin panel remains usable during Worker outages.
     }
   }
 

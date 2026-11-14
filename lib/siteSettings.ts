@@ -12,7 +12,7 @@ export const SITE_SETTINGS_CACHE_TAG = "ecliptic-site-settings";
 
 async function readSiteSettings() {
   if (hasCloudflareState()) {
-    const state = await readCloudflareState<SiteSettings>(SITE_SETTINGS_FALLBACK_KEY);
+    const state = await readCloudflareState<SiteSettings>(SITE_SETTINGS_FALLBACK_KEY).catch(() => null);
     if (state) return normalizeSiteSettings(state);
   }
   const blobSettings = await readBlobJson<SiteSettings>(SITE_SETTINGS_BLOB).catch(() => null);

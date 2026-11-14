@@ -3,7 +3,6 @@ import AnalyticsTracker from "./components/AnalyticsTracker";
 import ContactButton from "./components/ContactButton";
 import FloatingReferralStar from "./components/FloatingReferralStar";
 import HomeButton from "./components/HomeButton";
-import PageLoader from "./components/PageLoader";
 import SiteFooter from "./components/SiteFooter";
 import SwipeHomeGesture from "./components/SwipeHomeGesture";
 import SwipeHomePreview from "./components/SwipeHomePreview";
@@ -175,8 +174,7 @@ export default function RootLayout({
         {/* ЗВЕЗДЫ */}
         <SpaceScene />
 
-        {/* КНОПКА */}
-        <PageLoader />
+        {/* Плавающие элементы интерфейса */}
         <HomeButton />
         <UserAuthButton />
         <FloatingReferralStar />
