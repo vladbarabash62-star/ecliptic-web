@@ -101,7 +101,7 @@ const STYLE = `
   .pie { width:170px; aspect-ratio:1; border-radius:50%; background:conic-gradient(rgba(255,255,255,.12) 0 100%); box-shadow:inset 0 0 0 14px rgba(0,0,0,.18),0 18px 42px rgba(0,0,0,.28); }
   .legend { display:grid; gap:8px; align-content:center; }
   .legend-row { display:grid; grid-template-columns:12px 1fr auto; gap:8px; align-items:center; font-size:13px; }
-  .legend.scroll { max-height:none; overflow:visible; padding-right:4px; grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .legend.scroll { max-height:none; overflow:visible; padding-right:4px; grid-template-columns:1fr; }
   .dot { width:12px; height:12px; border-radius:50%; background:var(--dot,#38bdf8); }
   .chart-empty { display:grid; min-height:210px; place-items:center; color:var(--muted); text-align:center; }
   .wide-chart { padding:16px; margin-bottom:14px; }
@@ -160,7 +160,7 @@ const STYLE = `
   .login-card h1 { margin-top:14px; font-size:clamp(36px,7vw,50px); line-height:1; }
   .login-form { display:grid; gap:14px; margin-top:24px; text-align:left; }
   .login-form .btn { width:100%; }
-  @media (max-width:1100px) { .chart-grid,.chart-grid.two,.insight-grid { grid-template-columns:1fr; } .pie-wrap { grid-template-columns:1fr; justify-items:center; } .legend.scroll { grid-template-columns:1fr; width:100%; } }
+  @media (max-width:1100px) { .chart-grid,.chart-grid.two,.insight-grid { grid-template-columns:1fr; } .pie-wrap { grid-template-columns:1fr; justify-items:center; } .legend.scroll { width:100%; } }
   @media (max-width:940px) { .stats,.grid2,.admin-grid,.two,.referral-grid,.referral-detail-grid,.referral-columns { grid-template-columns:1fr; } .top { align-items:flex-start; flex-direction:column; } .sidebar { max-height:none; } .upload-row { grid-template-columns:1fr; } }
 `;
 
@@ -928,7 +928,8 @@ const ADMIN_HTML = `<!doctype html>
         return chartColors[index % chartColors.length] + ' ' + from.toFixed(2) + '% ' + to.toFixed(2) + '%';
       }).join(',') : '#1f2937 0% 100%';
       var legend = rows.map(function(row, index) {
-        return '<div class="legend-row"><span class="dot" style="--dot:' + chartColors[index % chartColors.length] + '"></span><span>' + esc(row[0]) + '</span><strong>' + row[1] + ' · ' + shareLabel(row[1], total) + '</strong></div>';
+        var displayLabel = String(row[0]).replace(/\s·\s\/products\/.*$/, '');
+        return '<div class="legend-row"><span class="dot" style="--dot:' + chartColors[index % chartColors.length] + '"></span><span>' + esc(displayLabel) + '</span><strong>' + row[1] + ' · ' + shareLabel(row[1], total) + '</strong></div>';
       }).join('');
       $(id).innerHTML = '<div class="pie-wrap"><div class="pie" style="background:conic-gradient(' + segments + ')"></div><div class="legend ' + (rows.length > 8 ? 'scroll' : '') + '">' + legend + '</div></div>';
     }
