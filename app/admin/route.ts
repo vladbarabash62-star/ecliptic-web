@@ -433,7 +433,7 @@ const ADMIN_HTML = `<!doctype html>
       { start: '2026-10-19', label: '19.10 - 25.10', events: 2874, buys: 143, buySum: 16370, views: 754, registrations: 147, referrals: 1 },
       { start: '2026-10-26', label: '26.10 - 01.11', events: 2126, buys: 111, buySum: 19898, views: 624, registrations: 51, referrals: 2 },
       { start: '2026-11-02', label: '02.11 - 08.11', events: 2490, buys: 164, buySum: 23842, views: 777, registrations: 99, referrals: 2 },
-      { start: '2026-11-09', label: '09.11 - 15.11', events: 41, buys: 2, buySum: 170, views: 16, registrations: 47, unique: 1 },
+      { start: '2026-11-09', label: '09.11 - 15.11', events: 1182, buys: 100, buySum: 9972, views: 405, registrations: 47, unique: 1 },
       { start: '2026-11-16', label: '16.11 - 22.11', events: 522, buys: 36, buySum: 4004.5, views: 172, registrations: 40, unique: 109 }
     ];
 
