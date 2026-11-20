@@ -414,6 +414,7 @@ const ADMIN_HTML = `<!doctype html>
     var hotVisitorOpenCounts = {};
     var referralUsers = [];
     var referralFilter = 'all';
+    var chartsFullLoading = false;
     var selectedReferralUserId = '';
     var selectedSlug = '';
     var uploadTarget = null;
@@ -434,8 +435,8 @@ const ADMIN_HTML = `<!doctype html>
       { start: '2026-10-19', label: '19.10 - 25.10', events: 2874, buys: 143, buySum: 16370, views: 754, registrations: 147, unique: null, referrals: 1 },
       { start: '2026-10-26', label: '26.10 - 01.11', events: 2126, buys: 111, buySum: 19898, views: 624, registrations: 51, unique: null, referrals: 2 },
       { start: '2026-11-02', label: '02.11 - 08.11', events: 2490, buys: 164, buySum: 23842, views: 777, registrations: 99, unique: null, referrals: 2 },
-      { start: '2026-11-09', label: '09.11 - 15.11', events: 1182, buys: 100, buySum: 9972, views: 405, registrations: 47, unique: 1, referrals: null },
-      { start: '2026-11-16', label: '16.11 - 22.11', events: 522, buys: 36, buySum: 4004.5, views: 172, registrations: 40, unique: 109, referrals: null }
+      { start: '2026-11-09', label: '09.11 - 15.11', events: 1182, buys: 100, buySum: 9972, views: 405, registrations: 47, unique: null, referrals: null },
+      { start: '2026-11-16', label: '16.11 - 22.11', events: 522, buys: 36, buySum: 4004.5, views: 172, registrations: 40, unique: null, referrals: null }
     ];
 
     function $(id) { return document.getElementById(id); }
@@ -1008,7 +1009,7 @@ const ADMIN_HTML = `<!doctype html>
       }).join('') + '</div>';
     }
     function uniqueVisitorId(event) {
-      return String(event && (event.visitorId || event.sessionId) || '').trim();
+      return String(visitorKey(event) || event && event.sessionId || '').trim();
     }
     function renderUniqueVisitorWeekBars(id, events) {
       var visitEvents = (events || []).filter(function(event) { return (event.type !== 'page_view' || event.snapshotVisitor) && uniqueVisitorId(event) && event.time; });
@@ -1198,7 +1199,7 @@ const ADMIN_HTML = `<!doctype html>
       return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
     }
     function visitorKey(event) {
-      return event.ipAddress || event.ipHash || event.visitorId || '';
+      return event.ipAddress || event.ipHash || event.ip || event.visitorId || '';
     }
     function returningVisitors(events) {
       var byVisitor = {};
@@ -1250,7 +1251,7 @@ const ADMIN_HTML = `<!doctype html>
         return '<div class="row"><div><strong>' + esc(label) + '</strong>' + meta + '<div class="bar"><span style="width:' + Math.max(8, Math.round(row[1] / max * 100)) + '%"></span></div></div><strong>' + row[1] + '</strong></div>';
       }).join('') : '<p class="muted">Пока нет данных.</p>';
     }
-    function renderAnalytics() {
+    function renderAnalytics(skipCharts) {
       hotVisitorOpenCounts = productOpenCountsByVisitorLastDay(analyticsEvents);
       var totalEvents = Math.max(Number(analyticsSummary.total) || 0, Number(analyticsPagination.totalStored) || 0, analyticsEvents.length);
       $('statTotal').textContent = totalEvents.toLocaleString('ru-RU');
@@ -1266,7 +1267,7 @@ const ADMIN_HTML = `<!doctype html>
       $('loadMoreEventsBtn').textContent = analyticsPagination.hasMore
         ? 'Показать еще события (' + analyticsEvents.length + ' из ' + analyticsPagination.totalStored + ')'
         : 'Все события загружены';
-      renderCharts();
+      if (!skipCharts) renderCharts();
     }
     function formatAdminDate(value) {
       return value ? new Date(value).toLocaleString('ru-RU') : '-';
@@ -1838,8 +1839,11 @@ const ADMIN_HTML = `<!doctype html>
           nextOffset: analyticsEvents.length,
         };
         analyticsPagination.totalStored = Math.max(analyticsPagination.totalStored || 0, analyticsEvents.length);
-        renderAnalytics();
+        var chartsActive = $('charts').classList.contains('active');
+        var deferCharts = chartsActive && !shouldAppend;
+        renderAnalytics(deferCharts);
         updateAnalyticsTimestamp();
+        if (deferCharts) loadFullAnalyticsForCharts();
         showNotice('Готово.', false);
         hideNoticeSoon();
       } catch (error) {
@@ -1862,7 +1866,7 @@ const ADMIN_HTML = `<!doctype html>
           selectedReferralUserId = referralUsers[0] ? referralUsers[0].id : '';
         }
         renderReferrals();
-        renderCharts();
+        if (!chartsFullLoading) renderCharts();
         $('referralsUpdatedAt').textContent = 'Обновлено: ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' · пользователей: ' + referralUsers.length;
       } catch (error) {
         $('referralsUpdatedAt').textContent = 'Не удалось загрузить пользователей';
@@ -1908,19 +1912,11 @@ const ADMIN_HTML = `<!doctype html>
     async function loadFullAnalyticsForCharts() {
       $('reloadChartsBtn').disabled = true;
       $('loadMoreEventsBtn').disabled = true;
+      chartsFullLoading = true;
       showNotice('Догружаю всю историю для диаграмм...', false);
       try {
-        var snapshotResponse = await postJson('/api/admin/analytics', { snapshot: true });
-        if (snapshotResponse.snapshot) {
-          analyticsEvents = eventsFromChartSnapshot(snapshotResponse.snapshot);
-          analyticsSummary = snapshotResponse.snapshot.summary || summarizeEvents(analyticsEvents);
-          analyticsPagination = { offset: 0, limit: analyticsEvents.length, loaded: analyticsEvents.length, totalStored: analyticsSummary.total || analyticsEvents.length, hasMore: false, nextOffset: analyticsEvents.length };
-          renderAnalytics();
-          updateAnalyticsTimestamp();
-          showNotice('Диаграммы загружены из сохранённой сводки.', false);
-          hideNoticeSoon();
-          return;
-        }
+        // Always read the paginated event store here. The chart snapshot intentionally has
+        // only partial aggregates and cannot rebuild unique visitors by IP.
         var pageSize = 5000;
         var firstPage = await postJson('/api/admin/analytics', { offset: 0, limit: pageSize });
         var allEvents = firstPage.events || [];
@@ -1944,6 +1940,7 @@ const ADMIN_HTML = `<!doctype html>
       } catch (error) {
         showNotice(error.message || 'Не удалось обновить диаграммы.', true);
       } finally {
+        chartsFullLoading = false;
         $('reloadChartsBtn').disabled = false;
         $('loadMoreEventsBtn').disabled = false;
       }
