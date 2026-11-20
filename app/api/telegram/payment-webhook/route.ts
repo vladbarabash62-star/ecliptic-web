@@ -406,6 +406,11 @@ function replyPolicy(product?: Product, hasPayment = false) {
     offer.type !== "divider" && typeof offer.priceRub === "number" && offer.priceRub > 0
   ));
 
+  // A concrete order code with a resolved amount is a payment request even if
+  // the catalog lookup is temporarily stale. Keep only explicit manager-only
+  // products on the manual-contact path.
+  if (hasPayment && (!product || !MANAGER_CONTACT_SLUGS.has(slug))) return "payment" as const;
+
   // A concrete site offer is always paid through the fixed payment block.
   // Manager-only replies are reserved for products without a selectable price.
   if (MANAGER_CONTACT_SLUGS.has(slug) && !hasSellableOffers) return "manager" as const;
@@ -464,6 +469,19 @@ async function resolveOrderPayment(orderMessage: string, orderCode: string): Pro
     sitePrice: resolvedOrderPrice,
     hasPayment: true,
   };
+
+  // A concrete order code already carries the price selected on the site.
+  // If the catalog changed after the order was created, keep ordinary paid
+  // products on the payment path instead of falling back to a manager reply.
+  // Manager-only products remain intentionally manual.
+  if (parsed.priceRub && parsed.priceRub > 0 && !MANAGER_CONTACT_SLUGS.has(product.slug.toLowerCase())) {
+    return {
+      amount: `${parsed.priceRub} р ПМР`,
+      product,
+      sitePrice: parsed.priceRub,
+      hasPayment: true,
+    };
+  }
 
   return { amount: "", product, hasPayment: false };
 }
