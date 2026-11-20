@@ -101,7 +101,7 @@ const STYLE = `
   .pie { width:170px; aspect-ratio:1; border-radius:50%; background:conic-gradient(rgba(255,255,255,.12) 0 100%); box-shadow:inset 0 0 0 14px rgba(0,0,0,.18),0 18px 42px rgba(0,0,0,.28); }
   .legend { display:grid; gap:8px; align-content:center; }
   .legend-row { display:grid; grid-template-columns:12px 1fr auto; gap:8px; align-items:center; font-size:13px; }
-  .legend.scroll { max-height:260px; overflow:auto; padding-right:4px; }
+  .legend.scroll { max-height:none; overflow:visible; padding-right:4px; grid-template-columns:repeat(2,minmax(0,1fr)); }
   .dot { width:12px; height:12px; border-radius:50%; background:var(--dot,#38bdf8); }
   .chart-empty { display:grid; min-height:210px; place-items:center; color:var(--muted); text-align:center; }
   .wide-chart { padding:16px; margin-bottom:14px; }
@@ -160,7 +160,7 @@ const STYLE = `
   .login-card h1 { margin-top:14px; font-size:clamp(36px,7vw,50px); line-height:1; }
   .login-form { display:grid; gap:14px; margin-top:24px; text-align:left; }
   .login-form .btn { width:100%; }
-  @media (max-width:1100px) { .chart-grid,.chart-grid.two,.insight-grid { grid-template-columns:1fr; } .pie-wrap { grid-template-columns:1fr; justify-items:center; } }
+  @media (max-width:1100px) { .chart-grid,.chart-grid.two,.insight-grid { grid-template-columns:1fr; } .pie-wrap { grid-template-columns:1fr; justify-items:center; } .legend.scroll { grid-template-columns:1fr; width:100%; } }
   @media (max-width:940px) { .stats,.grid2,.admin-grid,.two,.referral-grid,.referral-detail-grid,.referral-columns { grid-template-columns:1fr; } .top { align-items:flex-start; flex-direction:column; } .sidebar { max-height:none; } .upload-row { grid-template-columns:1fr; } }
 `;
 
@@ -797,6 +797,62 @@ const ADMIN_HTML = `<!doctype html>
       if (!cleanSlug) return 'Неизвестно';
       return productNameBySlug(cleanSlug) + ' · /products/' + cleanSlug;
     }
+    var REQUIRED_PRODUCT_CHART_CATALOG = [
+      ['telegram-premium', 'Telegram Premium'],
+      ['telegram-stars', 'Telegram Stars'],
+      ['telegram-accounts', 'Telegram аккаунты'],
+      ['standoff-2', 'Standoff 2'],
+      ['spotify-premium', 'Spotify Premium'],
+      ['sbp-payment', 'Оплата по СБП'],
+      ['premium-stars', 'Premium Stars'],
+      ['roblox-mobile', 'Roblox Mobile'],
+      ['clash-royale', 'Clash Royale'],
+      ['tiktok', 'TikTok'],
+      ['free-fire', 'Free Fire'],
+      ['minecraft', 'Minecraft'],
+      ['radmir-rp', 'Radmir RP'],
+      ['amazing-rp', 'Amazing RP'],
+      ['black-russia', 'Black Russia'],
+      ['grand-mobile', 'Grand Mobile'],
+      ['world-of-tanks', 'Мир танков'],
+      ['epic-games-topup', 'Epic Games'],
+      ['call-of-duty-mobile', 'Call of Duty Mobile'],
+      ['oxide', 'Oxide'],
+      ['discord-nitro', 'Discord Nitro'],
+      ['chatgpt-plus', 'ChatGPT'],
+      ['fortnite', 'Fortnite'],
+      ['youtube-premium', 'YouTube Premium'],
+      ['cursor', 'Cursor'],
+      ['site-topups', 'Пополнение сайтов'],
+      ['card-withdrawal-rf', 'Вывод с карты РФ'],
+      ['card-withdrawal-md', 'Вывод с карты MD'],
+      ['nft', 'NFT'],
+      ['playstation', 'PlayStation'],
+      ['boosty', 'Boosty'],
+      ['twitch', 'Twitch'],
+      ['delta-force', 'Delta Force'],
+      ['netflix', 'Netflix'],
+      ['ton', 'TON'],
+      ['steam', 'Steam'],
+      ['amazon', 'Amazon']
+    ];
+    function productChartCatalog() {
+      var catalog = [];
+      var seen = {};
+      function add(slug, name) {
+        slug = String(slug || '').trim();
+        if (!slug || seen[slug]) return;
+        seen[slug] = true;
+        catalog.push({ slug: slug, name: name || productNameBySlug(slug) || slug });
+      }
+      REQUIRED_PRODUCT_CHART_CATALOG.forEach(function(row) { add(row[0], row[1]); });
+      // Append any additional products currently present in the public catalog.
+      (products || []).forEach(function(product) { add(product.slug, product.name); });
+      return catalog;
+    }
+    function productChartLabel(item) {
+      return item.name + ' · /products/' + item.slug;
+    }
     function productSummaryNames(data) {
       return Object.entries(data || {}).reduce(function(acc, row) {
         acc[productNameBySlug(row[0])] = Number(row[1] || 0);
@@ -828,15 +884,18 @@ const ADMIN_HTML = `<!doctype html>
     }
     function catalogProductCounts(events, counter) {
       var counts = {};
-      (products || []).forEach(function(product) {
-        if (product && product.slug) counts[productLinkLabel(product.slug)] = 0;
+      var catalog = productChartCatalog();
+      var bySlug = {};
+      catalog.forEach(function(item) {
+        counts[productChartLabel(item)] = 0;
+        bySlug[item.slug] = productChartLabel(item);
       });
-      Object.entries(counter(events) || {}).forEach(function(row) {
-        // Ignore stale/unknown slugs from the event store. The legend must match
-        // the current catalog shown on the Products tab exactly.
-        if (Object.prototype.hasOwnProperty.call(counts, row[0])) {
-          counts[row[0]] += Number(row[1] || 0);
-        }
+      (events || []).forEach(function(event) {
+        var slug = eventProductSlug(event);
+        if (!slug || !bySlug[slug]) return;
+        var isOpen = counter === productOpenCounts && event.type === 'product_open';
+        var isBuy = counter === productBuyCounts && event.type === 'buy_click';
+        if (isOpen || isBuy) counts[bySlug[slug]] += 1;
       });
       return counts;
     }
@@ -1415,10 +1474,10 @@ const ADMIN_HTML = `<!doctype html>
       var productCounts = catalogProductCounts(chartEvents, productOpenCounts);
       var productBuyCountsData = catalogProductCounts(chartEvents, productBuyCounts);
 
-      // Keep catalog order so every product is easy to find and no item is
-      // hidden by a count-based top-N slice.
-      renderPie('chartProducts', Object.entries(productCounts));
-      renderPie('chartProductBuys', Object.entries(productBuyCountsData));
+      // Show every catalog item, ordered by popularity. Zero-count items remain
+      // at the bottom of the complete legend.
+      renderPie('chartProducts', topEntries(productCounts, Object.keys(productCounts).length));
+      renderPie('chartProductBuys', topEntries(productBuyCountsData, Object.keys(productBuyCountsData).length));
       renderWeekBars('chartWeeklyEvents', chartEvents, 'all_events', 'событий');
       renderWeekBars('chartWeeklyBuys', chartEvents, 'buy_click', 'кликов');
       renderWeekBars('chartWeeklyProductViews', chartEvents, 'product_page_view', 'открытий');
