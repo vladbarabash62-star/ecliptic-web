@@ -770,6 +770,12 @@ const ADMIN_HTML = `<!doctype html>
     function percent(value, total) {
       return total > 0 ? Math.round(value / total * 100) : 0;
     }
+    function shareLabel(value, total) {
+      if (!(total > 0) || !(value > 0)) return '0%';
+      var share = value / total * 100;
+      if (share < 0.1) return '<0.1%';
+      return share.toFixed(1).replace('.', ',') + '%';
+    }
     function decodeText(value) {
       var text = String(value || '').trim();
       if (!text) return '';
@@ -826,7 +832,11 @@ const ADMIN_HTML = `<!doctype html>
         if (product && product.slug) counts[productLinkLabel(product.slug)] = 0;
       });
       Object.entries(counter(events) || {}).forEach(function(row) {
-        counts[row[0]] = (counts[row[0]] || 0) + Number(row[1] || 0);
+        // Ignore stale/unknown slugs from the event store. The legend must match
+        // the current catalog shown on the Products tab exactly.
+        if (Object.prototype.hasOwnProperty.call(counts, row[0])) {
+          counts[row[0]] += Number(row[1] || 0);
+        }
       });
       return counts;
     }
@@ -850,15 +860,16 @@ const ADMIN_HTML = `<!doctype html>
         $(id).innerHTML = '<div class="chart-empty">Пока нет данных для диаграммы.</div>';
         return;
       }
+      var chartRows = rows.filter(function(row) { return Number(row[1]) > 0; });
       var used = 0;
-      var segments = total ? rows.map(function(row, index) {
+      var segments = total ? chartRows.map(function(row, index) {
         var from = used / total * 100;
         used += row[1];
         var to = used / total * 100;
         return chartColors[index % chartColors.length] + ' ' + from.toFixed(2) + '% ' + to.toFixed(2) + '%';
       }).join(',') : '#1f2937 0% 100%';
       var legend = rows.map(function(row, index) {
-        return '<div class="legend-row"><span class="dot" style="--dot:' + chartColors[index % chartColors.length] + '"></span><span>' + esc(row[0]) + '</span><strong>' + row[1] + ' · ' + percent(row[1], total) + '%</strong></div>';
+        return '<div class="legend-row"><span class="dot" style="--dot:' + chartColors[index % chartColors.length] + '"></span><span>' + esc(row[0]) + '</span><strong>' + row[1] + ' · ' + shareLabel(row[1], total) + '</strong></div>';
       }).join('');
       $(id).innerHTML = '<div class="pie-wrap"><div class="pie" style="background:conic-gradient(' + segments + ')"></div><div class="legend ' + (rows.length > 8 ? 'scroll' : '') + '">' + legend + '</div></div>';
     }
@@ -1404,8 +1415,10 @@ const ADMIN_HTML = `<!doctype html>
       var productCounts = catalogProductCounts(chartEvents, productOpenCounts);
       var productBuyCountsData = catalogProductCounts(chartEvents, productBuyCounts);
 
-      renderPie('chartProducts', topEntries(productCounts, products.length || 100));
-      renderPie('chartProductBuys', topEntries(productBuyCountsData, products.length || 100));
+      // Keep catalog order so every product is easy to find and no item is
+      // hidden by a count-based top-N slice.
+      renderPie('chartProducts', Object.entries(productCounts));
+      renderPie('chartProductBuys', Object.entries(productBuyCountsData));
       renderWeekBars('chartWeeklyEvents', chartEvents, 'all_events', 'событий');
       renderWeekBars('chartWeeklyBuys', chartEvents, 'buy_click', 'кликов');
       renderWeekBars('chartWeeklyProductViews', chartEvents, 'product_page_view', 'открытий');
