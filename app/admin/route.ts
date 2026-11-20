@@ -945,11 +945,14 @@ const ADMIN_HTML = `<!doctype html>
     }
     function addFixedEventWeeks(rows, type) {
       HISTORICAL_CHART_WEEKS.slice().reverse().forEach(function(week) {
-        if (fixedWeekValue(week, type) === null || rows.some(function(row) { return row.label === week.label; })) return;
+        var fixedValue = fixedWeekValue(week, type);
+        if (fixedValue === null) return;
+        var existingIndex = rows.findIndex(function(row) { return row.label === week.label; });
+        if (existingIndex >= 0) rows.splice(existingIndex, 1);
         var fixedStart = new Date(week.start + 'T00:00:00');
         var fixedEnd = new Date(fixedStart);
         fixedEnd.setDate(fixedEnd.getDate() + 6);
-        rows.unshift({ label: week.label, start: fixedStart, end: fixedEnd, value: fixedWeekValue(week, type), sum: type === 'buy_click' ? week.buySum : 0, days: [], fixed: true });
+        rows.unshift({ label: week.label, start: fixedStart, end: fixedEnd, value: fixedValue, sum: type === 'buy_click' ? week.buySum : 0, days: [], fixed: true });
       });
     }
     function renderWeekBars(id, events, type, unit) {
@@ -1023,7 +1026,9 @@ const ADMIN_HTML = `<!doctype html>
         return { label: range.label, start: range.start, end: range.end, visitors: new Set(), days: days };
       });
       HISTORICAL_CHART_WEEKS.slice().reverse().forEach(function(week) {
-        if (week.unique == null || rows.some(function(row) { return row.label === week.label; })) return;
+        if (week.unique == null) return;
+        var existingIndex = rows.findIndex(function(row) { return row.label === week.label; });
+        if (existingIndex >= 0) rows.splice(existingIndex, 1);
         var fixedStart = new Date(week.start + 'T00:00:00');
         var fixedEnd = new Date(fixedStart);
         fixedEnd.setDate(fixedEnd.getDate() + 6);
@@ -1102,7 +1107,8 @@ const ADMIN_HTML = `<!doctype html>
         return { label: range.label, start: range.start, end: range.end, value: 0, days: days };
       });
       HISTORICAL_CHART_WEEKS.slice().reverse().forEach(function(week) {
-        if (rows.some(function(row) { return row.label === week.label; })) return;
+        var existingIndex = rows.findIndex(function(row) { return row.label === week.label; });
+        if (existingIndex >= 0) rows.splice(existingIndex, 1);
         var fixedStart = new Date(week.start + 'T00:00:00');
         var fixedEnd = new Date(fixedStart);
         fixedEnd.setDate(fixedEnd.getDate() + 6);
@@ -1146,7 +1152,9 @@ const ADMIN_HTML = `<!doctype html>
         return { label: range.label, start: range.start, end: range.end, value: 0, days: days };
       });
       HISTORICAL_CHART_WEEKS.slice().reverse().forEach(function(week) {
-        if (week.referrals == null || rows.some(function(row) { return row.label === week.label; })) return;
+        if (week.referrals == null) return;
+        var existingIndex = rows.findIndex(function(row) { return row.label === week.label; });
+        if (existingIndex >= 0) rows.splice(existingIndex, 1);
         var fixedStart = new Date(week.start + 'T00:00:00');
         var fixedEnd = new Date(fixedStart);
         fixedEnd.setDate(fixedEnd.getDate() + 6);
