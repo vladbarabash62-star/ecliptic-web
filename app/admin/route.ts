@@ -409,8 +409,9 @@ const ADMIN_HTML = `<!doctype html>
     var deletedProductSlugs = [];
     var settings = { reviewsCountLabel: '400+' };
     var analyticsEvents = [];
+    var chartAnalyticsEvents = [];
     var analyticsSummary = { total: 0, views: 0, buys: 0, telegram: 0, actions: {}, products: {} };
-    var analyticsPagination = { offset: 0, limit: 500, loaded: 0, totalStored: 0, hasMore: false, nextOffset: 0 };
+    var analyticsPagination = { offset: 0, limit: 50, loaded: 0, totalStored: 0, hasMore: false, nextOffset: 0 };
     var hotVisitorOpenCounts = {};
     var referralUsers = [];
     var referralFilter = 'all';
@@ -1467,7 +1468,8 @@ const ADMIN_HTML = `<!doctype html>
         '</div>';
     }
     function renderCharts() {
-      var chartEvents = analyticsEvents.filter(isCountedEvent);
+      var sourceEvents = chartAnalyticsEvents.length ? chartAnalyticsEvents : analyticsEvents;
+      var chartEvents = sourceEvents.filter(isCountedEvent);
       var buyEvents = chartEvents.filter(function(e) { return e.type === 'buy_click'; });
       var productOpens = chartEvents.filter(function(e) { return e.type === 'product_open'; });
       // The server summary can be truncated. Build both product charts from the complete
@@ -1922,17 +1924,21 @@ const ADMIN_HTML = `<!doctype html>
       if (!shouldAppend) chartsFullReady = false;
       $('loadMoreEventsBtn').disabled = true;
       try {
-        var data = await postJson('/api/admin/analytics', { offset: loadOffset, limit: analyticsPagination.limit });
+        var requestedLimit = shouldAppend
+          ? Math.min(500, Math.max(100, Number(analyticsPagination.limit || 50) * 2))
+          : 50;
+        var data = await postJson('/api/admin/analytics', { offset: loadOffset, limit: requestedLimit });
         analyticsEvents = mergeAnalyticsSources(shouldAppend ? analyticsEvents.concat(data.events || []) : data.events || []);
         analyticsSummary = mergeSummary(data.summary || analyticsSummary, analyticsEvents);
         analyticsPagination = data.pagination || {
           offset: loadOffset,
-          limit: analyticsPagination.limit,
+          limit: requestedLimit,
           loaded: data.events ? data.events.length : 0,
           totalStored: analyticsEvents.length,
           hasMore: false,
           nextOffset: analyticsEvents.length,
         };
+        analyticsPagination.limit = requestedLimit;
         analyticsPagination.totalStored = Math.max(analyticsPagination.totalStored || 0, analyticsEvents.length);
         var chartsActive = $('charts').classList.contains('active');
         var deferCharts = chartsActive && !shouldAppend;
@@ -1944,8 +1950,9 @@ const ADMIN_HTML = `<!doctype html>
         hideNoticeSoon();
       } catch (error) {
         analyticsEvents = mergeAnalyticsSources([]);
+        chartAnalyticsEvents = [];
         analyticsSummary = summarizeEvents(analyticsEvents);
-        analyticsPagination = { offset: 0, limit: 500, loaded: analyticsEvents.length, totalStored: analyticsEvents.length, hasMore: false, nextOffset: analyticsEvents.length };
+        analyticsPagination = { offset: 0, limit: 50, loaded: analyticsEvents.length, totalStored: analyticsEvents.length, hasMore: false, nextOffset: analyticsEvents.length };
         renderAnalytics();
         $('analyticsUpdatedAt').textContent = 'Статистика временно не обновилась';
         showNotice('Товары загружены. Аналитика временно недоступна.', true);
@@ -2007,7 +2014,6 @@ const ADMIN_HTML = `<!doctype html>
     }
     async function loadFullAnalyticsForCharts() {
       $('reloadChartsBtn').disabled = true;
-      $('loadMoreEventsBtn').disabled = true;
       chartsFullLoading = true;
       chartsFullReady = false;
       showChartsLoading();
@@ -2027,12 +2033,9 @@ const ADMIN_HTML = `<!doctype html>
           pagination = page.pagination || pagination;
         }
 
-        analyticsEvents = mergeAnalyticsSources(allEvents);
-        analyticsSummary = mergeSummary(summary, analyticsEvents);
-        analyticsPagination = pagination || { offset: 0, limit: 500, loaded: allEvents.length, totalStored: allEvents.length, hasMore: false, nextOffset: allEvents.length };
-        analyticsPagination.totalStored = Math.max(analyticsPagination.totalStored || 0, analyticsEvents.length);
+        chartAnalyticsEvents = mergeAnalyticsSources(allEvents);
         chartsFullReady = true;
-        renderAnalytics();
+        renderCharts();
         updateAnalyticsTimestamp();
         showNotice('Диаграммы обновлены по всей истории.', false);
         hideNoticeSoon();
@@ -2041,7 +2044,6 @@ const ADMIN_HTML = `<!doctype html>
       } finally {
         chartsFullLoading = false;
         $('reloadChartsBtn').disabled = false;
-        $('loadMoreEventsBtn').disabled = false;
       }
     }
     async function resetAnalytics() {
@@ -2052,8 +2054,9 @@ const ADMIN_HTML = `<!doctype html>
         var data = await postJson('/api/admin/analytics', { reset: true });
         try { localStorage.removeItem(LOCAL_ANALYTICS_KEY); } catch (storageError) {}
         analyticsEvents = data.events || [];
+        chartAnalyticsEvents = [];
         analyticsSummary = data.summary || { total: 0, views: 0, buys: 0, telegram: 0, actions: {}, products: {} };
-        analyticsPagination = data.pagination || { offset: 0, limit: 500, loaded: 0, totalStored: 0, hasMore: false, nextOffset: 0 };
+        analyticsPagination = data.pagination || { offset: 0, limit: 50, loaded: 0, totalStored: 0, hasMore: false, nextOffset: 0 };
         renderAnalytics();
         updateAnalyticsTimestamp();
         showNotice('Статистика сброшена.', false);
