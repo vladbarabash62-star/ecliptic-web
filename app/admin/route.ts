@@ -425,17 +425,15 @@ const ADMIN_HTML = `<!doctype html>
     var dragScrollSpeed = 0;
     var KEEP_IMAGE = '__ECLIPTIC_KEEP_IMAGE__';
     var LOCAL_ANALYTICS_KEY = 'ecliptic_analytics_events_v2';
-    // Historical totals recovered from the last available analytics view. Keep this week local so it never depends on a live 10K-event scan.
-    var HISTORICAL_CHART_WEEK = {
-      start: '2026-11-02',
-      label: '02.11 - 08.11',
-      events: 2490,
-      buys: 164,
-      buySum: 23842,
-      views: 777,
-      registrations: 99,
-      referrals: 2
-    };
+    // Historical totals recovered from the last available analytics views. These rows stay local
+    // so old weeks never depend on a live 10K-event scan. Unknown unique-visitor totals are omitted.
+    var HISTORICAL_CHART_WEEKS = [
+      { start: '2026-10-05', label: '05.10 - 11.10', events: 202, buys: 27, buySum: 4801, views: 172, registrations: 30, referrals: 1 },
+      { start: '2026-10-12', label: '12.10 - 18.10', events: 625, buys: 46, buySum: 12036, views: 289, registrations: 23, referrals: 0 },
+      { start: '2026-10-19', label: '19.10 - 25.10', events: 2874, buys: 143, buySum: 16370, views: 754, registrations: 147, referrals: 1 },
+      { start: '2026-10-26', label: '26.10 - 01.11', events: 2126, buys: 111, buySum: 19898, views: 624, registrations: 51, referrals: 2 },
+      { start: '2026-11-02', label: '02.11 - 08.11', events: 2490, buys: 164, buySum: 23842, views: 777, registrations: 99, referrals: 2 }
+    ];
 
     function $(id) { return document.getElementById(id); }
     function esc(value) {
@@ -937,11 +935,25 @@ const ADMIN_HTML = `<!doctype html>
       if (type === 'product_page_view') return event.type === 'product_open' && Boolean(eventProductSlug(event));
       return event.type === type;
     }
+    function fixedWeekValue(week, type) {
+      if (type === 'all_events') return week.events;
+      if (type === 'buy_click') return week.buys;
+      if (type === 'product_page_view') return week.views;
+      return null;
+    }
+    function addFixedEventWeeks(rows, type) {
+      HISTORICAL_CHART_WEEKS.slice().reverse().forEach(function(week) {
+        if (fixedWeekValue(week, type) === null || rows.some(function(row) { return row.label === week.label; })) return;
+        var fixedStart = new Date(week.start + 'T00:00:00');
+        var fixedEnd = new Date(fixedStart);
+        fixedEnd.setDate(fixedEnd.getDate() + 6);
+        rows.unshift({ label: week.label, start: fixedStart, end: fixedEnd, value: fixedWeekValue(week, type), sum: type === 'buy_click' ? week.buySum : 0, days: [], fixed: true });
+      });
+    }
     function renderWeekBars(id, events, type, unit) {
       var ranges = weekRanges(events);
       if (!ranges.length) {
-        $(id).innerHTML = '<div class="chart-empty">Пока нет данных для недельного графика.</div>';
-        return;
+        ranges = weekRanges([{ time: new Date().toISOString() }]);
       }
       var rows = ranges.map(function(range) {
         var days = [];
@@ -952,19 +964,13 @@ const ADMIN_HTML = `<!doctype html>
         }
         return { label: range.label, start: range.start, end: range.end, value: 0, sum: 0, days: days };
       });
-      var fixedValue = type === 'all_events' ? HISTORICAL_CHART_WEEK.events : type === 'buy_click' ? HISTORICAL_CHART_WEEK.buys : type === 'product_page_view' ? HISTORICAL_CHART_WEEK.views : null;
-      if (fixedValue !== null && !rows.some(function(row) { return row.label === HISTORICAL_CHART_WEEK.label; })) {
-        var fixedStart = new Date(HISTORICAL_CHART_WEEK.start + 'T00:00:00');
-        var fixedEnd = new Date(fixedStart);
-        fixedEnd.setDate(fixedEnd.getDate() + 6);
-        rows.unshift({ label: HISTORICAL_CHART_WEEK.label, start: fixedStart, end: fixedEnd, value: fixedValue, sum: type === 'buy_click' ? HISTORICAL_CHART_WEEK.buySum : 0, days: [], fixed: true });
-      }
+      addFixedEventWeeks(rows, type);
       events.forEach(function(event) {
         if (!matchesWeeklyEvent(event, type) || !event.time) return;
         var date = new Date(event.time);
         if (Number.isNaN(date.getTime())) return;
         var row = rows.find(function(item) { return date >= item.start && date <= item.end; });
-        if (!row) return;
+        if (!row || row.fixed) return;
         var price = type === 'buy_click' ? parsePrice(event) : 0;
         row.value += 1;
         row.sum += price;
@@ -1085,17 +1091,18 @@ const ADMIN_HTML = `<!doctype html>
         }
         return { label: range.label, start: range.start, end: range.end, value: 0, days: days };
       });
-      if (!rows.some(function(row) { return row.label === HISTORICAL_CHART_WEEK.label; })) {
-        var fixedStart = new Date(HISTORICAL_CHART_WEEK.start + 'T00:00:00');
+      HISTORICAL_CHART_WEEKS.slice().reverse().forEach(function(week) {
+        if (rows.some(function(row) { return row.label === week.label; })) return;
+        var fixedStart = new Date(week.start + 'T00:00:00');
         var fixedEnd = new Date(fixedStart);
         fixedEnd.setDate(fixedEnd.getDate() + 6);
-        rows.unshift({ label: HISTORICAL_CHART_WEEK.label, start: fixedStart, end: fixedEnd, value: HISTORICAL_CHART_WEEK.registrations, days: [], fixed: true });
-      }
+        rows.unshift({ label: week.label, start: fixedStart, end: fixedEnd, value: week.registrations, days: [], fixed: true });
+      });
       registrationEvents.forEach(function(event) {
         var date = new Date(event.time);
         if (Number.isNaN(date.getTime())) return;
         var row = rows.find(function(item) { return date >= item.start && date <= item.end; });
-        if (!row) return;
+        if (!row || row.fixed) return;
         row.value += 1;
         var day = row.days.find(function(item) { return dayStamp(item.date) === dayStamp(date); });
         if (day) day.value += 1;
@@ -1117,8 +1124,7 @@ const ADMIN_HTML = `<!doctype html>
       });
       var ranges = weekRanges(completionEvents);
       if (!ranges.length) {
-        $(id).innerHTML = '<div class="chart-empty">Пока никто не выполнил оба условия программы.</div>';
-        return;
+        ranges = weekRanges([{ time: new Date().toISOString() }]);
       }
       var rows = ranges.map(function(range) {
         var days = [];
@@ -1129,17 +1135,18 @@ const ADMIN_HTML = `<!doctype html>
         }
         return { label: range.label, start: range.start, end: range.end, value: 0, days: days };
       });
-      if (!rows.some(function(row) { return row.label === HISTORICAL_CHART_WEEK.label; })) {
-        var fixedStart = new Date(HISTORICAL_CHART_WEEK.start + 'T00:00:00');
+      HISTORICAL_CHART_WEEKS.slice().reverse().forEach(function(week) {
+        if (rows.some(function(row) { return row.label === week.label; })) return;
+        var fixedStart = new Date(week.start + 'T00:00:00');
         var fixedEnd = new Date(fixedStart);
         fixedEnd.setDate(fixedEnd.getDate() + 6);
-        rows.unshift({ label: HISTORICAL_CHART_WEEK.label, start: fixedStart, end: fixedEnd, value: HISTORICAL_CHART_WEEK.referrals, days: [], fixed: true });
-      }
+        rows.unshift({ label: week.label, start: fixedStart, end: fixedEnd, value: week.referrals, days: [], fixed: true });
+      });
       completionEvents.forEach(function(event) {
         var date = new Date(event.time);
         if (Number.isNaN(date.getTime())) return;
         var row = rows.find(function(item) { return date >= item.start && date <= item.end; });
-        if (!row) return;
+        if (!row || row.fixed) return;
         row.value += 1;
         var day = row.days.find(function(item) { return dayStamp(item.date) === dayStamp(date); });
         if (day) day.value += 1;
