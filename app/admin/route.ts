@@ -1013,7 +1013,9 @@ const ADMIN_HTML = `<!doctype html>
       return String(visitorKey(event) || event && event.sessionId || '').trim();
     }
     function renderUniqueVisitorWeekBars(id, events) {
-      var visitEvents = (events || []).filter(function(event) { return (event.type !== 'page_view' || event.snapshotVisitor) && uniqueVisitorId(event) && event.time; });
+      // Unique visits use the complete event store, including page_view rows. Those rows
+      // carry the IP/IP-hash even though they are intentionally excluded from action totals.
+      var visitEvents = (events || []).filter(function(event) { return uniqueVisitorId(event) && event.time; });
       var ranges = weekRanges(visitEvents);
       if (!ranges.length) ranges = weekRanges([{ time: new Date().toISOString() }]);
       var rows = ranges.map(function(range) {
@@ -1396,7 +1398,7 @@ const ADMIN_HTML = `<!doctype html>
       renderWeekBars('chartWeeklyEvents', chartEvents, 'all_events', 'событий');
       renderWeekBars('chartWeeklyBuys', chartEvents, 'buy_click', 'кликов');
       renderWeekBars('chartWeeklyProductViews', chartEvents, 'product_page_view', 'открытий');
-      renderUniqueVisitorWeekBars('chartWeeklyUniqueVisitors', chartEvents);
+      renderUniqueVisitorWeekBars('chartWeeklyUniqueVisitors', analyticsEvents);
       renderRegistrationWeekBars('chartWeeklyRegistrations', referralUsers);
       renderReferralCompletionWeekBars('chartWeeklyReferralCompletions', referralUsers);
       $('chartsUpdatedAt').textContent = 'Обновлено: ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' · открытий товаров: ' + productOpens.length + ' · кликов «Купить»: ' + buyEvents.length;
