@@ -432,7 +432,9 @@ const ADMIN_HTML = `<!doctype html>
       { start: '2026-10-12', label: '12.10 - 18.10', events: 625, buys: 46, buySum: 12036, views: 289, registrations: 23, referrals: 0 },
       { start: '2026-10-19', label: '19.10 - 25.10', events: 2874, buys: 143, buySum: 16370, views: 754, registrations: 147, referrals: 1 },
       { start: '2026-10-26', label: '26.10 - 01.11', events: 2126, buys: 111, buySum: 19898, views: 624, registrations: 51, referrals: 2 },
-      { start: '2026-11-02', label: '02.11 - 08.11', events: 2490, buys: 164, buySum: 23842, views: 777, registrations: 99, referrals: 2 }
+      { start: '2026-11-02', label: '02.11 - 08.11', events: 2490, buys: 164, buySum: 23842, views: 777, registrations: 99, referrals: 2 },
+      { start: '2026-11-09', label: '09.11 - 15.11', events: 41, buys: 2, buySum: 170, views: 16, registrations: 47, unique: 1 },
+      { start: '2026-11-16', label: '16.11 - 22.11', events: 522, buys: 36, buySum: 4004.5, views: 172, registrations: 40, unique: 109 }
     ];
 
     function $(id) { return document.getElementById(id); }
@@ -1020,26 +1022,34 @@ const ADMIN_HTML = `<!doctype html>
         }
         return { label: range.label, start: range.start, end: range.end, visitors: new Set(), days: days };
       });
+      HISTORICAL_CHART_WEEKS.slice().reverse().forEach(function(week) {
+        if (week.unique == null || rows.some(function(row) { return row.label === week.label; })) return;
+        var fixedStart = new Date(week.start + 'T00:00:00');
+        var fixedEnd = new Date(fixedStart);
+        fixedEnd.setDate(fixedEnd.getDate() + 6);
+        rows.unshift({ label: week.label, start: fixedStart, end: fixedEnd, visitors: new Set(), value: week.unique, days: [], fixed: true });
+      });
       visitEvents.forEach(function(event) {
         var date = new Date(event.time);
         if (Number.isNaN(date.getTime())) return;
         var row = rows.find(function(item) { return date >= item.start && date <= item.end; });
-        if (!row) return;
+        if (!row || row.fixed) return;
         var key = uniqueVisitorId(event);
         if (!key) return;
         row.visitors.add(key);
         var day = row.days.find(function(item) { return dayStamp(item.date) === dayStamp(date); });
         if (day) day.visitors.add(key);
       });
-      var max = Math.max(1, ...rows.map(function(row) { return row.visitors.size; }));
+      var max = Math.max(1, ...rows.map(function(row) { return row.fixed ? row.value : row.visitors.size; }));
       $(id).innerHTML = '<div class="week-bars">' + rows.map(function(row) {
-        var height = Math.max(8, Math.round(row.visitors.size / max * 150));
+        var visitorCount = row.fixed ? row.value : row.visitors.size;
+        var height = Math.max(8, Math.round(visitorCount / max * 150));
         var activeDays = row.days.filter(function(day) { return day.visitors.size > 0; });
         var dayRows = activeDays.map(function(day) {
           return '<div class="week-tip-row"><span>' + esc(formatDayName(day.date)) + '</span><b>' + day.visitors.size + '</b></div>';
-        }).join('') || '<div class="week-tip-row"><span>Нет посещений</span><b>-</b></div>';
-        var tip = '<strong>' + esc(row.label) + '</strong>' + dayRows + '<div class="week-tip-total">Уникальных пользователей: ' + row.visitors.size + '</div>';
-        return '<div class="week-bar" data-week-tip="' + esc(tip) + '"><div class="week-value">' + row.visitors.size + '<small>пользователей</small></div><div class="week-fill" style="height:' + height + 'px"></div><div class="week-label">' + esc(row.label) + '</div></div>';
+        }).join('') || (row.fixed ? '<div class="week-tip-row"><span>Дневная детализация</span><b>нет в backup</b></div>' : '<div class="week-tip-row"><span>Нет посещений</span><b>-</b></div>');
+        var tip = '<strong>' + esc(row.label) + '</strong>' + dayRows + '<div class="week-tip-total">Уникальных пользователей: ' + visitorCount + '</div>';
+        return '<div class="week-bar" data-week-tip="' + esc(tip) + '"><div class="week-value">' + visitorCount + '<small>пользователей</small></div><div class="week-fill" style="height:' + height + 'px"></div><div class="week-label">' + esc(row.label) + '</div></div>';
       }).join('') + '</div>';
     }
     function enhanceWeekScroller(id) {
@@ -1136,7 +1146,7 @@ const ADMIN_HTML = `<!doctype html>
         return { label: range.label, start: range.start, end: range.end, value: 0, days: days };
       });
       HISTORICAL_CHART_WEEKS.slice().reverse().forEach(function(week) {
-        if (rows.some(function(row) { return row.label === week.label; })) return;
+        if (week.referrals == null || rows.some(function(row) { return row.label === week.label; })) return;
         var fixedStart = new Date(week.start + 'T00:00:00');
         var fixedEnd = new Date(fixedStart);
         fixedEnd.setDate(fixedEnd.getDate() + 6);
