@@ -1,4 +1,4 @@
-import "server-only";
+﻿import "server-only";
 import type { AnalyticsEvent } from "./analyticsFallbackStore";
 
 export function hasCloudflareAnalytics() {
@@ -46,6 +46,17 @@ export async function readCloudflareAnalyticsSummary(): Promise<{ totalStored: n
   const result = await analyticsRequest("/summary");
   if (!result.summary || typeof result.totalStored !== "number") throw new Error("Invalid analytics summary");
   return result as { totalStored: number; summary: { total: number; views: number; buys: number; telegram: number; actions: Record<string, number>; products: Record<string, number> } };
+}
+
+export async function readCloudflareAnalyticsChartSnapshot() {
+  const result = await analyticsRequest("/chart-snapshot");
+  if (!result.snapshot || !Array.isArray(result.snapshot.weeks)) throw new Error("Invalid analytics chart snapshot");
+  return result.snapshot as {
+    version: number;
+    generatedAt: string;
+    summary: { total: number; views: number; buys: number; telegram: number; actions: Record<string, number>; products: Record<string, number> };
+    weeks: Array<{ start: string; days: Array<{ date: string; events: number; buys: number; views: number; visitors: number }> }>;
+  };
 }
 
 export async function clearCloudflareAnalyticsEvents() {

@@ -1,4 +1,4 @@
-import { readAdminFallback, writeAdminFallback } from "./adminFallbackStore";
+﻿import { readAdminFallback, writeAdminFallback } from "./adminFallbackStore";
 import { readBlobJson, writeBlobJson } from "./blobJsonStore";
 import { hasCloudflareState, readCloudflareState, writeCloudflareState } from "./cloudflareStateStore";
 
@@ -75,7 +75,7 @@ export async function noteTelegramCustomerMessage(chatId: number, messageId?: nu
   };
   store[key] = next;
   await writeStore(store);
-  return { messageCount: next.messageCount, established: isEstablished(next) };
+  return { messageCount: next.messageCount, established: isEstablished(next), duplicate: isDuplicate };
 }
 
 export async function markTelegramChatOrder(chatId: number) {

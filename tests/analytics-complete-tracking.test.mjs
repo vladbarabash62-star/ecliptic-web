@@ -1,4 +1,4 @@
-import assert from "node:assert/strict";
+﻿import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -29,6 +29,8 @@ assert.match(adminApi, /"HGETALL", ANALYTICS_PRODUCTS_KEY/);
 assert.match(adminApi, /summary: \{/);
 assert.match(analyticsWorker, /SELECT data FROM events ORDER BY time DESC/);
 assert.doesNotMatch(analyticsWorker, /SELECT data FROM events ORDER BY time DESC LIMIT 5000/);
+assert.match(analyticsWorker, /chart-snapshot/);
+assert.match(adminApi, /body\.snapshot/);
 
 assert.match(adminPage, /var analyticsSummary = \{ total: 0, views: 0, buys: 0, telegram: 0, actions: \{\}, products: \{\} \};/);
 assert.match(adminPage, /page_view: 'Просмотр страницы'/);
@@ -44,8 +46,9 @@ assert.match(adminPage, /analyticsEvents\.concat/);
 assert.match(adminPage, /loadAnalytics\(analyticsPagination\.nextOffset \|\| analyticsEvents\.length\)/);
 assert.match(adminPage, /chartWeeklyEvents/);
 assert.match(adminPage, /type === 'all_events'/);
-assert.match(adminPage, /Math\.floor\(totalEvents \/ 10000\) \* 10000/);
-assert.match(adminPage, /statTotalOffset/);
+assert.match(adminPage, /totalEvents\.toLocaleString\('ru-RU'\)/);
+assert.doesNotMatch(adminPage, /totalEvents % 10000/);
+assert.match(adminPage, /while \(pagination\.hasMore\)/);
 
 assert.match(tracker, /navigator\.sendBeacon/);
 assert.match(tracker, /new Blob\(\[payload\], \{ type: "application\/json" \}\)/);

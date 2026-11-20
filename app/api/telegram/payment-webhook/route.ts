@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import {
   getManagerChatId,
   rememberBusinessManagerChat,
@@ -7,6 +7,7 @@ import {
 import { ensurePrimaryTelegramWebhook } from "../../../../lib/telegramWebhook";
 import {
   getPendingTelegramOrder,
+  clearPendingTelegramOrder,
   claimPaymentNotification,
   releasePaymentNotificationClaim,
   savePendingTelegramOrder,
@@ -75,6 +76,7 @@ async function telegram(method: string, body: Record<string, unknown>) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
+    signal: AbortSignal.timeout(8_000),
   }).catch(() => null);
   if (!response) {
     console.error("Telegram API request failed", method);
@@ -103,13 +105,15 @@ function sleep(milliseconds: number) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
+const DEFAULT_AUTO_REPLY_DELAY_MS = 1000;
+
 async function showTyping(chatId: number, businessConnectionId?: string) {
   await telegram("sendChatAction", {
     chat_id: chatId,
     ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
     action: "typing",
   });
-  await sleep(1000);
+  await sleep(DEFAULT_AUTO_REPLY_DELAY_MS);
 }
 
 function applyAccountNoticeEmojiIds(text: string, ids: string[]) {
@@ -222,19 +226,102 @@ function normalizeProductQuery(value: string) {
     .replace(/(^|\s)спотик(?:а|е|у)?(?=\s|$)/g, "$1spotify")
     .replace(/(^|\s)премк(?:а|у|е)?(?=\s|$)/g, "$1премиум")
     .replace(/(^|\s)звезд(?:а|ы|е|у|ой|ами)?(?=\s|$)/g, "$1звезды")
+    .replace(/(^|\s)(?:зывызды|заезд|заезды|звездочки|звездочк(?:а|и)|старс)(?=\s|$)/g, "$1звезды")
+    .replace(/(^|\s)(?:фри\s*фаер|фрифайер|фрифайр|фрифаир|ff)(?=\s|$)/g, "$1free fire")
+    .replace(/(^|\s)(?:стендофф?|стендоф|стендов|станофф|standoff2|so2|stn)(?=\s|$)/g, "$1standoff 2")
+    .replace(/(^|\s)(?:роблокс|роблок|рб|rb)(?=\s|$)/g, "$1roblox")
+    .replace(/(^|\s)(?:радмир|радмир\s*рп|radmir)(?=\s|$)/g, "$1radmir rp")
+    .replace(/(^|\s)(?:амазинг|амазинг\s*рп|amazing)(?=\s|$)/g, "$1amazing rp")
+    .replace(/(^|\s)(?:блэк\s*раша|блек\s*раша|блэк\s*руссия|черная\s*россия|чёрная\s*россия|black\s*russia|br)(?=\s|$)/g, "$1black russia")
+    .replace(/(^|\s)(?:форнайт|фортнайт)(?=\s|$)/g, "$1fortnite")
+    .replace(/(^|\s)(?:чат\s*gpt|чатгпт|чаджипити|чатжпт)(?=\s|$)/g, "$1chatgpt")
+    .replace(/(^|\s)(?:майнкрафт|маинкрафт|minecraft)(?=\s|$)/g, "$1minecraft")
     .replace(/\s+/g, " ")
     .trim();
 }
 
+function isInstantPurchaseRequest(message: string, product?: Product) {
+  if (!product) return false;
+  const normalized = normalizeProductQuery(message);
+  return /(?:куп(?:ить|и)|заказать|закажи|оформить|оформи|хочу|нужн|пополн)/i.test(normalized);
+}
+
+function hasProductRequestIntent(message: string) {
+  const normalized = normalizeProductQuery(message);
+  return /(?:куп(?:ить|и)|заказать|закажи|оформить|оформи|хочу|нужн|пополн|сколько|стоимость|цена|почем|ссылк|где\s+(?:купить|оформить)|как\s+(?:купить|заказать|оформить))/i.test(normalized);
+}
+
 const PRODUCT_REQUEST_ALIASES: Record<string, string[]> = {
-  roblox: ["робукс", "робукса", "робуксов", "робуксы", "роблоксе", "robux"],
-  steam: ["стим"],
-  "telegram-stars": ["телеграм звезд", "телега звезд", "звезд", "звезды", "stars"],
-  "telegram-premium": ["телеграм премиум", "телега премиум", "тг прем", "tg premium", "tg prem", "премк", "премиум", "premium"],
-  "telegram-accounts": ["телеграм аккаунт", "телеграм аккаунты", "тг акк", "тг акки", "tg account", "tg acc"],
-  "spotify-premium": ["спотифай", "спотик", "spotify", "споти"],
-  "brawl-stars": ["brawl pass", "brawl pass plus", "бравл пасс", "бравл пас"],
+  netflix: ["нетфликс", "нетфлик", "netflix"],
+  "delta-force": ["дельта", "дельта форс", "delta force", "дф", "df"],
+  steam: ["стим", "steam"],
+  "telegram-stars": ["телеграм звезд", "телега звезд", "звезд", "звезды", "зывызды", "заезд", "заезды", "звездочки", "stars", "старс"],
+  "telegram-premium": ["телеграм премиум", "телега премиум", "тг прем", "tg premium", "tg prem", "премка", "премк", "премиум", "premium"],
+  "telegram-accounts": ["телеграм аккаунт", "телеграм аккаунты", "тг акк", "тг акки", "акки", "аккаунты", "tg account", "tg acc"],
+  "world-of-tanks": ["танки", "мир танков", "world of tanks", "wot"],
+  "chatgpt-plus": ["чатгпт", "чат gpt", "чаджипити", "чатжпт", "chatgpt", "chat gpt"],
+  "brawl-stars": ["бравл", "бравл старс", "бравл стар", "brawl", "brawl stars", "brawl pass", "brawl pass plus", "бравл пасс", "бравл пас"],
+  roblox: ["роблокс", "роблок", "роблоксe", "робукс", "робукса", "робуксов", "робуксы", "рб", "rb", "robux"],
+  "standoff-2": ["стендофф", "стендоф", "стендов", "станофф", "стано", "standoff", "standoff 2", "standoff2", "stn", "so2"],
+  tiktok: ["тик ток", "тикток", "тик ток", "tiktok", "тт"],
+  "youtube-premium": ["ютуб", "ютуб премиум", "youtube", "youtube premium"],
+  "spotify-premium": ["спотифай", "спотик", "споти", "spotify"],
+  "pubg-mobile": ["пабг", "пабджи", "пубг", "pubg", "пабг мобайл"],
+  "discord-nitro": ["дискорд", "дискорд нитро", "discord", "discord nitro"],
+  "mobile-legends": ["мобайл легендс", "мобайл легенд", "мл", "mobile legends"],
+  "clash-of-clans": ["клеш оф кланс", "клаш оф кланс", "кок", "clash of clans", "coc"],
+  "clash-royale": ["клеш рояль", "клаш рояль", "clash royale", "cr"],
+  "free-fire": ["фрифаер", "фри файер", "фрифайр", "фрифаир", "free fire", "ff"],
+  "gta-5-rp-majestic-rp": ["маджестик", "маджестик рп", "majestic", "majestic rp"],
+  "radmir-rp": ["радмир", "радмир рп", "radmir", "radmir rp"],
+  "amazing-rp": ["амазинг", "амазинг рп", "amazing", "amazing rp"],
+  "black-russia": ["блэк раша", "блек раша", "блэк руссия", "черная россия", "чёрная россия", "black russia", "br"],
+  "epic-games-topup": ["эпик геймс", "эпик", "epic games"],
+  fortnite: ["фортнайт", "форнайт", "fortnite"],
+  minecraft: ["майнкрафт", "маинкрафт", "майн", "minecraft", "mc"],
+  oxide: ["оксайд", "oxide"],
+  "site-topups": ["пополнение сайтов", "донат", "донат сайтов"],
+  "sbp-payment": ["сбп", "система быстрых платежей"],
+  nft: ["нфт", "nft"],
+  ton: ["тон", "ton"],
+  playstation: ["плейстейшен", "плейстейшн", "playstation"],
+  boosty: ["бусти", "boosty"],
+  twitch: ["твич", "twitch"],
+  "call-of-duty-mobile": ["колда", "код мобайл", "call of duty", "call of duty mobile", "codm"],
 };
+
+function levenshteinDistance(left: string, right: string) {
+  const previous = Array.from({ length: right.length + 1 }, (_, index) => index);
+  for (let row = 1; row <= left.length; row += 1) {
+    let diagonal = previous[0];
+    previous[0] = row;
+    for (let column = 1; column <= right.length; column += 1) {
+      const above = previous[column];
+      previous[column] = Math.min(
+        previous[column] + 1,
+        previous[column - 1] + 1,
+        diagonal + (left[row - 1] === right[column - 1] ? 0 : 1),
+      );
+      diagonal = above;
+    }
+  }
+  return previous[right.length];
+}
+
+function matchesProductAlias(message: string, alias: string) {
+  const normalizedMessage = normalizeProductQuery(message);
+  const normalizedAlias = normalizeProductQuery(alias);
+  if (!normalizedAlias) return false;
+  if (normalizedMessage.includes(normalizedAlias)) return true;
+
+  const aliasTokens = normalizedAlias.split(" ").filter((token) => token.length >= 3);
+  if (aliasTokens.length !== 1) return false;
+  return normalizedMessage.split(" ").some((token) => {
+    if (token.length < 5 || Math.abs(token.length - aliasTokens[0].length) > 2) return false;
+    const limit = token.length >= 8 ? 2 : 1;
+    return levenshteinDistance(token, aliasTokens[0]) <= limit;
+  });
+}
 
 function parseOrderCode(orderCode: string) {
   const compact = orderCode.match(/^E-([A-Z0-9]{5})-(\d+|NA)-([A-Z0-9]{4})$/i);
@@ -345,7 +432,7 @@ async function resolveOrderPayment(orderMessage: string, orderCode: string): Pro
   const parsed = parseOrderCode(orderCode);
   if (!parsed) return { amount: "", hasPayment: false };
 
-  const products = await getProducts({ cached: false }).catch(() => []);
+  const products = await getProducts({ cached: true }).catch(() => []);
   const product = products.find((candidate) => {
     if (parsed.alias) return compactProductCode(candidate.slug) === parsed.alias;
     return candidate.slug.toLowerCase().replace(/[^a-z0-9]/g, "").startsWith(parsed.legacyPrefix || "");
@@ -437,24 +524,23 @@ function chooseBudgetBundle(
 }
 
 async function resolveProductRequest(orderMessage: string): Promise<ResolvedOrderPayment> {
+  // Product names can appear in ordinary conversation. Never turn a casual
+  // mention into a catalog link or payment flow without a clear request.
+  if (!hasProductRequestIntent(orderMessage)) return { amount: "", hasPayment: false };
   const normalizedMessage = normalizeProductQuery(orderMessage);
   const isPriceQuestion = /(сколько\s+(?:стоит|стоят|это|будет|нужно|нужен|выходит)|сколько\s+.+?\s+сто(?:ит|ят)|какая\s+цена|стоимость|почем|цена|во\s+сколько)/i.test(normalizedMessage);
-  const isAvailabilityQuestion = /(^|\s)(есть|имеется|наличие|можно)(?=\s|$)/i.test(normalizedMessage);
-  const isStoreLinkRequest = /(купить|заказать|оформить|нужн|хочу|ссылк|скин|скид|магазин)/i.test(normalizedMessage)
-    || isPriceQuestion
-    || isAvailabilityQuestion;
-  if (!/(купить|заказать|оформить|нужн|хочу|пополн|ссылк|скин|скид|магазин)/i.test(normalizedMessage) && !isPriceQuestion && !isAvailabilityQuestion) {
-    return { amount: "", hasPayment: false };
-  }
 
-  const products = await getProducts({ cached: false }).catch(() => []);
+  // Bot traffic must use the short-lived catalog cache. A live Cloudflare
+  // state read can take several seconds or fail during a cold start; an empty
+  // result here makes the bot look random even though the catalog is healthy.
+  const products = await getProducts({ cached: true }).catch(() => []);
   for (const product of products) {
     const aliases = [
       product.name,
       product.slug.replace(/[-_]+/g, " "),
       ...(PRODUCT_REQUEST_ALIASES[product.slug] || []),
     ].map(normalizeProductQuery).filter(Boolean);
-    if (!aliases.some((alias) => normalizedMessage.includes(alias))) continue;
+    if (!aliases.some((alias) => matchesProductAlias(normalizedMessage, alias))) continue;
 
     const offers = product.offers.filter((offer): offer is Extract<Product["offers"][number], { priceRub: number }> =>
       offer.type !== "divider" && typeof offer.priceRub === "number" && offer.priceRub > 0
@@ -471,18 +557,26 @@ async function resolveProductRequest(orderMessage: string): Promise<ResolvedOrde
       : undefined;
     const textualOffer = [...offers]
       .sort((left, right) => normalizeProductQuery(right.label).length - normalizeProductQuery(left.label).length)
-      .find((candidate) => normalizedMessage.includes(normalizeProductQuery(candidate.label)));
+      .find((candidate) => matchesProductAlias(normalizedMessage, candidate.label));
+    const requestedStars = product.slug === "telegram-stars"
+      ? messageQuantities.map((value) => Number(value.replace(",", "."))).find((value) => value > 0)
+      : undefined;
+    const nearestStarsOffer = requestedStars
+      ? [...offers]
+        .filter((candidate) => offerQuantity(candidate.label) >= requestedStars)
+        .sort((left, right) => offerQuantity(left.label) - offerQuantity(right.label))[0]
+      : undefined;
     const offer = budgetBundle ? undefined : textualOffer || offers.find((candidate) => {
       const quantityTokens = candidate.label.match(/\d+(?:[.,]\d+)?/g) || [];
       return quantityTokens.some((token) => messageQuantities.some(
         (messageQuantity) => Number(messageQuantity.replace(",", ".")) === Number(token.replace(",", "."))
       ));
-    })
+    }) || nearestStarsOffer
       || (hasOfferQualifier && offers.length === 1 ? offers[0] : undefined);
     if (!budgetBundle && !offer) {
-      return isStoreLinkRequest
-        ? { amount: "", product, hasPayment: false, priceOnly: true }
-        : { amount: "", product, hasPayment: false };
+      // A recognized product name is enough to return its canonical page link,
+      // even when the customer did not include the word "купить".
+      return { amount: "", product, hasPayment: false, priceOnly: true };
     }
 
     // Never recalculate a price from the customer's wording. Both a concrete
@@ -511,6 +605,7 @@ async function sendPriceAnswer(
   businessConnectionId?: string
 ) {
   if (!payment.product) return false;
+  await showTyping(chatId, businessConnectionId);
   const productUrl = `${SITE_URL}/products/${encodeURIComponent(payment.product.slug)}`;
   const linkLabel = payment.product.slug === "telegram-stars"
     ? "Купить звёзды"
@@ -540,8 +635,10 @@ async function sendOrderInstructions(
   productData?: Product,
   sitePrice?: number,
   offerLabel?: string,
-  suppressWelcome = false
+  suppressWelcome = false,
+  skipTypingDelay = false
 ) {
+  if (!skipTypingDelay) await showTyping(chatId, businessConnectionId);
   const category = extractOrderCategory(orderMessage);
   const product = extractOrderProduct(orderMessage);
   const displayCategory = category.value === "не указан" ? productData?.name || category.value : category.value;
@@ -627,7 +724,6 @@ async function sendOrderInstructions(
     });
     return Boolean(noticeResponse);
   }
-  await showTyping(chatId, businessConnectionId);
   await telegram("sendMessage", {
     chat_id: chatId,
     ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
@@ -819,6 +915,7 @@ async function handleDecision(update: TelegramUpdate) {
       ? "✅ Оплата принята. Заказ передан в работу."
       : "❌ Не удалось подтвердить оплату. Проверьте сумму и отправьте актуальный скриншот операции.",
   });
+  await clearPendingTelegramOrder(Number(customerChatId)).catch(() => undefined);
   if (!approved) await releasePaymentNotificationClaim(Number(customerChatId));
   return true;
 }
@@ -826,7 +923,9 @@ async function handleDecision(update: TelegramUpdate) {
 export async function processTelegramPaymentUpdate(update: TelegramUpdate, request?: Request) {
   const botToken = token();
   if (!botToken) return NextResponse.json({ ok: false, error: "TELEGRAM_BOT_TOKEN is not configured" }, { status: 500 });
-  if (request) await ensurePrimaryTelegramWebhook(request, botToken);
+  // Registration is best-effort maintenance. It must not delay or block the
+  // reply to the update that Telegram is currently delivering.
+  if (request) void ensurePrimaryTelegramWebhook(request, botToken);
   if (update.business_connection?.is_enabled && update.business_connection.user_chat_id) {
     await rememberBusinessManagerChat(update.business_connection.user_chat_id).catch(() => undefined);
   }
@@ -856,7 +955,9 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate, reque
   const chatHistory = await noteTelegramCustomerMessage(message.chat.id, message.message_id).catch(() => ({
     messageCount: 0,
     established: false,
+    duplicate: false,
   }));
+  if (chatHistory.duplicate) return NextResponse.json({ ok: true, ignored: "duplicate-update" });
   await rememberManagerChat(message.from?.username, message.chat.id).catch(() => undefined);
   if (message.text?.trim() && !message.photo?.length && !message.document?.file_id) {
     const orderCode = extractOrderCode(message.text);
@@ -864,9 +965,14 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate, reque
       ? await resolveOrderPayment(message.text, orderCode)
       : await resolveProductRequest(message.text);
     if (!orderCode && isPaymentDetailsRequest(message.text)) {
+      const pendingOrder = await getPendingTelegramOrder(message.chat.id).catch(() => null);
+      if (!pendingOrder) {
+        await noteTelegramChatActivity(message.chat.id).catch(() => undefined);
+        return NextResponse.json({ ok: true, ignored: "payment-details-without-order" });
+      }
       const context = await getTelegramProductContext(message.chat.id).catch(() => null);
       if (context) {
-        const products = await getProducts({ cached: false }).catch(() => []);
+        const products = await getProducts({ cached: true }).catch(() => []);
         const product = products.find((candidate) => candidate.slug === context.productSlug);
         if (product) {
           const contextPayment: ResolvedOrderPayment = {
@@ -905,7 +1011,10 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate, reque
     if (!orderCode && resolvedPayment.priceOnly) {
       // A concrete offer is enough to provide payment details. Do not gate
       // this on chat history: a first-time customer can place a precise order.
-      const shouldSendPaymentDetails = Boolean(resolvedPayment.quoteOnly && resolvedPayment.hasPayment);
+      const shouldSendPaymentDetails = Boolean(
+        resolvedPayment.hasPayment
+        && isInstantPurchaseRequest(message.text, resolvedPayment.product)
+      );
       const replied = shouldSendPaymentDetails
         ? await sendOrderInstructions(
             message.chat.id,
@@ -916,7 +1025,8 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate, reque
             resolvedPayment.product,
             resolvedPayment.sitePrice,
             resolvedPayment.offerLabel,
-            !(await claimWelcomeWithin(message.chat.id).catch(() => true))
+            !(await claimWelcomeWithin(message.chat.id).catch(() => true)),
+            false
           )
         : await sendPriceAnswer(message.chat.id, resolvedPayment, message.business_connection_id);
       if (replied && shouldSendPaymentDetails) {
@@ -957,7 +1067,8 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate, reque
       resolvedPayment.product,
       resolvedPayment.sitePrice,
       resolvedPayment.offerLabel,
-      !(await claimWelcomeWithin(message.chat.id).catch(() => true))
+      !(await claimWelcomeWithin(message.chat.id).catch(() => true)),
+      false
     );
     if (replied && resolvedPayment.hasPayment) {
       await savePendingTelegramOrder({

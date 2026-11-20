@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { isExcludedAnalyticsVisitor } from "../../../../lib/analyticsExclusions";
-import { clearCloudflareAnalyticsEvents, hasCloudflareAnalytics, readCloudflareAnalyticsEventsPage, readCloudflareAnalyticsSummary } from "../../../../lib/cloudflareAnalytics";
+import { clearCloudflareAnalyticsEvents, hasCloudflareAnalytics, readCloudflareAnalyticsChartSnapshot, readCloudflareAnalyticsEventsPage, readCloudflareAnalyticsSummary } from "../../../../lib/cloudflareAnalytics";
 import {
   clearFallbackAnalyticsEvents,
   readFallbackAnalyticsEvents,
@@ -24,7 +24,7 @@ const DEFAULT_EVENTS_LIMIT = 1000;
 const MAX_EVENTS_LIMIT = 5000;
 
 export async function POST(request: Request) {
-  const body = (await request.json().catch(() => ({}))) as { pin?: string; reset?: boolean; offset?: number; limit?: number };
+  const body = (await request.json().catch(() => ({}))) as { pin?: string; reset?: boolean; snapshot?: boolean; offset?: number; limit?: number };
   const authError = await validateAdminRequest(request, body.pin);
   if (authError) return authError;
 
@@ -35,6 +35,7 @@ export async function POST(request: Request) {
 
   if (hasCloudflareAnalytics()) {
     try {
+      if (body.snapshot) return NextResponse.json({ ok: true, configured: true, storage: "cloudflare-d1", snapshot: await readCloudflareAnalyticsChartSnapshot() });
       if (body.reset) await clearCloudflareAnalyticsEvents();
       const [page, storedSummary] = body.reset
         ? [{ events: [], pagination: { offset, limit, loaded: 0, totalStored: 0, hasMore: false, nextOffset: 0 } }, { totalStored: 0, summary: { total: 0, views: 0, buys: 0, telegram: 0, actions: {}, products: {} } }]

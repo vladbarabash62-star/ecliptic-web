@@ -1,4 +1,4 @@
-import { readAdminFallback, writeAdminFallback } from "./adminFallbackStore";
+﻿import { readAdminFallback, writeAdminFallback } from "./adminFallbackStore";
 import { readBlobJson, writeBlobJson } from "./blobJsonStore";
 import { hasCloudflareState, readCloudflareState, writeCloudflareState } from "./cloudflareStateStore";
 
@@ -45,7 +45,24 @@ export async function savePendingTelegramOrder(order: PendingTelegramOrder) {
 
 export async function getPendingTelegramOrder(chatId: number) {
   const store = await readStore();
-  return store[String(chatId)] || null;
+  const order = store[String(chatId)];
+  if (!order) return null;
+  const createdAt = Date.parse(order.createdAt);
+  // A pending payment is valid only for one day. This prevents an old order
+  // from turning an unrelated future message or screenshot into a payment.
+  if (!Number.isFinite(createdAt) || Date.now() - createdAt > 24 * 60 * 60 * 1000) {
+    delete store[String(chatId)];
+    await writeStore(store).catch(() => undefined);
+    return null;
+  }
+  return order;
+}
+
+export async function clearPendingTelegramOrder(chatId: number) {
+  const store = await readStore();
+  if (!store[String(chatId)]) return;
+  delete store[String(chatId)];
+  await writeStore(store);
 }
 
 export async function claimPaymentNotification(chatId: number) {

@@ -1,4 +1,4 @@
-import { ADMIN_SESSION_COOKIE, getAdminSessionSecret, getAdminSessionValue, safeEqual } from "../../lib/security";
+﻿import { ADMIN_SESSION_COOKIE, getAdminSessionSecret, getAdminSessionValue, safeEqual } from "../../lib/security";
 import { EXCLUDED_ANALYTICS_VISITOR_IDS } from "../../lib/analyticsExclusions";
 
 export const dynamic = "force-dynamic";
@@ -731,6 +731,22 @@ const ADMIN_HTML = `<!doctype html>
         products: countBy(rows.filter(function(event) { return event.type === 'product_open' && eventProductSlug(event); }), function(event) { return eventProductSlug(event); })
       };
     }
+    function eventsFromChartSnapshot(snapshot) {
+      var events = [];
+      (snapshot.weeks || []).forEach(function(week) {
+        (week.days || []).forEach(function(day) {
+          var time = day.date + 'T12:00:00.000Z';
+          var buyCount = Number(day.buys) || 0;
+          var viewCount = Number(day.views) || 0;
+          var totalCount = Number(day.events) || 0;
+          for (var index = 0; index < buyCount; index += 1) events.push({ type: 'buy_click', time: time, price: 0, visitorId: 'snapshot-buy-' + time + '-' + index });
+          for (var viewIndex = 0; viewIndex < viewCount; viewIndex += 1) events.push({ type: 'product_open', product: 'snapshot', time: time, visitorId: 'snapshot-view-' + time + '-' + viewIndex });
+          for (var other = buyCount + viewCount; other < totalCount; other += 1) events.push({ type: 'snapshot_event', time: time, visitorId: 'snapshot-event-' + time + '-' + other });
+          for (var visitorIndex = 0; visitorIndex < (Number(day.visitors) || 0); visitorIndex += 1) events.push({ type: 'page_view', snapshotVisitor: true, time: time, visitorId: 'snapshot-visitor-' + time + '-' + visitorIndex });
+        });
+      });
+      return events;
+    }
     function mergeSummary(serverSummary, events) {
       return serverSummary && Number(serverSummary.total) >= 0 ? serverSummary : summarizeEvents(events);
     }
@@ -965,7 +981,7 @@ const ADMIN_HTML = `<!doctype html>
       return String(event && (event.visitorId || event.sessionId) || '').trim();
     }
     function renderUniqueVisitorWeekBars(id, events) {
-      var visitEvents = (events || []).filter(function(event) { return event.type !== 'page_view' && uniqueVisitorId(event) && event.time; });
+      var visitEvents = (events || []).filter(function(event) { return (event.type !== 'page_view' || event.snapshotVisitor) && uniqueVisitorId(event) && event.time; });
       var ranges = weekRanges(visitEvents);
       if (!ranges.length) {
         $(id).innerHTML = '<div class="chart-empty">Пока нет данных о посещениях. Новые визиты появятся после первого открытия сайта.</div>';
@@ -1186,9 +1202,8 @@ const ADMIN_HTML = `<!doctype html>
     function renderAnalytics() {
       hotVisitorOpenCounts = productOpenCountsByVisitorLastDay(analyticsEvents);
       var totalEvents = Math.max(Number(analyticsSummary.total) || 0, Number(analyticsPagination.totalStored) || 0, analyticsEvents.length);
-      var eventOffset = Math.floor(totalEvents / 10000) * 10000;
-      $('statTotal').textContent = (totalEvents % 10000).toLocaleString('ru-RU');
-      $('statTotalOffset').textContent = eventOffset ? '+' + (eventOffset / 1000) + 'k' : '';
+      $('statTotal').textContent = totalEvents.toLocaleString('ru-RU');
+      $('statTotalOffset').textContent = '';
       $('statViews').textContent = analyticsSummary.views || analyticsEvents.filter(function(e) { return e.type === 'product_open'; }).length;
       $('statBuys').textContent = analyticsSummary.buys || analyticsEvents.filter(function(e) { return e.type === 'buy_click'; }).length;
       $('statTelegram').textContent = analyticsSummary.telegram || analyticsEvents.filter(function(e) { return String(e.type || '').indexOf('telegram') !== -1; }).length;
@@ -1844,18 +1859,28 @@ const ADMIN_HTML = `<!doctype html>
       $('loadMoreEventsBtn').disabled = true;
       showNotice('Догружаю всю историю для диаграмм...', false);
       try {
-        var allEvents = [];
-        var nextOffset = 0;
-        var pagination = null;
-        var summary = analyticsSummary;
-        do {
-          // Load the full history in a few requests so charts do not render with only the first 500 events.
-          var data = await postJson('/api/admin/analytics', { offset: nextOffset, limit: 5000 });
-          allEvents = allEvents.concat(data.events || []);
-          summary = data.summary || summary;
-          pagination = data.pagination || { hasMore: false, nextOffset: allEvents.length, totalStored: allEvents.length };
-          nextOffset = pagination.nextOffset || allEvents.length;
-        } while (pagination.hasMore && allEvents.length < 50000);
+        var snapshotResponse = await postJson('/api/admin/analytics', { snapshot: true });
+        if (snapshotResponse.snapshot) {
+          analyticsEvents = eventsFromChartSnapshot(snapshotResponse.snapshot);
+          analyticsSummary = snapshotResponse.snapshot.summary || summarizeEvents(analyticsEvents);
+          analyticsPagination = { offset: 0, limit: analyticsEvents.length, loaded: analyticsEvents.length, totalStored: analyticsSummary.total || analyticsEvents.length, hasMore: false, nextOffset: analyticsEvents.length };
+          renderAnalytics();
+          updateAnalyticsTimestamp();
+          showNotice('Диаграммы загружены из сохранённой сводки.', false);
+          hideNoticeSoon();
+          return;
+        }
+        var pageSize = 5000;
+        var firstPage = await postJson('/api/admin/analytics', { offset: 0, limit: pageSize });
+        var allEvents = firstPage.events || [];
+        var pagination = firstPage.pagination || { hasMore: false, nextOffset: allEvents.length, totalStored: allEvents.length };
+        var summary = firstPage.summary || analyticsSummary;
+        while (pagination.hasMore) {
+          var page = await postJson('/api/admin/analytics', { offset: pagination.nextOffset, limit: pageSize });
+          allEvents = allEvents.concat(page.events || []);
+          summary = page.summary || summary;
+          pagination = page.pagination || pagination;
+        }
 
         analyticsEvents = mergeAnalyticsSources(allEvents);
         analyticsSummary = mergeSummary(summary, analyticsEvents);
