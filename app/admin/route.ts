@@ -426,15 +426,16 @@ const ADMIN_HTML = `<!doctype html>
     var KEEP_IMAGE = '__ECLIPTIC_KEEP_IMAGE__';
     var LOCAL_ANALYTICS_KEY = 'ecliptic_analytics_events_v2';
     // Historical totals recovered from the last available analytics views. These rows stay local
-    // so old weeks never depend on a live 10K-event scan. Unknown unique-visitor totals are omitted.
+    // so old weeks never depend on a live 10K-event scan. A zero means no verified value was
+    // available in the backup, but the week must still remain visible in the chart.
     var HISTORICAL_CHART_WEEKS = [
-      { start: '2026-10-05', label: '05.10 - 11.10', events: 202, buys: 27, buySum: 4801, views: 172, registrations: 30, referrals: 1 },
-      { start: '2026-10-12', label: '12.10 - 18.10', events: 625, buys: 46, buySum: 12036, views: 289, registrations: 23, referrals: 0 },
-      { start: '2026-10-19', label: '19.10 - 25.10', events: 2874, buys: 143, buySum: 16370, views: 754, registrations: 147, referrals: 1 },
-      { start: '2026-10-26', label: '26.10 - 01.11', events: 2126, buys: 111, buySum: 19898, views: 624, registrations: 51, referrals: 2 },
-      { start: '2026-11-02', label: '02.11 - 08.11', events: 2490, buys: 164, buySum: 23842, views: 777, registrations: 99, referrals: 2 },
-      { start: '2026-11-09', label: '09.11 - 15.11', events: 1182, buys: 100, buySum: 9972, views: 405, registrations: 47, unique: 1 },
-      { start: '2026-11-16', label: '16.11 - 22.11', events: 522, buys: 36, buySum: 4004.5, views: 172, registrations: 40, unique: 109 }
+      { start: '2026-10-05', label: '05.10 - 11.10', events: 202, buys: 27, buySum: 4801, views: 172, registrations: 30, unique: null, referrals: 1 },
+      { start: '2026-10-12', label: '12.10 - 18.10', events: 625, buys: 46, buySum: 12036, views: 289, registrations: 23, unique: null, referrals: 0 },
+      { start: '2026-10-19', label: '19.10 - 25.10', events: 2874, buys: 143, buySum: 16370, views: 754, registrations: 147, unique: null, referrals: 1 },
+      { start: '2026-10-26', label: '26.10 - 01.11', events: 2126, buys: 111, buySum: 19898, views: 624, registrations: 51, unique: null, referrals: 2 },
+      { start: '2026-11-02', label: '02.11 - 08.11', events: 2490, buys: 164, buySum: 23842, views: 777, registrations: 99, unique: null, referrals: 2 },
+      { start: '2026-11-09', label: '09.11 - 15.11', events: 1182, buys: 100, buySum: 9972, views: 405, registrations: 47, unique: 1, referrals: null },
+      { start: '2026-11-16', label: '16.11 - 22.11', events: 522, buys: 36, buySum: 4004.5, views: 172, registrations: 40, unique: 109, referrals: null }
     ];
 
     function $(id) { return document.getElementById(id); }
@@ -1012,10 +1013,7 @@ const ADMIN_HTML = `<!doctype html>
     function renderUniqueVisitorWeekBars(id, events) {
       var visitEvents = (events || []).filter(function(event) { return (event.type !== 'page_view' || event.snapshotVisitor) && uniqueVisitorId(event) && event.time; });
       var ranges = weekRanges(visitEvents);
-      if (!ranges.length) {
-        $(id).innerHTML = '<div class="chart-empty">Пока нет данных о посещениях. Новые визиты появятся после первого открытия сайта.</div>';
-        return;
-      }
+      if (!ranges.length) ranges = weekRanges([{ time: new Date().toISOString() }]);
       var rows = ranges.map(function(range) {
         var days = [];
         for (var index = 0; index < 7; index += 1) {
@@ -1026,13 +1024,12 @@ const ADMIN_HTML = `<!doctype html>
         return { label: range.label, start: range.start, end: range.end, visitors: new Set(), days: days };
       });
       HISTORICAL_CHART_WEEKS.slice().reverse().forEach(function(week) {
-        if (week.unique == null) return;
         var existingIndex = rows.findIndex(function(row) { return row.label === week.label; });
         if (existingIndex >= 0) rows.splice(existingIndex, 1);
         var fixedStart = new Date(week.start + 'T00:00:00');
         var fixedEnd = new Date(fixedStart);
         fixedEnd.setDate(fixedEnd.getDate() + 6);
-        rows.unshift({ label: week.label, start: fixedStart, end: fixedEnd, visitors: new Set(), value: week.unique, days: [], fixed: true });
+        rows.unshift({ label: week.label, start: fixedStart, end: fixedEnd, visitors: new Set(), value: Number(week.unique || 0), days: [], fixed: week.unique != null });
       });
       visitEvents.forEach(function(event) {
         var date = new Date(event.time);
@@ -1152,13 +1149,12 @@ const ADMIN_HTML = `<!doctype html>
         return { label: range.label, start: range.start, end: range.end, value: 0, days: days };
       });
       HISTORICAL_CHART_WEEKS.slice().reverse().forEach(function(week) {
-        if (week.referrals == null) return;
         var existingIndex = rows.findIndex(function(row) { return row.label === week.label; });
         if (existingIndex >= 0) rows.splice(existingIndex, 1);
         var fixedStart = new Date(week.start + 'T00:00:00');
         var fixedEnd = new Date(fixedStart);
         fixedEnd.setDate(fixedEnd.getDate() + 6);
-        rows.unshift({ label: week.label, start: fixedStart, end: fixedEnd, value: week.referrals, days: [], fixed: true });
+        rows.unshift({ label: week.label, start: fixedStart, end: fixedEnd, value: Number(week.referrals || 0), days: [], fixed: week.referrals != null });
       });
       completionEvents.forEach(function(event) {
         var date = new Date(event.time);
