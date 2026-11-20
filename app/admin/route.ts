@@ -425,6 +425,17 @@ const ADMIN_HTML = `<!doctype html>
     var dragScrollSpeed = 0;
     var KEEP_IMAGE = '__ECLIPTIC_KEEP_IMAGE__';
     var LOCAL_ANALYTICS_KEY = 'ecliptic_analytics_events_v2';
+    // Historical totals recovered from the last available analytics view. Keep this week local so it never depends on a live 10K-event scan.
+    var HISTORICAL_CHART_WEEK = {
+      start: '2026-11-02',
+      label: '02.11 - 08.11',
+      events: 2490,
+      buys: 164,
+      buySum: 23842,
+      views: 777,
+      registrations: 99,
+      referrals: 2
+    };
 
     function $(id) { return document.getElementById(id); }
     function esc(value) {
@@ -941,6 +952,13 @@ const ADMIN_HTML = `<!doctype html>
         }
         return { label: range.label, start: range.start, end: range.end, value: 0, sum: 0, days: days };
       });
+      var fixedValue = type === 'all_events' ? HISTORICAL_CHART_WEEK.events : type === 'buy_click' ? HISTORICAL_CHART_WEEK.buys : type === 'product_page_view' ? HISTORICAL_CHART_WEEK.views : null;
+      if (fixedValue !== null && !rows.some(function(row) { return row.label === HISTORICAL_CHART_WEEK.label; })) {
+        var fixedStart = new Date(HISTORICAL_CHART_WEEK.start + 'T00:00:00');
+        var fixedEnd = new Date(fixedStart);
+        fixedEnd.setDate(fixedEnd.getDate() + 6);
+        rows.unshift({ label: HISTORICAL_CHART_WEEK.label, start: fixedStart, end: fixedEnd, value: fixedValue, sum: type === 'buy_click' ? HISTORICAL_CHART_WEEK.buySum : 0, days: [], fixed: true });
+      }
       events.forEach(function(event) {
         if (!matchesWeeklyEvent(event, type) || !event.time) return;
         var date = new Date(event.time);
@@ -964,7 +982,7 @@ const ADMIN_HTML = `<!doctype html>
         var dayRows = activeDays.map(function(day) {
           var valueText = type === 'buy_click' ? day.value + ' - ' + day.sum + ' р' : String(day.value);
           return '<div class="week-tip-row"><span>' + esc(formatDayName(day.date)) + '</span><b>' + valueText + '</b></div>';
-        }).join('') || '<div class="week-tip-row"><span>Нет действий</span><b>-</b></div>';
+        }).join('') || (row.fixed ? '<div class="week-tip-row"><span>Дневная детализация</span><b>нет в backup</b></div>' : '<div class="week-tip-row"><span>Нет действий</span><b>-</b></div>');
         var totalText = type === 'buy_click'
           ? 'Заказов: ' + row.value + '<br>Сумма: ' + row.sum + ' р'
           : type === 'all_events'
@@ -1067,6 +1085,12 @@ const ADMIN_HTML = `<!doctype html>
         }
         return { label: range.label, start: range.start, end: range.end, value: 0, days: days };
       });
+      if (!rows.some(function(row) { return row.label === HISTORICAL_CHART_WEEK.label; })) {
+        var fixedStart = new Date(HISTORICAL_CHART_WEEK.start + 'T00:00:00');
+        var fixedEnd = new Date(fixedStart);
+        fixedEnd.setDate(fixedEnd.getDate() + 6);
+        rows.unshift({ label: HISTORICAL_CHART_WEEK.label, start: fixedStart, end: fixedEnd, value: HISTORICAL_CHART_WEEK.registrations, days: [], fixed: true });
+      }
       registrationEvents.forEach(function(event) {
         var date = new Date(event.time);
         if (Number.isNaN(date.getTime())) return;
@@ -1081,7 +1105,7 @@ const ADMIN_HTML = `<!doctype html>
         var height = Math.max(8, Math.round(row.value / max * 150));
         var dayRows = row.days.filter(function(day) { return day.value > 0; }).map(function(day) {
           return '<div class="week-tip-row"><span>' + esc(formatDayName(day.date)) + '</span><b>' + day.value + '</b></div>';
-        }).join('') || '<div class="week-tip-row"><span>Нет регистраций</span><b>-</b></div>';
+        }).join('') || (row.fixed ? '<div class="week-tip-row"><span>Дневная детализация</span><b>нет в backup</b></div>' : '<div class="week-tip-row"><span>Нет регистраций</span><b>-</b></div>');
         var tip = '<strong>' + esc(row.label) + '</strong>' + dayRows + '<div class="week-tip-total">Новых пользователей: ' + row.value + '</div>';
         return '<div class="week-bar" data-week-tip="' + esc(tip) + '"><div class="week-value">' + row.value + '<small>регистраций</small></div><div class="week-fill" style="height:' + height + 'px"></div><div class="week-label">' + esc(row.label) + '</div></div>';
       }).join('') + '</div>';
@@ -1105,6 +1129,12 @@ const ADMIN_HTML = `<!doctype html>
         }
         return { label: range.label, start: range.start, end: range.end, value: 0, days: days };
       });
+      if (!rows.some(function(row) { return row.label === HISTORICAL_CHART_WEEK.label; })) {
+        var fixedStart = new Date(HISTORICAL_CHART_WEEK.start + 'T00:00:00');
+        var fixedEnd = new Date(fixedStart);
+        fixedEnd.setDate(fixedEnd.getDate() + 6);
+        rows.unshift({ label: HISTORICAL_CHART_WEEK.label, start: fixedStart, end: fixedEnd, value: HISTORICAL_CHART_WEEK.referrals, days: [], fixed: true });
+      }
       completionEvents.forEach(function(event) {
         var date = new Date(event.time);
         if (Number.isNaN(date.getTime())) return;
@@ -1119,7 +1149,7 @@ const ADMIN_HTML = `<!doctype html>
         var height = Math.max(8, Math.round(row.value / max * 150));
         var dayRows = row.days.filter(function(day) { return day.value > 0; }).map(function(day) {
           return '<div class="week-tip-row"><span>' + esc(formatDayName(day.date)) + '</span><b>' + day.value + '</b></div>';
-        }).join('') || '<div class="week-tip-row"><span>Нет выполнений</span><b>-</b></div>';
+        }).join('') || (row.fixed ? '<div class="week-tip-row"><span>Дневная детализация</span><b>нет в backup</b></div>' : '<div class="week-tip-row"><span>Нет выполнений</span><b>-</b></div>');
         var tip = '<strong>' + esc(row.label) + '</strong>' + dayRows + '<div class="week-tip-total">Выполнили условия: ' + row.value + '</div>';
         return '<div class="week-bar" data-week-tip="' + esc(tip) + '"><div class="week-value">' + row.value + '<small>участников</small></div><div class="week-fill" style="height:' + height + 'px"></div><div class="week-label">' + esc(row.label) + '</div></div>';
       }).join('') + '</div>';
