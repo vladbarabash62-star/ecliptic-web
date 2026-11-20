@@ -1485,7 +1485,9 @@ const ADMIN_HTML = `<!doctype html>
       renderWeekBars('chartWeeklyEvents', chartEvents, 'all_events', 'событий');
       renderWeekBars('chartWeeklyBuys', chartEvents, 'buy_click', 'кликов');
       renderWeekBars('chartWeeklyProductViews', chartEvents, 'product_page_view', 'открытий');
-      renderUniqueVisitorWeekBars('chartWeeklyUniqueVisitors', analyticsEvents);
+      // Use the full chart archive here, not the first paginated table page.
+      // Otherwise older weeks are rendered as zero until the user loads every row.
+      renderUniqueVisitorWeekBars('chartWeeklyUniqueVisitors', sourceEvents);
       renderRegistrationWeekBars('chartWeeklyRegistrations', referralUsers);
       renderReferralCompletionWeekBars('chartWeeklyReferralCompletions', referralUsers);
       $('chartsUpdatedAt').textContent = 'Обновлено: ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' · открытий товаров: ' + productOpens.length + ' · кликов «Купить»: ' + buyEvents.length;
