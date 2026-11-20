@@ -415,6 +415,7 @@ const ADMIN_HTML = `<!doctype html>
     var referralUsers = [];
     var referralFilter = 'all';
     var chartsFullLoading = false;
+    var chartsFullReady = false;
     var selectedReferralUserId = '';
     var selectedSlug = '';
     var uploadTarget = null;
@@ -1269,6 +1270,13 @@ const ADMIN_HTML = `<!doctype html>
         : 'Все события загружены';
       if (!skipCharts) renderCharts();
     }
+    function showChartsLoading() {
+      var ids = ['chartProducts', 'chartProductBuys', 'chartWeeklyEvents', 'chartWeeklyBuys', 'chartWeeklyProductViews', 'chartWeeklyUniqueVisitors', 'chartWeeklyRegistrations', 'chartWeeklyReferralCompletions'];
+      ids.forEach(function(id) {
+        var el = $(id);
+        if (el) el.innerHTML = '<div class="chart-empty">Загружаю полную историю аналитики...</div>';
+      });
+    }
     function formatAdminDate(value) {
       return value ? new Date(value).toLocaleString('ru-RU') : '-';
     }
@@ -1825,6 +1833,7 @@ const ADMIN_HTML = `<!doctype html>
     async function loadAnalytics(offset) {
       var shouldAppend = Number(offset || 0) > 0;
       var loadOffset = shouldAppend ? offset : 0;
+      if (!shouldAppend) chartsFullReady = false;
       $('loadMoreEventsBtn').disabled = true;
       try {
         var data = await postJson('/api/admin/analytics', { offset: loadOffset, limit: analyticsPagination.limit });
@@ -1841,9 +1850,10 @@ const ADMIN_HTML = `<!doctype html>
         analyticsPagination.totalStored = Math.max(analyticsPagination.totalStored || 0, analyticsEvents.length);
         var chartsActive = $('charts').classList.contains('active');
         var deferCharts = chartsActive && !shouldAppend;
+        if (deferCharts) showChartsLoading();
         renderAnalytics(deferCharts);
         updateAnalyticsTimestamp();
-        if (deferCharts) loadFullAnalyticsForCharts();
+        if (deferCharts && !chartsFullLoading) loadFullAnalyticsForCharts();
         showNotice('Готово.', false);
         hideNoticeSoon();
       } catch (error) {
@@ -1866,7 +1876,7 @@ const ADMIN_HTML = `<!doctype html>
           selectedReferralUserId = referralUsers[0] ? referralUsers[0].id : '';
         }
         renderReferrals();
-        if (!chartsFullLoading) renderCharts();
+        if (chartsFullReady && !chartsFullLoading) renderCharts();
         $('referralsUpdatedAt').textContent = 'Обновлено: ' + new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' · пользователей: ' + referralUsers.length;
       } catch (error) {
         $('referralsUpdatedAt').textContent = 'Не удалось загрузить пользователей';
@@ -1913,6 +1923,8 @@ const ADMIN_HTML = `<!doctype html>
       $('reloadChartsBtn').disabled = true;
       $('loadMoreEventsBtn').disabled = true;
       chartsFullLoading = true;
+      chartsFullReady = false;
+      showChartsLoading();
       showNotice('Догружаю всю историю для диаграмм...', false);
       try {
         // Always read the paginated event store here. The chart snapshot intentionally has
@@ -1933,6 +1945,7 @@ const ADMIN_HTML = `<!doctype html>
         analyticsSummary = mergeSummary(summary, analyticsEvents);
         analyticsPagination = pagination || { offset: 0, limit: 500, loaded: allEvents.length, totalStored: allEvents.length, hasMore: false, nextOffset: allEvents.length };
         analyticsPagination.totalStored = Math.max(analyticsPagination.totalStored || 0, analyticsEvents.length);
+        chartsFullReady = true;
         renderAnalytics();
         updateAnalyticsTimestamp();
         showNotice('Диаграммы обновлены по всей истории.', false);
@@ -2036,7 +2049,7 @@ const ADMIN_HTML = `<!doctype html>
       if (syncHash !== false && window.location.hash !== '#' + target) {
         window.history.replaceState(null, '', '#' + target);
       }
-      if (target === 'charts' && analyticsPagination.hasMore) {
+      if (target === 'charts' && !chartsFullReady && !chartsFullLoading) {
         loadFullAnalyticsForCharts();
       }
       if (target === 'charts' && !referralUsers.length) loadReferrals();
