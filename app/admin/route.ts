@@ -929,7 +929,7 @@ const ADMIN_HTML = `<!doctype html>
         return chartColors[index % chartColors.length] + ' ' + from.toFixed(2) + '% ' + to.toFixed(2) + '%';
       }).join(',') : '#1f2937 0% 100%';
       var legend = rows.map(function(row, index) {
-        var displayLabel = String(row[0]).replace(/\s·\s\/products\/.*$/, '');
+        var displayLabel = String(row[0]).replace(/\\s·\\s \\/products\\/.*$/, '');
         return '<div class="legend-row"><span class="dot" style="--dot:' + chartColors[index % chartColors.length] + '"></span><span>' + esc(displayLabel) + '</span><strong>' + row[1] + ' · ' + shareLabel(row[1], total) + '</strong></div>';
       }).join('');
       $(id).innerHTML = '<div class="pie-wrap"><div class="pie" style="background:conic-gradient(' + segments + ')"></div><div class="legend ' + (rows.length > 8 ? 'scroll' : '') + '">' + legend + '</div></div>';
