@@ -820,6 +820,16 @@ const ADMIN_HTML = `<!doctype html>
         return event.type === 'buy_click' && eventProductSlug(event);
       }), function(event) { return productLinkLabel(eventProductSlug(event)); });
     }
+    function catalogProductCounts(events, counter) {
+      var counts = {};
+      (products || []).forEach(function(product) {
+        if (product && product.slug) counts[productLinkLabel(product.slug)] = 0;
+      });
+      Object.entries(counter(events) || {}).forEach(function(row) {
+        counts[row[0]] = (counts[row[0]] || 0) + Number(row[1] || 0);
+      });
+      return counts;
+    }
     function productOpenCountsByVisitorLastDay(events) {
       var since = Date.now() - 24 * 60 * 60 * 1000;
       var counts = {};
@@ -836,17 +846,17 @@ const ADMIN_HTML = `<!doctype html>
     var chartColors = ['#38bdf8','#22c55e','#f59e0b','#a78bfa','#fb7185','#2dd4bf','#f97316','#60a5fa','#facc15','#34d399','#c084fc','#fb923c','#67e8f9','#fda4af'];
     function renderPie(id, rows) {
       var total = rows.reduce(function(sum, row) { return sum + row[1]; }, 0);
-      if (!total) {
+      if (!rows.length) {
         $(id).innerHTML = '<div class="chart-empty">Пока нет данных для диаграммы.</div>';
         return;
       }
       var used = 0;
-      var segments = rows.map(function(row, index) {
+      var segments = total ? rows.map(function(row, index) {
         var from = used / total * 100;
         used += row[1];
         var to = used / total * 100;
         return chartColors[index % chartColors.length] + ' ' + from.toFixed(2) + '% ' + to.toFixed(2) + '%';
-      }).join(',');
+      }).join(',') : '#1f2937 0% 100%';
       var legend = rows.map(function(row, index) {
         return '<div class="legend-row"><span class="dot" style="--dot:' + chartColors[index % chartColors.length] + '"></span><span>' + esc(row[0]) + '</span><strong>' + row[1] + ' · ' + percent(row[1], total) + '%</strong></div>';
       }).join('');
@@ -1389,9 +1399,10 @@ const ADMIN_HTML = `<!doctype html>
       var chartEvents = analyticsEvents.filter(isCountedEvent);
       var buyEvents = chartEvents.filter(function(e) { return e.type === 'buy_click'; });
       var productOpens = chartEvents.filter(function(e) { return e.type === 'product_open'; });
-      var fallbackProductCounts = productOpenCounts(chartEvents);
-      var productCounts = Object.keys(analyticsSummary.products || {}).length ? productSummaryLinkNames(analyticsSummary.products) : fallbackProductCounts;
-      var productBuyCountsData = productBuyCounts(chartEvents);
+      // The server summary can be truncated. Build both product charts from the complete
+      // event list and seed every current catalog item so no product disappears from the legend.
+      var productCounts = catalogProductCounts(chartEvents, productOpenCounts);
+      var productBuyCountsData = catalogProductCounts(chartEvents, productBuyCounts);
 
       renderPie('chartProducts', topEntries(productCounts, products.length || 100));
       renderPie('chartProductBuys', topEntries(productBuyCountsData, products.length || 100));
