@@ -1,6 +1,7 @@
 ﻿import { ADMIN_SESSION_COOKIE, getAdminSessionSecret, getAdminSessionValue, safeEqual } from "../../lib/security";
 import { EXCLUDED_ANALYTICS_VISITOR_IDS } from "../../lib/analyticsExclusions";
 
+// Keep the admin route dynamic so analytics controls always use the current API state.
 export const dynamic = "force-dynamic";
 
 const STYLE = `
