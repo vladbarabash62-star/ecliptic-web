@@ -116,6 +116,31 @@ async function showTyping(chatId: number, businessConnectionId?: string) {
   await sleep(DEFAULT_AUTO_REPLY_DELAY_MS);
 }
 
+function isReadyQuickReply(text?: string) {
+  return Boolean(text?.trim().match(/^готово\s*✅?$/i));
+}
+
+function timeGreetingForManagerReply() {
+  const hour = Number(new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Europe/Chisinau",
+    hour: "2-digit",
+    hourCycle: "h23",
+  }).format(new Date()));
+  if (hour >= 6 && hour < 16) return "Хорошего дня!";
+  if (hour >= 16) return "Приятного вечера!";
+  return "Доброй ночи!";
+}
+
+async function sendReadyQuickReplyGreeting(chatId: number, businessConnectionId: string) {
+  await showTyping(chatId, businessConnectionId);
+  const response = await telegram("sendMessage", {
+    chat_id: chatId,
+    business_connection_id: businessConnectionId,
+    text: timeGreetingForManagerReply(),
+  });
+  return Boolean(response);
+}
+
 function applyAccountNoticeEmojiIds(text: string, ids: string[]) {
   const emojiPlaceholders = ["❗", "⌛️", "🚫", "📄", "💡"];
   let result = text;
@@ -953,6 +978,10 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate, reque
     // A manual message from the connected business account is not a customer
     // message and must never trigger an automatic reply.
     if (message.from?.id === businessConnection.user_chat_id) {
+      if (message.business_connection_id && isReadyQuickReply(message.text)) {
+        const replied = await sendReadyQuickReplyGreeting(message.chat.id, message.business_connection_id);
+        return NextResponse.json({ ok: true, ignored: "manager-message", quickReplyGreeting: replied });
+      }
       await noteTelegramChatActivity(message.chat.id).catch(() => undefined);
       return NextResponse.json({ ok: true, ignored: "manager-message" });
     }
