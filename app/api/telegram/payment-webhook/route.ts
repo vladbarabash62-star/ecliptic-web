@@ -395,11 +395,6 @@ const MANAGER_CONTACT_SLUGS = new Set([
   "ton",
 ]);
 
-const RU_RUBLE_TOPUP_SLUGS = new Set([
-  "sbp-payment",
-  "site-topups",
-]);
-
 function replyPolicy(product?: Product, hasPayment = false) {
   const slug = product?.slug.toLowerCase() || "";
   const hasSellableOffers = Boolean(product?.offers.some((offer) =>
@@ -416,13 +411,6 @@ function replyPolicy(product?: Product, hasPayment = false) {
   if (MANAGER_CONTACT_SLUGS.has(slug) && !hasSellableOffers) return "manager" as const;
   if (!hasSellableOffers) return "manager" as const;
   return hasPayment ? "payment" as const : "manager" as const;
-}
-
-function ruRublesEquivalent(pricePmr?: number) {
-  if (!Number.isFinite(pricePmr) || !pricePmr || pricePmr <= 0) return "";
-  // The current rate is 30 PMR = 30 Russian rubles; round down to 5/0.
-  const rubles = Math.floor(pricePmr / 5) * 5;
-  return `${rubles} р РФ`;
 }
 
 function catalogOfferPrice(product: Product, offer: Extract<Product["offers"][number], { priceRub: number }>) {
@@ -450,6 +438,15 @@ async function resolveOrderPayment(orderMessage: string, orderCode: string): Pro
   const offers = product.offers.filter((offer): offer is Extract<Product["offers"][number], { priceRub: number }> =>
     offer.type !== "divider" && typeof offer.priceRub === "number" && offer.priceRub > 0
   );
+  const isDynamicPaymentProduct = product.slug === "sbp-payment" || product.slug === "site-topups";
+  if (isDynamicPaymentProduct && parsed.priceRub && parsed.priceRub > 0) {
+    return {
+      amount: `${parsed.priceRub} р ПМР`,
+      product,
+      sitePrice: parsed.priceRub,
+      hasPayment: true,
+    };
+  }
   const orderProductText = normalizeProductQuery(extractOrderProduct(orderMessage));
   const offerByLabel = [...offers]
     .sort((left, right) => normalizeProductQuery(right.label).length - normalizeProductQuery(left.label).length)
@@ -707,16 +704,6 @@ async function sendOrderInstructions(
     "<b>Получатель: Владислав Б</b>",
     `<b>Сумма к оплате: ${escapeHtml(paymentAmount || extractOrderAmount(orderMessage))}</b>`,
   ];
-  const ruRubles = RU_RUBLE_TOPUP_SLUGS.has(productData?.slug.toLowerCase() || "")
-    ? ruRublesEquivalent(sitePrice)
-    : "";
-  if (ruRubles) {
-    paymentLines.push(
-      "",
-      "<b>Курс: 30 р ПМР = 30 р РФ.</b>",
-      `<b>Баланс будет пополнен на ${escapeHtml(ruRubles)}.</b>`,
-    );
-  }
   if (productData?.slug.toLowerCase() === "world-of-tanks") {
     paymentLines.push("", "<b>После оплаты отправьте данные вашего аккаунта: логин и пароль.</b>");
   } else {

@@ -1071,12 +1071,7 @@ export const products: Product[] = [
     "icon": "/loading-icon.png",
     "slug": "sbp-payment",
     "iconScale": 1.08,
-    "offers": [
-      {
-        "label": "РФ",
-        "priceRub": 100
-      }
-    ]
+    "offers": []
   },
   {
     "name": "Вывод с карты РФ",
