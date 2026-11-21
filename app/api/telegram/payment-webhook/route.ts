@@ -216,7 +216,7 @@ function extractOrderCode(message: string) {
 
 function isGreetingText(message: string) {
   const value = message.trim().toLowerCase().replace(/ё/g, "е");
-  return /^(привет(?:ствую)?|здравствуйте|здрасьте|добрый\s+(?:день|вечер|утро)|доброе\s+утро|ку|hello|hi)(?:\s|[!,.?]|$)/i.test(value);
+  return /^(привет(?:ствую)?|здравствуйте|здрасьте|здарова|сап|салют|добрый\s+(?:день|вечер|утро)|доброе\s+утро|ку|hello|hi)(?:\s|[!,.?]|$)/i.test(value);
 }
 
 function isPaymentDetailsRequest(message: string) {
@@ -305,7 +305,16 @@ const PRODUCT_REQUEST_ALIASES: Record<string, string[]> = {
   fortnite: ["фортнайт", "форнайт", "fortnite"],
   minecraft: ["майнкрафт", "маинкрафт", "майн", "minecraft", "mc"],
   oxide: ["оксайд", "oxide"],
-  "site-topups": ["пополнение сайтов", "донат", "донат сайтов"],
+  "site-topups": [
+    "пополнение сайтов",
+    "пополнение сайта",
+    "пополнение баланса сайта",
+    "пополнить баланс на сайте",
+    "пополнить баланс сайта",
+    "пополнить баланс",
+    "донат",
+    "донат сайтов",
+  ],
   "sbp-payment": ["сбп", "система быстрых платежей"],
   nft: ["нфт", "nft"],
   ton: ["тон", "ton"],
