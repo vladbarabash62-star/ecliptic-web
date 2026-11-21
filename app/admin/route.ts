@@ -1103,6 +1103,15 @@ const ADMIN_HTML = `<!doctype html>
           day.sum += price;
         }
       });
+      rows.forEach(function(row) {
+        var hasDailyValues = row.days.some(function(day) { return day.value > 0; });
+        if (!hasDailyValues) return;
+        row.value = row.days.reduce(function(total, day) { return total + day.value; }, 0);
+        if (type === 'buy_click') {
+          var dailySum = row.days.reduce(function(total, day) { return total + day.sum; }, 0);
+          if (dailySum > 0) row.sum = dailySum;
+        }
+      });
       var max = Math.max(1, ...rows.map(function(row) { return row.value; }));
       $(id).innerHTML = '<div class="week-bars">' + rows.map(function(row) {
         var height = Math.max(8, Math.round(row.value / max * 150));
@@ -1160,17 +1169,23 @@ const ADMIN_HTML = `<!doctype html>
         var day = row.days.find(function(item) { return dayStamp(item.date) === dayStamp(date); });
         if (day) day.visitors.add(key);
       });
-      var max = Math.max(1, ...rows.map(function(row) { return row.fixed ? row.value : row.visitors.size; }));
-      $(id).innerHTML = '<div class="week-bars">' + rows.map(function(row) {
-        var visitorCount = row.fixed ? row.value : row.visitors.size;
-        var height = Math.max(8, Math.round(visitorCount / max * 150));
+      function uniqueDisplayDays(row) {
         var activeDays = row.days.filter(function(day) { return day.visitors.size > 0; });
-        if (!activeDays.length && row.snapshotDays && row.snapshotDays.length) {
-          activeDays = row.snapshotDays.filter(function(day) { return Number(day.visitors) > 0; }).map(function(day) {
-            return { date: new Date(day.date + 'T12:00:00'), visitors: { size: Number(day.visitors) || 0 } };
-          });
-        }
-        var dayRows = activeDays.map(function(day) {
+        if (activeDays.length || !row.snapshotDays || !row.snapshotDays.length) return activeDays;
+        return row.snapshotDays.filter(function(day) { return Number(day.visitors) > 0; }).map(function(day) {
+          return { date: new Date(day.date + 'T12:00:00'), visitors: { size: Number(day.visitors) || 0 } };
+        });
+      }
+      function uniqueDisplayValue(row) {
+        var days = uniqueDisplayDays(row);
+        return days.length ? days.reduce(function(total, day) { return total + day.visitors.size; }, 0) : row.visitors.size;
+      }
+      var max = Math.max(1, ...rows.map(uniqueDisplayValue));
+      $(id).innerHTML = '<div class="week-bars">' + rows.map(function(row) {
+        var displayDays = uniqueDisplayDays(row);
+        var visitorCount = uniqueDisplayValue(row);
+        var height = Math.max(8, Math.round(visitorCount / max * 150));
+        var dayRows = displayDays.map(function(day) {
           return '<div class="week-tip-row"><span>' + esc(formatDayName(day.date)) + '</span><b>' + day.visitors.size + '</b></div>';
         }).join('') || (row.fixed ? '<div class="week-tip-row"><span>Дневная детализация</span><b>нет в backup</b></div>' : '<div class="week-tip-row"><span>Нет посещений</span><b>-</b></div>');
         var tip = '<strong>' + esc(row.label) + '</strong>' + dayRows + '<div class="week-tip-total">Уникальных пользователей: ' + visitorCount + '</div>';
@@ -1243,6 +1258,11 @@ const ADMIN_HTML = `<!doctype html>
         if (day) day.value += 1;
         if (!row.fixed) row.value += 1;
       });
+      rows.forEach(function(row) {
+        if (row.days.some(function(day) { return day.value > 0; })) {
+          row.value = row.days.reduce(function(total, day) { return total + day.value; }, 0);
+        }
+      });
       var max = Math.max(1, ...rows.map(function(row) { return row.value; }));
       $(id).innerHTML = '<div class="week-bars">' + rows.map(function(row) {
         var height = Math.max(8, Math.round(row.value / max * 150));
@@ -1287,6 +1307,11 @@ const ADMIN_HTML = `<!doctype html>
         var day = row.days.find(function(item) { return dayStamp(item.date) === dayStamp(date); });
         if (day) day.value += 1;
         if (!row.fixed) row.value += 1;
+      });
+      rows.forEach(function(row) {
+        if (row.days.some(function(day) { return day.value > 0; })) {
+          row.value = row.days.reduce(function(total, day) { return total + day.value; }, 0);
+        }
       });
       var max = Math.max(1, ...rows.map(function(row) { return row.value; }));
       $(id).innerHTML = '<div class="week-bars">' + rows.map(function(row) {
