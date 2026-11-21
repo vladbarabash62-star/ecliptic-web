@@ -8,8 +8,7 @@ const formSource = readFileSync(join(rootDir, "app", "products", "[slug]", "Prod
 const pageSource = readFileSync(join(rootDir, "app", "products", "[slug]", "page.tsx"), "utf8");
 
 assert.match(formSource, /export function SiteTopupForm/);
-assert.match(formSource, /Ссылка:/);
-assert.match(formSource, /Введите ссылку на сайт, который хотите пополнить/);
+assert.doesNotMatch(formSource, /Введите ссылку на сайт, который хотите пополнить/);
 assert.match(formSource, /Сумма пополнения/);
 assert.match(formSource, /Введите сумму/);
 assert.match(formSource, /CURRENCY_RUB = "\\u20BD"/);

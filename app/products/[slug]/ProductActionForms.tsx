@@ -1461,12 +1461,10 @@ export function ManagerButtonForm({ productName, productSlug }: { productName: s
 }
 
 export function SiteTopupForm({ productName, productSlug }: { productName: string; productSlug: string }) {
-  const [link, setLink] = useState("");
   const [amount, setAmount] = useState("");
   const [currency, setCurrency] = useState(CURRENCY_RUB);
   const { notice, isVisible, showNotice } = useOrderNotice();
   const numericAmount = Number(amount.replace(",", ".")) || 0;
-  const hasLink = link.trim().length > 0;
   const hasInput = amount.trim().length > 0;
   const hasAmount = hasInput && numericAmount > 0;
   const selectedMinimum = SITE_TOPUP_MINIMUMS[currency];
@@ -1476,7 +1474,7 @@ export function SiteTopupForm({ productName, productSlug }: { productName: strin
       : "";
 
   function validateOrder() {
-    if (!hasLink || !hasAmount) return REQUIRED_FIELDS_MESSAGE;
+    if (!hasAmount) return REQUIRED_FIELDS_MESSAGE;
 
     const minimum = selectedMinimum;
     if (minimum && numericAmount < minimum.amount) {
@@ -1487,7 +1485,7 @@ export function SiteTopupForm({ productName, productSlug }: { productName: strin
   }
 
   const message = normalizeOrderMessage(
-    `🛍 Новый заказ\n📦 Сервис: ${productName}\n🔗 Ссылка: ${codeValue(link)}\n💵 Сумма пополнения: ${
+    `🛍 Новый заказ\n📦 Сервис: ${productName}\n💵 Сумма пополнения: ${
       hasAmount ? codeValue(`${amount.trim()} ${currency}`) : "`не указана`"
     }`
   );
@@ -1496,16 +1494,6 @@ export function SiteTopupForm({ productName, productSlug }: { productName: strin
     <>
       {notice && <OrderNotice message={notice} isVisible={isVisible} />}
       <div className="grid w-full gap-4 rounded-2xl border border-cyan-300/18 bg-cyan-950/20 p-4">
-        <label className="grid gap-2">
-          <span className="text-sm font-bold text-white/78">Ссылка:</span>
-          <input
-            value={link}
-            onChange={(event) => setLink(event.target.value)}
-            placeholder="Введите ссылку на сайт, который хотите пополнить"
-            className="w-full rounded-xl border border-white/10 bg-[#07101d] px-4 py-3 text-white outline-none transition placeholder:text-white/35 focus:border-sky-300/45"
-          />
-        </label>
-
         <div className="grid gap-2">
           <span className="text-sm font-bold text-white/78">Сумма пополнения</span>
           <div className="grid grid-cols-[minmax(0,1fr)_118px] gap-2">
