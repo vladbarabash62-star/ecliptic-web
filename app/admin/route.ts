@@ -411,6 +411,7 @@ const ADMIN_HTML = `<!doctype html>
     var settings = { reviewsCountLabel: '400+' };
     var analyticsEvents = [];
     var chartAnalyticsEvents = [];
+    var chartSnapshot = null;
     var analyticsSummary = { total: 0, views: 0, buys: 0, telegram: 0, actions: {}, products: {} };
     var analyticsPagination = { offset: 0, limit: 50, loaded: 0, totalStored: 0, hasMore: false, nextOffset: 0 };
     var hotVisitorOpenCounts = {};
@@ -1029,6 +1030,20 @@ const ADMIN_HTML = `<!doctype html>
       if (type === 'product_page_view') return week.views;
       return null;
     }
+    function snapshotDaysForWeek(week, type) {
+      var snapshotWeek = chartSnapshot && Array.isArray(chartSnapshot.weeks)
+        ? chartSnapshot.weeks.find(function(item) { return item && item.start === week.start; })
+        : null;
+      var sourceDays = snapshotWeek && Array.isArray(snapshotWeek.days) ? snapshotWeek.days : [];
+      return sourceDays.map(function(day) {
+        var value = type === 'all_events'
+          ? Number(day.events) || 0
+          : type === 'buy_click'
+            ? Number(day.buys) || 0
+            : Number(day.views) || 0;
+        return { date: new Date(day.date + 'T12:00:00'), value: value, sum: Number(day.buySum) || 0 };
+      });
+    }
     function addFixedEventWeeks(rows, type) {
       HISTORICAL_CHART_WEEKS.slice().reverse().forEach(function(week) {
         var fixedValue = fixedWeekValue(week, type);
@@ -1038,7 +1053,7 @@ const ADMIN_HTML = `<!doctype html>
         var fixedStart = new Date(week.start + 'T00:00:00');
         var fixedEnd = new Date(fixedStart);
         fixedEnd.setDate(fixedEnd.getDate() + 6);
-        rows.unshift({ label: week.label, start: fixedStart, end: fixedEnd, value: fixedValue, sum: type === 'buy_click' ? week.buySum : 0, days: [], fixed: true });
+        rows.unshift({ label: week.label, start: fixedStart, end: fixedEnd, value: fixedValue, sum: type === 'buy_click' ? week.buySum : 0, days: snapshotDaysForWeek(week, type), fixed: true });
       });
     }
     function renderWeekBars(id, events, type, unit) {
@@ -1116,7 +1131,7 @@ const ADMIN_HTML = `<!doctype html>
         var fixedStart = new Date(week.start + 'T00:00:00');
         var fixedEnd = new Date(fixedStart);
         fixedEnd.setDate(fixedEnd.getDate() + 6);
-        rows.unshift({ label: week.label, start: fixedStart, end: fixedEnd, visitors: new Set(), value: Number(week.unique || 0), days: [], fixed: week.unique != null });
+        rows.unshift({ label: week.label, start: fixedStart, end: fixedEnd, visitors: new Set(), value: Number(week.unique || 0), days: [], snapshotDays: (chartSnapshot && Array.isArray(chartSnapshot.weeks) ? chartSnapshot.weeks.find(function(item) { return item && item.start === week.start; }) : null)?.days || [], fixed: week.unique != null });
       });
       visitEvents.forEach(function(event) {
         var date = new Date(event.time);
@@ -1134,6 +1149,11 @@ const ADMIN_HTML = `<!doctype html>
         var visitorCount = row.fixed ? row.value : row.visitors.size;
         var height = Math.max(8, Math.round(visitorCount / max * 150));
         var activeDays = row.days.filter(function(day) { return day.visitors.size > 0; });
+        if (!activeDays.length && row.snapshotDays && row.snapshotDays.length) {
+          activeDays = row.snapshotDays.filter(function(day) { return Number(day.visitors) > 0; }).map(function(day) {
+            return { date: new Date(day.date + 'T12:00:00'), visitors: { size: Number(day.visitors) || 0 } };
+          });
+        }
         var dayRows = activeDays.map(function(day) {
           return '<div class="week-tip-row"><span>' + esc(formatDayName(day.date)) + '</span><b>' + day.visitors.size + '</b></div>';
         }).join('') || (row.fixed ? '<div class="week-tip-row"><span>Дневная детализация</span><b>нет в backup</b></div>' : '<div class="week-tip-row"><span>Нет посещений</span><b>-</b></div>');
@@ -2025,6 +2045,7 @@ const ADMIN_HTML = `<!doctype html>
         // Always read the paginated event store here. The chart snapshot intentionally has
         // only partial aggregates and cannot rebuild unique visitors by IP.
         var pageSize = 5000;
+        var snapshotPromise = postJson('/api/admin/analytics', { snapshot: true }).catch(function() { return null; });
         var firstPage = await postJson('/api/admin/analytics', { offset: 0, limit: pageSize });
         var allEvents = firstPage.events || [];
         var pagination = firstPage.pagination || { hasMore: false, nextOffset: allEvents.length, totalStored: allEvents.length };
@@ -2037,6 +2058,10 @@ const ADMIN_HTML = `<!doctype html>
         }
 
         chartAnalyticsEvents = mergeAnalyticsSources(allEvents);
+        var snapshotData = await snapshotPromise;
+        chartSnapshot = snapshotData && snapshotData.snapshot && Array.isArray(snapshotData.snapshot.weeks)
+          ? snapshotData.snapshot
+          : null;
         chartsFullReady = true;
         renderCharts();
         updateAnalyticsTimestamp();
