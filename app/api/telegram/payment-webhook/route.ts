@@ -1033,6 +1033,10 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate, reque
         resolvedPayment.hasPayment
         && isInstantPurchaseRequest(message.text, resolvedPayment.product)
       );
+      const isManagerOnlyProduct = Boolean(
+        resolvedPayment.product
+        && MANAGER_CONTACT_SLUGS.has(resolvedPayment.product.slug.toLowerCase())
+      );
       const replied = shouldSendPaymentDetails
         ? await sendOrderInstructions(
             message.chat.id,
@@ -1046,6 +1050,19 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate, reque
             !(await claimWelcomeWithin(message.chat.id).catch(() => true)),
             false
           )
+        : isManagerOnlyProduct
+          ? await sendOrderInstructions(
+              message.chat.id,
+              message.text,
+              message.business_connection_id,
+              "",
+              false,
+              resolvedPayment.product,
+              undefined,
+              undefined,
+              !(await claimWelcomeWithin(message.chat.id).catch(() => true)),
+              false
+            )
         : await sendPriceAnswer(message.chat.id, resolvedPayment, message.business_connection_id);
       if (replied && shouldSendPaymentDetails) {
         await savePendingTelegramOrder({
