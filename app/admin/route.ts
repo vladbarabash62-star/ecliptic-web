@@ -1044,6 +1044,16 @@ const ADMIN_HTML = `<!doctype html>
         return { date: new Date(day.date + 'T12:00:00'), value: value, sum: Number(day.buySum) || 0 };
       });
     }
+    function blankDaysForWeek(week) {
+      var start = new Date(week.start + 'T00:00:00');
+      var days = [];
+      for (var index = 0; index < 7; index += 1) {
+        var date = new Date(start);
+        date.setDate(date.getDate() + index);
+        days.push({ date: date, value: 0, sum: 0 });
+      }
+      return days;
+    }
     function addFixedEventWeeks(rows, type) {
       HISTORICAL_CHART_WEEKS.slice().reverse().forEach(function(week) {
         var fixedValue = fixedWeekValue(week, type);
@@ -1076,12 +1086,18 @@ const ADMIN_HTML = `<!doctype html>
         var date = new Date(event.time);
         if (Number.isNaN(date.getTime())) return;
         var row = rows.find(function(item) { return date >= item.start && date <= item.end; });
-        if (!row || row.fixed) return;
+        if (!row) return;
         var price = type === 'buy_click' ? parsePrice(event) : 0;
-        row.value += 1;
-        row.sum += price;
         var stamp = dayStamp(date);
         var day = row.days.find(function(item) { return dayStamp(item.date) === stamp; });
+        if (row.fixed) {
+          // Historical counts come from the saved snapshot, but purchase sums
+          // are available on the original buy events and must be restored here.
+          if (day && type === 'buy_click') day.sum += price;
+          return;
+        }
+        row.value += 1;
+        row.sum += price;
         if (day) {
           day.value += 1;
           day.sum += price;
@@ -1090,7 +1106,7 @@ const ADMIN_HTML = `<!doctype html>
       var max = Math.max(1, ...rows.map(function(row) { return row.value; }));
       $(id).innerHTML = '<div class="week-bars">' + rows.map(function(row) {
         var height = Math.max(8, Math.round(row.value / max * 150));
-        var activeDays = row.days.filter(function(day) { return day.value > 0; });
+        var activeDays = row.fixed ? row.days : row.days.filter(function(day) { return day.value > 0; });
         var dayRows = activeDays.map(function(day) {
           var valueText = type === 'buy_click' ? day.value + ' - ' + day.sum + ' р' : String(day.value);
           return '<div class="week-tip-row"><span>' + esc(formatDayName(day.date)) + '</span><b>' + valueText + '</b></div>';
@@ -1216,21 +1232,21 @@ const ADMIN_HTML = `<!doctype html>
         var fixedStart = new Date(week.start + 'T00:00:00');
         var fixedEnd = new Date(fixedStart);
         fixedEnd.setDate(fixedEnd.getDate() + 6);
-        rows.unshift({ label: week.label, start: fixedStart, end: fixedEnd, value: week.registrations, days: [], fixed: true });
+        rows.unshift({ label: week.label, start: fixedStart, end: fixedEnd, value: week.registrations, days: blankDaysForWeek(week), fixed: true });
       });
       registrationEvents.forEach(function(event) {
         var date = new Date(event.time);
         if (Number.isNaN(date.getTime())) return;
         var row = rows.find(function(item) { return date >= item.start && date <= item.end; });
-        if (!row || row.fixed) return;
-        row.value += 1;
+        if (!row) return;
         var day = row.days.find(function(item) { return dayStamp(item.date) === dayStamp(date); });
         if (day) day.value += 1;
+        if (!row.fixed) row.value += 1;
       });
       var max = Math.max(1, ...rows.map(function(row) { return row.value; }));
       $(id).innerHTML = '<div class="week-bars">' + rows.map(function(row) {
         var height = Math.max(8, Math.round(row.value / max * 150));
-        var dayRows = row.days.filter(function(day) { return day.value > 0; }).map(function(day) {
+        var dayRows = (row.fixed ? row.days : row.days.filter(function(day) { return day.value > 0; })).map(function(day) {
           return '<div class="week-tip-row"><span>' + esc(formatDayName(day.date)) + '</span><b>' + day.value + '</b></div>';
         }).join('') || (row.fixed ? '<div class="week-tip-row"><span>Дневная детализация</span><b>нет в backup</b></div>' : '<div class="week-tip-row"><span>Нет регистраций</span><b>-</b></div>');
         var tip = '<strong>' + esc(row.label) + '</strong>' + dayRows + '<div class="week-tip-total">Новых пользователей: ' + row.value + '</div>';
@@ -1261,21 +1277,21 @@ const ADMIN_HTML = `<!doctype html>
         var fixedStart = new Date(week.start + 'T00:00:00');
         var fixedEnd = new Date(fixedStart);
         fixedEnd.setDate(fixedEnd.getDate() + 6);
-        rows.unshift({ label: week.label, start: fixedStart, end: fixedEnd, value: Number(week.referrals || 0), days: [], fixed: week.referrals != null });
+        rows.unshift({ label: week.label, start: fixedStart, end: fixedEnd, value: Number(week.referrals || 0), days: blankDaysForWeek(week), fixed: week.referrals != null });
       });
       completionEvents.forEach(function(event) {
         var date = new Date(event.time);
         if (Number.isNaN(date.getTime())) return;
         var row = rows.find(function(item) { return date >= item.start && date <= item.end; });
-        if (!row || row.fixed) return;
-        row.value += 1;
+        if (!row) return;
         var day = row.days.find(function(item) { return dayStamp(item.date) === dayStamp(date); });
         if (day) day.value += 1;
+        if (!row.fixed) row.value += 1;
       });
       var max = Math.max(1, ...rows.map(function(row) { return row.value; }));
       $(id).innerHTML = '<div class="week-bars">' + rows.map(function(row) {
         var height = Math.max(8, Math.round(row.value / max * 150));
-        var dayRows = row.days.filter(function(day) { return day.value > 0; }).map(function(day) {
+        var dayRows = (row.fixed ? row.days : row.days.filter(function(day) { return day.value > 0; })).map(function(day) {
           return '<div class="week-tip-row"><span>' + esc(formatDayName(day.date)) + '</span><b>' + day.value + '</b></div>';
         }).join('') || (row.fixed ? '<div class="week-tip-row"><span>Дневная детализация</span><b>нет в backup</b></div>' : '<div class="week-tip-row"><span>Нет выполнений</span><b>-</b></div>');
         var tip = '<strong>' + esc(row.label) + '</strong>' + dayRows + '<div class="week-tip-total">Выполнили условия: ' + row.value + '</div>';
