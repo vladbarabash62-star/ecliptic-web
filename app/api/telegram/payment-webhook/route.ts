@@ -169,6 +169,11 @@ function extractOrderAmount(message: string) {
   return fallback?.[1]?.trim() || "уточняется";
 }
 
+function displayPaymentAmount(amount: string, product?: Product) {
+  if (product?.slug !== "sbp-payment") return amount;
+  return amount.replace(/\s*р\s*ПМР\b/i, " рублей");
+}
+
 function extractOrderField(message: string, field: string) {
   const match = message.match(new RegExp(`${field}\\s*:\\s*([^\\n]+)`, "i"));
   return match?.[1]?.trim() || "не указан";
@@ -268,12 +273,12 @@ function normalizeProductQuery(value: string) {
 function isInstantPurchaseRequest(message: string, product?: Product) {
   if (!product) return false;
   const normalized = normalizeProductQuery(message);
-  return /(?:куп(?:ить|и)|заказать|закажи|оформить|оформи|хочу|нужн|пополн)/i.test(normalized);
+  return /(?:куп(?:ить|и)|заказать|закажи|оформить|оформи|хочу|нужн|пополн|можн)/i.test(normalized);
 }
 
 function hasProductRequestIntent(message: string) {
   const normalized = normalizeProductQuery(message);
-  return /(?:куп(?:ить|и)|заказать|закажи|оформить|оформи|хочу|нужн|пополн|сколько|стоимость|цена|почем|ссылк|где\s+(?:купить|оформить)|как\s+(?:купить|заказать|оформить))/i.test(normalized);
+  return /(?:куп(?:ить|и)|заказать|закажи|оформить|оформи|хочу|нужн|пополн|можн|сколько|стоимость|цена|почем|ссылк|где\s+(?:купить|оформить)|как\s+(?:купить|заказать|оформить))/i.test(normalized);
 }
 
 const PRODUCT_REQUEST_ALIASES: Record<string, string[]> = {
@@ -594,6 +599,21 @@ async function resolveProductRequest(orderMessage: string): Promise<ResolvedOrde
     const offers = product.offers.filter((offer): offer is Extract<Product["offers"][number], { priceRub: number }> =>
       offer.type !== "divider" && typeof offer.priceRub === "number" && offer.priceRub > 0
     );
+    if (product.slug === "sbp-payment") {
+      const rublesMatch = normalizedMessage.match(/(\d+(?:[.,]\d+)?)\s*(?:р|руб|рубл(?:ь|я|ей)|рублей)/i);
+      const rubles = rublesMatch ? Number(rublesMatch[1].replace(",", ".")) : 0;
+      if (Number.isFinite(rubles) && rubles > 0) {
+        const pmr = Math.round(rubles * 0.6 * 100) / 100;
+        const displayPmr = Number.isInteger(pmr) ? String(pmr) : pmr.toFixed(2).replace(/0+$/, "");
+        return {
+          amount: `${displayPmr} рублей`,
+          product,
+          sitePrice: pmr,
+          hasPayment: true,
+          priceOnly: true,
+        };
+      }
+    }
     const budgetMatch = product.slug === "telegram-stars"
       ? normalizedMessage.match(/(?:на|за)\s+(\d+(?:[.,]\d+)?)\s*(?:р|руб|рубл(?:ь|я|ей))/i)
       : null;
@@ -736,7 +756,7 @@ async function sendOrderInstructions(
     "",
     "<b>Номер получателя: <code>77534682</code></b>",
     "<b>Получатель: Владислав Б</b>",
-    `<b>Сумма к оплате: ${escapeHtml(paymentAmount || extractOrderAmount(orderMessage))}</b>`,
+    `<b>Сумма к оплате: ${escapeHtml(displayPaymentAmount(paymentAmount || extractOrderAmount(orderMessage), productData))}</b>`,
   ];
   if (productData?.slug.toLowerCase() === "world-of-tanks") {
     paymentLines.push("", "<b>После оплаты отправьте данные вашего аккаунта: логин и пароль.</b>");
@@ -1056,7 +1076,10 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate, reque
       // this on chat history: a first-time customer can place a precise order.
       const shouldSendPaymentDetails = Boolean(
         resolvedPayment.hasPayment
-        && isInstantPurchaseRequest(message.text, resolvedPayment.product)
+        && (
+          isInstantPurchaseRequest(message.text, resolvedPayment.product)
+          || resolvedPayment.product?.slug === "sbp-payment"
+        )
       );
       const isManagerOnlyProduct = Boolean(
         resolvedPayment.product

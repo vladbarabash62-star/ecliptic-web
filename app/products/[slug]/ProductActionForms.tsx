@@ -1102,7 +1102,7 @@ export function SbpPaymentForm({ productName, productSlug }: { productName: stri
   const hasInput = amount.trim().length > 0;
   const hasAmount = hasInput && numericAmount > 0;
   const isValidAmount = hasAmount && numericAmount >= 100;
-  const pricePmr = isValidAmount ? Math.round(numericAmount * 0.3) : 0;
+  const pricePmr = isValidAmount ? Math.round(numericAmount * 0.6) : 0;
   const limitMessage = rangeLimitMessage({
     hasAmount: hasInput,
     amount: numericAmount,
