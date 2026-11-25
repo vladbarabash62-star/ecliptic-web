@@ -16,6 +16,7 @@ import {
 import {
   getTelegramAccountNoticeTemplate,
   getTelegramCustomEmojiIds,
+  saveTelegramAccountNoticeTemplateDirect,
 } from "../../../../lib/telegramCustomEmojiStore";
 import { claimDailyGreeting, claimInactiveChatNotice, claimWelcomeWithin, noteTelegramChatActivity } from "../../../../lib/telegramDailyGreetingStore";
 import { markTelegramChatOrder, noteTelegramCustomerMessage } from "../../../../lib/telegramChatHistoryStore";
@@ -36,6 +37,7 @@ type TelegramMessage = {
   business_connection_id?: string;
   media_group_id?: string;
   text?: string;
+  entities?: Array<{ type?: string; offset?: number; length?: number; custom_emoji_id?: string }>;
   caption?: string;
   sticker?: { file_id: string; is_animated?: boolean; is_video?: boolean };
   photo?: Array<{ file_id: string; width?: number; height?: number }>;
@@ -160,6 +162,21 @@ function isOutgoingBusinessMessage(message: TelegramMessage) {
   // Telegram echoes messages sent by a connected business bot as business_message
   // updates. They must never be treated as a new customer order.
   return Boolean(message.sender_business_bot || message.from?.is_bot);
+}
+
+function isAccountNoticeTemplate(text?: string) {
+  return Boolean(text && /Важно!\s*(?:Прочтите|Ознакомьтесь)\s+перед\s+(?:входом\s+в|использованием)\s+аккаунт/i.test(text));
+}
+
+function accountNoticeEntities(message: TelegramMessage) {
+  return (message.entities || [])
+    .filter((entity) => entity.type && Number.isFinite(entity.offset) && Number.isFinite(entity.length))
+    .map((entity) => ({
+      type: entity.type as string,
+      offset: Number(entity.offset),
+      length: Number(entity.length),
+      ...(entity.custom_emoji_id ? { custom_emoji_id: entity.custom_emoji_id } : {}),
+    }));
 }
 
 function extractOrderAmount(message: string) {
@@ -1007,6 +1024,9 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate, reque
     // A manual message from the connected business account is not a customer
     // message and must never trigger an automatic reply.
     if (message.from?.id === businessConnection.user_chat_id) {
+      if (isAccountNoticeTemplate(message.text)) {
+        await saveTelegramAccountNoticeTemplateDirect(message.text!, accountNoticeEntities(message)).catch(() => undefined);
+      }
       if (message.business_connection_id && isReadyQuickReply(message.text)) {
         const replied = await sendReadyQuickReplyGreeting(message.chat.id, message.business_connection_id);
         return NextResponse.json({ ok: true, ignored: "manager-message", quickReplyGreeting: replied });

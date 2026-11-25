@@ -70,6 +70,20 @@ export async function saveTelegramAccountNoticeTemplate(
   return writeSet({ ...current, template, entities, pendingEditorChatId: undefined, updatedAt: new Date().toISOString() });
 }
 
+export async function saveTelegramAccountNoticeTemplateDirect(
+  template: string,
+  entities: TelegramCustomEmojiSet["entities"]
+) {
+  const current = await getTelegramCustomEmojiIds();
+  return writeSet({
+    ...(current || { ids: [], version: 1 as const }),
+    template,
+    entities,
+    pendingEditorChatId: undefined,
+    updatedAt: new Date().toISOString(),
+  });
+}
+
 export async function getTelegramAccountNoticeTemplate() {
   const current = await getTelegramCustomEmojiIds();
   if (!current?.template) return null;
