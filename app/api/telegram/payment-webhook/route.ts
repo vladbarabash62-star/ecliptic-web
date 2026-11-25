@@ -287,7 +287,7 @@ function isInstantPurchaseRequest(message: string, product?: Product) {
 
 function hasProductRequestIntent(message: string) {
   const normalized = normalizeProductQuery(message);
-  return /(?:куп(?:ить|и)|заказать|закажи|оформить|оформи|хочу|нужн|пополн|можн|сколько|стоимость|цена|почем|ссылк|где\s+(?:купить|оформить)|как\s+(?:купить|заказать|оформить))/i.test(normalized);
+  return /(?:куп(?:ить|и)|заказать|закажи|оформить|оформи|хочу|нужн|пополн|можн|прод(?:ай|ать|аешь|аете|аж[аиу]?)|сколько|стоимость|цена|почем|ссылк|где\s+(?:купить|оформить)|как\s+(?:купить|заказать|оформить))/i.test(normalized);
 }
 
 const PRODUCT_REQUEST_ALIASES: Record<string, string[]> = {
