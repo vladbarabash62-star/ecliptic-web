@@ -256,6 +256,7 @@ function normalizeProductQuery(value: string) {
   return normalizeSearchText(value)
     .replace(/(^|\s)(?:тг|tg)(?=\s|$)/g, "$1телеграм")
     .replace(/(^|\s)(?:акк|акки|аккаунты?)(?=\s|$)/g, "$1аккаунт")
+    .replace(/(^|\s)кулю(?=\s|$)/g, "$1куплю")
     .replace(/(^|\s)прем(?=\s|$)/g, "$1премиум")
     .replace(/(^|\s)скоко(?=\s|$)/g, "$1сколько")
     .replace(/(^|\s)скока(?=\s|$)/g, "$1сколько")
@@ -282,12 +283,12 @@ function normalizeProductQuery(value: string) {
 function isInstantPurchaseRequest(message: string, product?: Product) {
   if (!product) return false;
   const normalized = normalizeProductQuery(message);
-  return /(?:куп(?:ить|и)|заказать|закажи|оформить|оформи|хочу|нужн|пополн|можн)/i.test(normalized);
+  return /(?:куп(?:лю|ить|и)|заказать|закажи|оформить|оформи|хочу|нужн|пополн|можн)/i.test(normalized);
 }
 
 function hasProductRequestIntent(message: string) {
   const normalized = normalizeProductQuery(message);
-  return /(?:куп(?:ить|и)|заказать|закажи|оформить|оформи|хочу|нужн|пополн|можн|прод(?:ай|ать|аешь|аете|аж[аиу]?)|сколько|стоимость|цена|почем|ссылк|где\s+(?:купить|оформить)|как\s+(?:купить|заказать|оформить))/i.test(normalized);
+  return /(?:куп(?:лю|ить|и)|заказать|закажи|оформить|оформи|хочу|нужн|пополн|можн|прод(?:ай|ать|аешь|аете|аж[аиу]?)|сколько|стоимость|цена|почем|ссылк|где\s+(?:купить|оформить)|как\s+(?:купить|заказать|оформить))/i.test(normalized);
 }
 
 const PRODUCT_REQUEST_ALIASES: Record<string, string[]> = {
@@ -296,7 +297,7 @@ const PRODUCT_REQUEST_ALIASES: Record<string, string[]> = {
   steam: ["стим", "steam"],
   "telegram-stars": ["телеграм звезд", "телега звезд", "звезд", "звезды", "зывызды", "заезд", "заезды", "звездочки", "stars", "старс"],
   "telegram-premium": ["телеграм премиум", "телега премиум", "тг прем", "tg premium", "tg prem", "премка", "премк", "премиум", "premium"],
-  "telegram-accounts": ["телеграм аккаунт", "телеграм аккаунты", "тг акк", "тг акки", "акки", "аккаунты", "tg account", "tg acc"],
+  "telegram-accounts": ["телеграм аккаунт", "телеграм аккаунты", "аккаунт телеграм", "аккаунт в телеграм", "аккаунт в телеге", "аккаунт в тг", "тг аккаунт", "акк тг", "тг акк", "тг акки", "акк", "акки", "аккаунты", "аккаунт", "tg account", "tg acc"],
   "world-of-tanks": ["танки", "мир танков", "world of tanks", "wot"],
   "chatgpt-plus": ["чатгпт", "чат gpt", "чаджипити", "чатжпт", "chatgpt", "chat gpt"],
   "brawl-stars": ["бравл", "бравл старс", "бравл стар", "brawl", "brawl stars", "brawl pass", "brawl pass plus", "бравл пасс", "бравл пас"],
