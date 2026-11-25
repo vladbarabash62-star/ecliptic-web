@@ -503,10 +503,13 @@ async function resolveOrderPayment(orderMessage: string, orderCode: string): Pro
     || offers.find((candidate) => catalogOfferPrice(product, candidate) === parsed.priceRub)
     || offers.find((candidate) => orderMessage.toLowerCase().includes(candidate.label.toLowerCase()))
     || (offers.length === 1 ? offers[0] : undefined);
-  // The live catalog is authoritative. The amount embedded in an order code is
-  // only used to locate a matching current offer, never as an independent price.
+  // The order code is the authoritative snapshot of the price selected on the
+  // site. The catalog is used only to identify the product and offer label;
+  // re-resolving the amount from a changed catalog can select another tariff.
   const orderPrice = offer?.priceRub;
-  const resolvedOrderPrice = offer ? catalogOfferPrice(product, offer) : orderPrice;
+  const resolvedOrderPrice = parsed.priceRub && parsed.priceRub > 0
+    ? parsed.priceRub
+    : (offer ? catalogOfferPrice(product, offer) : orderPrice);
   if (resolvedOrderPrice) return {
     amount: `${resolvedOrderPrice} р ПМР`,
     product,
