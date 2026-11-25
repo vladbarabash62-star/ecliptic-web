@@ -15,7 +15,6 @@ import {
 } from "../../../../lib/telegramPendingOrderStore";
 import {
   getTelegramAccountNoticeTemplate,
-  getTelegramCustomEmojiIds,
   saveTelegramAccountNoticeTemplateDirect,
 } from "../../../../lib/telegramCustomEmojiStore";
 import { claimDailyGreeting, claimInactiveChatNotice, claimWelcomeWithin, noteTelegramChatActivity } from "../../../../lib/telegramDailyGreetingStore";
@@ -143,21 +142,6 @@ async function sendReadyQuickReplyGreeting(chatId: number, businessConnectionId:
   return Boolean(response);
 }
 
-function applyAccountNoticeEmojiIds(text: string, ids: string[]) {
-  const emojiPlaceholders = ["❗", "⌛️", "🚫", "📄", "💡"];
-  let result = text;
-  let offset = 0;
-  for (const [index, id] of ids.slice(0, emojiPlaceholders.length).entries()) {
-    const emoji = emojiPlaceholders[index];
-    const position = result.indexOf(emoji, offset);
-    if (position < 0) continue;
-    const tag = `<tg-emoji emoji-id="${escapeHtml(id)}">${emoji}</tg-emoji>`;
-    result = `${result.slice(0, position)}${tag}${result.slice(position + emoji.length)}`;
-    offset = position + tag.length;
-  }
-  return result;
-}
-
 function isOutgoingBusinessMessage(message: TelegramMessage) {
   // Telegram echoes messages sent by a connected business bot as business_message
   // updates. They must never be treated as a new customer order.
@@ -165,7 +149,15 @@ function isOutgoingBusinessMessage(message: TelegramMessage) {
 }
 
 function isAccountNoticeTemplate(text?: string) {
-  return Boolean(text && /Важно!\s*(?:Прочтите|Ознакомьтесь)\s+перед\s+(?:входом\s+в|использованием)\s+аккаунт/i.test(text));
+  return Boolean(text && /Важно!\s*Прочтите\s+перед\s+входом\s+в\s+аккаунт/i.test(text));
+}
+
+function isDesiredAccountNoticeTemplate(text?: string) {
+  return Boolean(text
+    && /Прочтите\s+перед\s+входом\s+в\s+аккаунт/i.test(text)
+    && /ключ\s+доступа/i.test(text)
+    && /облачн(?:ый|ого)\s+парол/i.test(text)
+    && /Не\s+спамьте\s+и\s+не\s+делайте\s+рассылок/i.test(text));
 }
 
 function accountNoticeEntities(message: TelegramMessage) {
@@ -732,19 +724,23 @@ async function sendOrderInstructions(
   const policy = replyPolicy(productData, hasPayment);
   const isTelegramAccount = displayCategory.trim().toLowerCase() === "telegram" && /аккаунт/i.test(displayProduct);
   const fallbackAccountSafetyNotice = isTelegramAccount
-    ? applyAccountNoticeEmojiIds([
+    ? [
+        "❗️ <b>Важно! Прочтите перед входом в аккаунт</b> ❗️",
         "",
-        "❗ Важно! Ознакомьтесь перед использованием аккаунта",
+        "После передачи аккаунта <b>ответственность за его дальнейшее использование несете только вы.</b>",
         "",
-        "После передачи аккаунта ответственность за его дальнейшее использование несёте только вы.",
+        "<b>Обязательно:</b>",
         "",
-        "Рекомендуем для безопасного использования:",
-        "• ⏳ Не пользоваться аккаунтом первые 48 часов.",
-        "• 🚫 Не спамить и не флудить другим пользователям.",
-        "• 📄 Соблюдать правила Telegram.",
+        "⏳ <b>Первые 48 часов</b> минимизируйте  действия в аккаунте.",
         "",
-        "🤝 Следуя этим простым рекомендациям, вы снизите вероятность возникновения каких-либо ограничений.",
-      ].join("\n"), (await getTelegramCustomEmojiIds())?.ids || [])
+        "🛡 <b>Установите ключ доступа</b> (физический или виртуальный)",
+        "",
+        "😎 <b>Включите облачный пароль</b> для защиты аккаунта",
+        "",
+        "❌ <b>Не спамьте и не делайте рассылок</b>",
+        "",
+        "❗️ При нарушении правил мы не несём ответственности за блокировки, ограничения и сохранность аккаунта. Дополнительно.",
+      ].join("\n")
     : "";
   const welcomeText = "<b>Здравствуйте, добро пожаловать в Ecliptic Store!</b>";
   const workingHoursNotice = isQuietHours()
@@ -791,7 +787,9 @@ async function sendOrderInstructions(
     });
     if (!response || !isTelegramAccount) return Boolean(response);
     const customTemplate = await getTelegramAccountNoticeTemplate();
-    const notice = customTemplate || { text: fallbackAccountSafetyNotice, entities: [] };
+    const notice = customTemplate && isDesiredAccountNoticeTemplate(customTemplate.text)
+      ? customTemplate
+      : { text: fallbackAccountSafetyNotice, entities: [] };
     const noticeResponse = await telegram("sendMessage", {
       chat_id: chatId,
       ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
@@ -816,7 +814,9 @@ async function sendOrderInstructions(
   });
   if (!response || !isTelegramAccount) return Boolean(response);
   const customTemplate = await getTelegramAccountNoticeTemplate();
-  const notice = customTemplate || { text: fallbackAccountSafetyNotice, entities: [] };
+  const notice = customTemplate && isDesiredAccountNoticeTemplate(customTemplate.text)
+    ? customTemplate
+    : { text: fallbackAccountSafetyNotice, entities: [] };
   const noticeResponse = await telegram("sendMessage", {
     chat_id: chatId,
     ...(businessConnectionId ? { business_connection_id: businessConnectionId } : {}),
