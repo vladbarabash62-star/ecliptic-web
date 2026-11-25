@@ -603,7 +603,7 @@ async function resolveProductRequest(orderMessage: string): Promise<ResolvedOrde
       const rublesMatch = normalizedMessage.match(/(\d+(?:[.,]\d+)?)\s*(?:р|руб|рубл(?:ь|я|ей)|рублей)/i);
       const rubles = rublesMatch ? Number(rublesMatch[1].replace(",", ".")) : 0;
       if (Number.isFinite(rubles) && rubles > 0) {
-        const pmr = Math.round(rubles * 0.6 * 100) / 100;
+        const pmr = Math.round(rubles * 0.3 * 100) / 100;
         const displayPmr = Number.isInteger(pmr) ? String(pmr) : pmr.toFixed(2).replace(/0+$/, "");
         return {
           amount: `${displayPmr} рублей`,
