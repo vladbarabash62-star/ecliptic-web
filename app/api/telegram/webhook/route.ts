@@ -202,6 +202,7 @@ async function sendManagerMenu(
               ? `https://ecliptic.website/api/auth/telegram/complete?token=${encodeURIComponent(loginToken)}`
               : "https://ecliptic.website",
           }],
+          [{ text: "Аккаунты", callback_data: "edit_account_notice" }],
         ],
       },
     }),
