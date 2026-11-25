@@ -1012,6 +1012,12 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate, reque
   if (!message.business_connection_id && !update.business_message) {
     return NextResponse.json({ ok: true, ignored: "orders-bot-manager-only" });
   }
+  // Telegram may echo a business-account quick reply as an outgoing business
+  // message. Capture its original entities before the outgoing-message guard,
+  // otherwise premium custom emoji IDs are discarded.
+  if (message.business_connection_id && isAccountNoticeTemplate(message.text)) {
+    await saveTelegramAccountNoticeTemplateDirect(message.text!, accountNoticeEntities(message)).catch(() => undefined);
+  }
   if (isOutgoingBusinessMessage(message)) {
     await noteTelegramChatActivity(message.chat.id).catch(() => undefined);
     return NextResponse.json({ ok: true, ignored: "outgoing" });
@@ -1024,9 +1030,6 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate, reque
     // A manual message from the connected business account is not a customer
     // message and must never trigger an automatic reply.
     if (message.from?.id === businessConnection.user_chat_id) {
-      if (isAccountNoticeTemplate(message.text)) {
-        await saveTelegramAccountNoticeTemplateDirect(message.text!, accountNoticeEntities(message)).catch(() => undefined);
-      }
       if (message.business_connection_id && isReadyQuickReply(message.text)) {
         const replied = await sendReadyQuickReplyGreeting(message.chat.id, message.business_connection_id);
         return NextResponse.json({ ok: true, ignored: "manager-message", quickReplyGreeting: replied });
