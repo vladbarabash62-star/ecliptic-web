@@ -19,7 +19,7 @@ import {
 } from "../../../../lib/telegramCustomEmojiStore";
 import { claimDailyGreeting, claimInactiveChatNotice, claimWelcomeWithin, noteTelegramChatActivity } from "../../../../lib/telegramDailyGreetingStore";
 import { markTelegramChatOrder, noteTelegramCustomerMessage } from "../../../../lib/telegramChatHistoryStore";
-import { getTelegramProductContext } from "../../../../lib/telegramProductContextStore";
+import { getTelegramProductContext, saveTelegramProductContext } from "../../../../lib/telegramProductContextStore";
 import { compactProductCode } from "../../../../lib/orderCode";
 import { getProducts } from "../../../../lib/productStore";
 import type { Product } from "../../../../lib/products";
@@ -284,6 +284,12 @@ function isInstantPurchaseRequest(message: string, product?: Product) {
   if (!product) return false;
   const normalized = normalizeProductQuery(message);
   return /(?:куп(?:лю|ить|и)|заказать|закажи|оформить|оформи|хочу|нужн|пополн|можн)/i.test(normalized);
+}
+
+function isContextFollowUp(message: string) {
+  const value = normalizeProductQuery(message).replace(/[!?.,]+$/g, "").trim();
+  if (!value || value.split(/\s+/).length > 7) return false;
+  return /^(?:да|ага|ок|хорошо|этот|это|он|она|беру|берем|подойдет|подойд[её]т|сколько|почем|цена|ссылка|ссылку|кинь|скинь|дай|нужен|нужна|хочу|куплю|купить|оформить|оплатить|оплата|реквизиты?|как\s+оплатить)(?:\s|$)/i.test(value);
 }
 
 function hasProductRequestIntent(message: string) {
@@ -1051,16 +1057,46 @@ export async function processTelegramPaymentUpdate(update: TelegramUpdate, reque
   await rememberManagerChat(message.from?.username, message.chat.id).catch(() => undefined);
   if (message.text?.trim() && !message.photo?.length && !message.document?.file_id) {
     const orderCode = extractOrderCode(message.text);
-    const resolvedPayment = orderCode
+    let resolvedPayment = orderCode
       ? await resolveOrderPayment(message.text, orderCode)
       : await resolveProductRequest(message.text);
+
+    // Keep a short-lived product context for this chat. It helps with natural
+    // follow-ups such as "сколько?", "ссылка" or "да", without letting an old
+    // product silently turn an unrelated message into an order.
+    if (resolvedPayment.product) {
+      await saveTelegramProductContext(message.chat.id, {
+        productSlug: resolvedPayment.product.slug,
+        offerLabel: resolvedPayment.offerLabel || "",
+        amount: resolvedPayment.amount || "",
+        sitePrice: resolvedPayment.sitePrice,
+        sourceMessage: message.text,
+      }).catch(() => undefined);
+    } else if (!orderCode && isContextFollowUp(message.text)) {
+      const context = await getTelegramProductContext(message.chat.id).catch(() => null);
+      if (context) {
+        const products = await getProducts({ cached: true }).catch(() => []);
+        const product = products.find((candidate) => candidate.slug === context.productSlug);
+        if (product) {
+          const asksForPayment = isInstantPurchaseRequest(message.text, product) || isPaymentDetailsRequest(message.text);
+          resolvedPayment = {
+            amount: context.amount,
+            product,
+            offerLabel: context.offerLabel || undefined,
+            sitePrice: context.sitePrice,
+            hasPayment: Boolean(context.amount),
+            priceOnly: !asksForPayment,
+          };
+        }
+      }
+    }
     if (!orderCode && isPaymentDetailsRequest(message.text)) {
       const pendingOrder = await getPendingTelegramOrder(message.chat.id).catch(() => null);
-      if (!pendingOrder) {
+      const context = await getTelegramProductContext(message.chat.id).catch(() => null);
+      if (!pendingOrder && !context?.amount) {
         await noteTelegramChatActivity(message.chat.id).catch(() => undefined);
         return NextResponse.json({ ok: true, ignored: "payment-details-without-order" });
       }
-      const context = await getTelegramProductContext(message.chat.id).catch(() => null);
       if (context) {
         const products = await getProducts({ cached: true }).catch(() => []);
         const product = products.find((candidate) => candidate.slug === context.productSlug);
