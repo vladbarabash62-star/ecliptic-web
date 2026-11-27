@@ -609,13 +609,23 @@ async function resolveProductRequest(orderMessage: string): Promise<ResolvedOrde
   // state read can take several seconds or fail during a cold start; an empty
   // result here makes the bot look random even though the catalog is healthy.
   const products = await getProducts({ cached: true }).catch(() => []);
-  for (const product of products) {
+  const matchedProducts = products.map((product) => {
     const aliases = [
       product.name,
       product.slug.replace(/[-_]+/g, " "),
       ...(PRODUCT_REQUEST_ALIASES[product.slug] || []),
     ].map(normalizeProductQuery).filter(Boolean);
-    if (!aliases.some((alias) => matchesProductAlias(normalizedMessage, alias))) continue;
+    const matchedAlias = [...aliases]
+      .sort((left, right) => right.length - left.length)
+      .find((alias) => matchesProductAlias(normalizedMessage, alias));
+    return matchedAlias ? { product, matchedAlias } : null;
+  })
+    .filter((entry): entry is { product: Product; matchedAlias: string } => Boolean(entry))
+    // Prefer the most specific phrase. For example, "spotify premium" must
+    // beat the generic "premium" alias belonging to Telegram Premium.
+    .sort((left, right) => right.matchedAlias.length - left.matchedAlias.length);
+
+  for (const { product } of matchedProducts) {
 
     const offers = product.offers.filter((offer): offer is Extract<Product["offers"][number], { priceRub: number }> =>
       offer.type !== "divider" && typeof offer.priceRub === "number" && offer.priceRub > 0
