@@ -103,7 +103,7 @@ export default async function ProductPage({ params }: PageProps) {
       ? [
           {
             id: "telegramUsername",
-            label: "Введите Telegram юзернейм (имя пользователя)",
+            label: "Юзернейм",
             placeholder: "Например, @username",
           },
         ]
