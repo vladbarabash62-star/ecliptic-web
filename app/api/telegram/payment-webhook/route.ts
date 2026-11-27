@@ -289,7 +289,9 @@ function isInstantPurchaseRequest(message: string, product?: Product) {
 function isContextFollowUp(message: string) {
   const value = normalizeProductQuery(message).replace(/[!?.,]+$/g, "").trim();
   if (!value || value.split(/\s+/).length > 7) return false;
-  return /^(?:да|ага|ок|хорошо|этот|это|он|она|беру|берем|подойдет|подойд[её]т|сколько|почем|цена|ссылка|ссылку|кинь|скинь|дай|нужен|нужна|хочу|куплю|купить|оформить|оплатить|оплата|реквизиты?|как\s+оплатить)(?:\s|$)/i.test(value);
+  // A context lookup must still contain a clear commercial request. Neutral
+  // replies such as "ок", "да" or "хорошо" must never produce a link.
+  return /^(?:сколько(?:\s+стоит)?|почем|цена|ссылк\w*|куп(?:ить|лю)|оформ(?:ить|и)|оплат(?:ить|а)|реквизит\w*|как\s+оплатить|хочу\s+(?:купить|оформить)|(?:кинь|скинь|дай|отправь|пришли)\s+(?:ссылк\w*|реквизит\w*|номер|оплат\w*))(?:\s|$)/i.test(value);
 }
 
 function hasProductRequestIntent(message: string) {
